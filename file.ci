@@ -1,0 +1,6 @@
+on git.push
+
+cp .env.example .env
+
+make install
+make

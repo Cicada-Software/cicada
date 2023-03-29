@@ -1,0 +1,93 @@
+:root {
+  --blue: #3099bb;
+  --dark-blue: #0f4659;
+  --white: #ddd;
+  --lightgray: #5b5b5b;
+  --medium-gray: #202020;
+  --gray: #171717;
+  --black: #0d0d0d;
+  --yellow: #ff0;
+  --dark-yellow: #330;
+  --green: #0f0;
+  --dark-green: #030;
+  --red: #f00;
+  --dark-red: #300;
+}
+
+@font-face {
+  font-family: "jetbrains";
+  src: url("/static/fonts/JetBrainsMono.ttf");
+}
+
+#error-msg {
+  color: var(--red);
+  background: var(--dark-red);
+  padding: 0.5em;
+}
+
+#logout {
+  cursor: pointer;
+  padding: 0.4em !important;
+  height: min-content;
+  transition: background 150ms;
+}
+
+#logout:hover {
+  background: var(--medium-gray);
+}
+
+.ci-status[data-status="success"] {
+  color: var(--green);
+  background: var(--dark-green) !important;
+}
+
+.ci-status[data-status="success"]::after {
+  content: ' ✓';
+}
+
+.ci-status[data-status="failure"], .ci-status[data-status="stopped"] {
+  color: var(--red);
+  background: var(--dark-red) !important;
+}
+
+.ci-status[data-status="failure"]::after, .ci-status[data-status="stopped"]::after {
+  content: ' ✘';
+}
+
+.ci-status[data-status="pending"] {
+  color: var(--yellow);
+  background: var(--dark-yellow) !important;
+}
+
+.ci-status[data-status="pending"]::after {
+  animation: ci-pending-spinner 0.75s infinite;
+  content: ' /';
+}
+
+@keyframes ci-pending-spinner {
+  25% { content: ' -'; }
+  50% { content: ' \\'; }
+  75% { content: ' |'; }
+}
+
+input, textarea {
+  border: none;
+  padding: 1em;
+}
+
+button {
+  padding: 1em;
+  border: none;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid;
+  outline-color: #939393;
+  outline-offset: 2px;
+}

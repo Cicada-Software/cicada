@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<link rel="stylesheet" href="/static/common.css">
+<script src="/static/auth.js"></script>
+</head>
+
+<body>
+
+<main>
+  <div class="navbar">
+    <a href="/dashboard" id="back">&#8592; Back</a>
+    <span id="version">Cicada (pre-alpha)</span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <div id="container" style="display: none">
+    <h1 id="repo-name"></h1>
+
+    <a href="#" id="view-source"></a>
+
+    <h3>Environment Variables</h3>
+
+    <p class="note" style="padding-bottom: 1em">
+      Note: environment variables are not meant for sensitive data and
+      should only be used for non-sensitive data which is safe to expose!
+    </p>
+
+    <table>
+      <tr><th>Key</th><th>Value</th></tr>
+    </table>
+
+    <p id="no-env-vars" class="note">Nothing yet!</p>
+
+    <span>
+      <button id="add">+ Add</button><button id="save" disabled>Save All</button>
+    <span>
+  </div>
+
+  <div id="error-msg" style="display: none"></div>
+
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#container {
+  width: 70vw;
+}
+
+h1 {
+  color: var(--white);
+  margin: 0;
+  font-size: 1.5em;
+}
+
+h3 {
+  padding-top: 2em;
+  padding-bottom: 1em;
+  color: var(--white);
+  margin: 0;
+}
+
+.note {
+  color: var(--lightgray);
+}
+
+table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  border: 0px;
+}
+
+th {
+  text-align: left;
+  font-style: italic;
+  color: var(--lightgray);
+  width: 17.15em;
+}
+
+td {
+  padding-top: 1em;
+  padding-right: 1em;
+  vertical-align: top;
+}
+
+a {
+  color: var(--blue);
+}
+
+input, textarea {
+  background: var(--gray);
+  color: var(--white);
+  width: 20em;
+  height: 1.5em;
+  min-height: 1.5em;
+  padding: 0.75em;
+  font-size: 12px;
+}
+
+textarea {
+  resize: vertical;
+  width: 35em;
+  height: 1.5em;
+  max-height: 20em;
+  margin: 0;
+}
+
+button {
+  background: var(--green);
+  color: var(--gray);
+  padding: 0.75em;
+}
+
+button.delete {
+  background: var(--red);
+  color: var(--black);
+  max-height: 2.65em;
+}
+
+button#add {
+  margin-top: 1rem;
+  margin-right: 1rem;
+  background: var(--blue);
+  color: var(--black);
+}
+
+button:disabled {
+  background: var(--dark-green);
+  color: var(--black);
+}
+
+/* TODO: dedupe */
+#back {
+  transition: background 150ms;
+}
+
+#back:hover {
+  background: var(--medium-gray);
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+.navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+.navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#version {
+  color: var(--lightgray);
+  flex: 1;
+}
+
+#post-change-password {
+  display: none;
+  color: var(--lightgray);
+  font-style: italic;
+}
+</style>
+
+<script>
+let repo;
+
+function main() {
+  ping();
+
+  repo = getRepoInfo();
+
+  if ("provider" in repo) {
+    const {provider, shortUrl} = repo;
+
+    document.title = `Repository ${shortUrl}`;
+
+    document.getElementById("container").style.display = "block";
+
+    document.getElementById("repo-name").innerText = shortUrl;
+
+    document.getElementById("view-source").innerText = `View code on ${normalizeProvider(provider)}`;
+
+    const gitUrl = getGitUrl(provider, shortUrl);
+    document.getElementById("view-source").href = gitUrl;
+
+    const url = `/env/repo_env_vars?provider=${provider}&url=${encodeURIComponent(gitUrl)}`;
+
+    cicadaFetch(url).then(resp => {
+      if (resp.ok) {
+        resp.json().then(j => {
+          for (const env of j) {
+            addRow(env.key, env.value);
+          }
+        });
+      } else {
+        // TODO: handle
+      }
+    });
+  }
+}
+
+main();
+
+function getRepoInfo() {
+  const parts = window.location.pathname.split("/").slice(1);
+
+  if (parts.length == 4) {
+    if (parts[0] == "repo") {
+      return {provider: parts[1], shortUrl: `${parts[2]}/${parts[3]}` };
+    }
+  }
+
+  const errorMsg = document.getElementById("error-msg");
+
+  errorMsg.style.display = "block";
+  errorMsg.innerText = "Could not load repository information";
+
+  return {};
+}
+
+function getGitUrl(provider, shortUrl) {
+  // TODO: get actual URL from API
+  return `https://${repo.provider}.com/${repo.shortUrl}`;
+}
+
+function normalizeProvider(provider) {
+  switch (provider.toLowerCase()) {
+    case "github": return "GitHub";
+    case "gitlab": return "Gitlab";
+    default: return provider;
+  }
+}
+
+function addRow(key, value) {
+  const row = document.createElement("tr");
+
+  row.innerHTML = `
+    <td><input type="text" name="key" value="" spellcheck=false /></td>
+    <td><textarea type="text" name="value" autocomplete=off spellcheck=false></textarea></td>
+    <td><button class="delete" onclick="removeEnvVar(this)">Remove</button></td>
+  `;
+
+  const keyInput = row.querySelector("input[name=key]");
+  const valueInput = row.querySelector("textarea[name=value]");
+
+  keyInput.oninput = dirtySaveButton;
+  valueInput.oninput = dirtySaveButton;
+
+  keyInput.value = key ?? "";
+  valueInput.value = value ?? "";
+
+  document.querySelector("table").appendChild(row);
+
+  onEnvVarListUpdate();
+}
+
+document.getElementById("add").addEventListener("click", (event) => {
+  addRow();
+  dirtySaveButton();
+});
+
+document.getElementById("save").addEventListener("click", (event) => {
+  const data = {
+    provider: repo.provider,
+    repository_url: getGitUrl(repo.provider, repo.shortUrl),
+    env_vars: {},
+  };
+
+  document.querySelectorAll("table tr").forEach((row, i) => {
+    if (i === 0) return;
+
+    const key = row.querySelector("input[name=key]").value;
+    const value = row.querySelector("textarea[name=value]").value;
+
+    data["env_vars"][key] = value;
+  });
+
+  console.log(data);
+
+  cicadaFetch("/env/repo_env_vars", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data),
+  })
+    .then(resp => {
+      if (resp.ok) {
+        // add save message
+      } else {
+        // add err message
+      }
+    })
+    .catch(err => console.log({err}));
+});
+
+function removeEnvVar(element) {
+  if (confirm("Are you sure you want to delete this environment variable?")) {
+    document.querySelector("table").removeChild(element.parentNode.parentNode);
+
+    onEnvVarListUpdate();
+    dirtySaveButton();
+  }
+}
+
+function onEnvVarListUpdate() {
+  // Subtract 1 for header
+  const rowCount = document.querySelectorAll("table tr").length - 1;
+
+  document.getElementById("no-env-vars").style.display = rowCount ? "none" : "block";
+}
+
+function dirtySaveButton() {
+  document.getElementById("save").disabled = false;
+}
+</script>
+
+</body>
+
+</html>

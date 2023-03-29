@@ -1,0 +1,18 @@
+.venv
+*__pycache__
+docs
+htmlcov
+.mypy_cache
+dist
+.coverage
+test
+.git
+
+*Dockerfile*
+
+*.pem
+.env
+*.db3
+
+# only used on my local machine
+x

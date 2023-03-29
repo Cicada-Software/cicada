@@ -1,0 +1,151 @@
+{
+    "object_kind": "issue",
+    "event_type": "issue",
+    "user": {
+        "id": 11442654,
+        "name": "dosisod",
+        "username": "dosisod",
+        "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/11442654/avatar.png",
+        "email": "[REDACTED]"
+    },
+    "project": {
+        "id": 41561449,
+        "name": "Cicada Testing 2",
+        "description": null,
+        "web_url": "https://gitlab.com/dosisod/cicada-testing2",
+        "avatar_url": null,
+        "git_ssh_url": "git@gitlab.com:dosisod/cicada-testing2.git",
+        "git_http_url": "https://gitlab.com/dosisod/cicada-testing2.git",
+        "namespace": "dosisod",
+        "visibility_level": 0,
+        "path_with_namespace": "dosisod/cicada-testing2",
+        "default_branch": "master",
+        "ci_config_path": "",
+        "homepage": "https://gitlab.com/dosisod/cicada-testing2",
+        "url": "git@gitlab.com:dosisod/cicada-testing2.git",
+        "ssh_url": "git@gitlab.com:dosisod/cicada-testing2.git",
+        "http_url": "https://gitlab.com/dosisod/cicada-testing2.git"
+    },
+    "object_attributes": {
+        "author_id": 11442654,
+        "closed_at": null,
+        "confidential": false,
+        "created_at": "2022-12-13 19:16:27 UTC",
+        "description": "This is the body of the issue.\n\nHere is some code:\n\n```python\nprint(\"Hello from gitlab!\")\n```",
+        "discussion_locked": null,
+        "due_date": "2022-12-17",
+        "id": 120360018,
+        "iid": 1,
+        "last_edited_at": null,
+        "last_edited_by_id": null,
+        "milestone_id": null,
+        "moved_to_id": null,
+        "duplicated_to_id": null,
+        "project_id": 41561449,
+        "relative_position": null,
+        "state_id": 1,
+        "time_estimate": 0,
+        "title": "Gitlab issue test",
+        "updated_at": "2022-12-13 19:16:27 UTC",
+        "updated_by_id": null,
+        "weight": null,
+        "url": "https://gitlab.com/dosisod/cicada-testing2/-/issues/1",
+        "total_time_spent": 0,
+        "time_change": 0,
+        "human_total_time_spent": null,
+        "human_time_change": null,
+        "human_time_estimate": null,
+        "assignee_ids": [
+            11442654
+        ],
+        "assignee_id": 11442654,
+        "labels": [
+            {
+                "id": 28310989,
+                "title": "important",
+                "color": "#ff0000",
+                "project_id": 41561449,
+                "created_at": "2022-12-13 19:15:50 UTC",
+                "updated_at": "2022-12-13 19:15:50 UTC",
+                "template": false,
+                "description": null,
+                "type": "ProjectLabel",
+                "group_id": null
+            }
+        ],
+        "state": "opened",
+        "severity": "unknown",
+        "action": "open"
+    },
+    "labels": [
+        {
+            "id": 28310989,
+            "title": "important",
+            "color": "#ff0000",
+            "project_id": 41561449,
+            "created_at": "2022-12-13 19:15:50 UTC",
+            "updated_at": "2022-12-13 19:15:50 UTC",
+            "template": false,
+            "description": null,
+            "type": "ProjectLabel",
+            "group_id": null
+        }
+    ],
+    "changes": {
+        "author_id": {
+            "previous": null,
+            "current": 11442654
+        },
+        "created_at": {
+            "previous": null,
+            "current": "2022-12-13 19:16:27 UTC"
+        },
+        "description": {
+            "previous": null,
+            "current": "This is the body of the issue.\n\nHere is some code:\n\n```python\nprint(\"Hello from gitlab!\")\n```"
+        },
+        "due_date": {
+            "previous": null,
+            "current": "2022-12-17"
+        },
+        "id": {
+            "previous": null,
+            "current": 120360018
+        },
+        "iid": {
+            "previous": null,
+            "current": 1
+        },
+        "project_id": {
+            "previous": null,
+            "current": 41561449
+        },
+        "time_estimate": {
+            "previous": null,
+            "current": 0
+        },
+        "title": {
+            "previous": null,
+            "current": "Gitlab issue test"
+        },
+        "updated_at": {
+            "previous": null,
+            "current": "2022-12-13 19:16:27 UTC"
+        }
+    },
+    "repository": {
+        "name": "Cicada Testing 2",
+        "url": "git@gitlab.com:dosisod/cicada-testing2.git",
+        "description": null,
+        "homepage": "https://gitlab.com/dosisod/cicada-testing2"
+    },
+    "assignees": [
+        {
+            "id": 11442654,
+            "name": "dosisod",
+            "username": "dosisod",
+            "avatar_url": "https://gitlab.com/uploads/-/system/user/avatar/11442654/avatar.png",
+            "email": "[REDACTED]"
+        }
+    ]
+}

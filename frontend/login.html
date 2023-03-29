@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Cicada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="/static/common.css">
+</head>
+
+<body>
+
+<main>
+  <div class="wrapper">
+    <form onSubmit="handleLogin(event)">
+      <h1>Cicada</h1>
+      <input type="text" name="username" placeholder="Username" autocomplete=on />
+      <input type="password" name="password" placeholder="Password" autocomplete=on />
+      <button type="submit">Login</button>
+    </form>
+
+    <p class="sso-divider">or</p>
+
+    <a
+      href="https://github.com/login/oauth/authorize?client_id=CLIENT_ID&redirect_uri=REDIRECT_URI&state=state&allow_signup=false"
+      class="github-sso"
+    >
+      Sign-in with GitHub
+    </a>
+
+    <span id="error-msg" style="display: none"></span>
+  </div>
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.sso-divider {
+  color: var(--lightgray);
+  margin: auto;
+}
+
+a.github-sso {
+  color: var(--dark-green);
+  background: var(--green);
+
+  padding: 1em;
+  margin: auto;
+  width: max-content;
+  text-decoration: none;
+}
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+  margin: auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+  max-width: 35em;
+  width: 50vw;
+  background: var(--gray);
+  padding: 2em;
+}
+
+#error-msg {
+  color: var(--red);
+  background: var(--dark-red);
+  padding: 1em;
+  text-align: center;
+}
+
+h1 {
+  color: var(--white);
+  text-align: center;
+  font-size: 1.5em;
+  margin-bottom: 1em;
+}
+
+input {
+  background: var(--black);
+  color: var(--white);
+}
+
+button {
+  background: var(--blue);
+  color: var(--gray);
+  width: 33%;
+  margin: auto;
+}
+
+p, pre {
+  margin: 0;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+#navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+#navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#navbar-filler {
+  color: var(--lightgray);
+}
+
+.navbar-filler {
+  flex: 1;
+  text-align: right;
+}
+
+#status-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: -1em;
+  padding: 1em;
+  position: sticky;
+  top: 0;
+  background: var(--black);
+}
+
+#status-bar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+@media (max-width: 48em) {
+  form {
+    width: calc(100vw - 10em);
+    max-width: unset !important;
+  }
+}
+</style>
+
+<script>
+const handleLogin = e => {
+  e.preventDefault();
+
+  const errorMsg = document.getElementById("error-msg");
+  errorMsg.style.display = "none";
+
+  fetch("/login", {method: "POST", body: new FormData(e.target)})
+    .then(resp => {
+      if (resp.ok) {
+        resp.json().then(j => {
+          localStorage.setItem("jwt", j["access_token"]);
+          window.location.href = "/dashboard";
+        });
+      }
+      else {
+        errorMsg.style.display = "block";
+        errorMsg.innerText = "Invalid username or password";
+      }
+    })
+    .catch(err => console.log({err}));
+};
+</script>
+
+</body>
+
+</html>

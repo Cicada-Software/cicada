@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Cicada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<script src="/static/ansi_up.js" type="text/javascript"></script>
+<script src="/static/auth.js"></script>
+<link rel="stylesheet" href="/static/common.css">
+</head>
+
+<body>
+
+<main>
+  <div id="navbar">
+    <a href="/runs" id="back">&#8592; Back</a>
+    <a href="" id="repo" class="hide-by-default"></a>
+    <a href="" class="hide-by-default" id="run-number">run #1</a>
+    <span class="triggered-wrapper hide-by-default">Triggered by <span id="trigger"></span></span>
+    <span class="navbar-filler" id="navbar-filler">Cicada (pre-alpha)</span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <div id="error-msg" style="display: none"></div>
+
+  <!-- commit info -->
+  <div id="commit-info" style="display: none">
+    <span>
+      <a href="" id="sha"></a>
+      push to
+      <a href="" id="ref"></a>
+      by
+      <a href="" id="commit-author"></a>
+      on
+      <span id="committed-on"></span>
+    </span>
+    <br>
+    <br>
+    <pre id="commit-message"></pre>
+  </div>
+
+  <!-- issue info -->
+  <div id="issue-info" style="display: none">
+    <span>
+      <a href="" id="issue-id"></a>
+      opened by
+      <a href="" id="issue-author"></a>
+      on
+      <span id="opened-on"></span><span id="closed-on" style="display: hidden"></span>
+    </span>
+    <br>
+    <br>
+    <span id="issue-title"></span>
+    <br>
+    <br>
+    <pre id="issue-body"></pre>
+  </div>
+
+  <div id="status-bar" class="hide-by-default">
+    <span id="status" class="ci-status"></span>
+    <span id="elapsed-time">--:--:--</span>
+    <a href="" id="cancel" title="Cancel workflow" onclick="cancel(event)">
+      <img src="/static/img/x.svg" />
+    </a>
+    <a href="" id="rerun" title="Re-run workflow" onclick="rerun(event)">
+      <img src="/static/img/reload.svg" />
+    </a>
+    <span class="navbar-filler"></span>
+  </div>
+
+  <pre id="terminal" class="hide-by-default"></pre>
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--blue);
+}
+
+p, pre {
+  margin: 0;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+#commit-info, #issue-info, #terminal {
+  margin: 0;
+  padding: 1em;
+  color: var(--white);
+  background: var(--gray);
+}
+
+.hide-by-default {
+  display: none !important;
+}
+
+#navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+#navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#navbar-filler {
+  color: var(--lightgray);
+}
+
+.navbar-filler {
+  flex: 1;
+  text-align: right;
+}
+
+#status-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: -1em;
+  padding: 1em;
+  position: sticky;
+  top: 0;
+  background: var(--black);
+}
+
+#status-bar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#elapsed-time, .triggered-wrapper, #trigger {
+  color: var(--lightgray);
+}
+
+#cancel {
+  text-decoration: none;
+  color: var(--lightgray);
+  transition: color 150ms, background 150ms;
+  display: none;
+  padding: 0.4em;
+}
+
+#cancel:hover {
+  color: var(--red);
+  background: var(--dark-red);
+}
+
+#cancel:hover img {
+  /* https://stackoverflow.com/a/53336754 */
+  filter: invert(13%) sepia(91%) saturate(6280%) hue-rotate(3deg) brightness(95%) contrast(121%);
+}
+
+#rerun {
+  text-decoration: none;
+  color: var(--lightgray);
+  display: none;
+  padding: 0.4em;
+}
+
+#back, #repo, #run-number, #rerun {
+  transition: color 150ms, background 150ms;
+}
+
+#back:hover, #repo:hover, #run-number:hover, #rerun:hover {
+  background: var(--medium-gray);
+}
+
+.triggered-wrapper {
+  font-weight: normal;
+}
+
+#trigger {
+  color: var(--blue);
+}
+
+#terminal {
+  box-sizing: border-box;
+  overflow-x: auto;
+  flex: 1;
+}
+
+#issue-title {
+  font-weight: bold;
+  font-style: italic;
+}
+</style>
+
+<script>
+let uuid;
+let currentRun;
+let ws;
+let ansi_up;
+let shouldScroll;
+let hasStartedScrolling;
+let displayTimerInterval;
+const SCROLL_SNAP_OFFSET = 50;
+
+const BACKSPACE_REGEX = new RegExp(/\x08/g);
+
+function main() {
+  // TODO: update this to wss only once I setup self-signed certs
+  const socketUrl = new URL(window.location.href);
+  uuid = socketUrl.pathname.split("/").pop()
+  socketUrl.pathname = `/ws/session/${uuid}`;
+  socketUrl.protocol = socketUrl.hostname == "localhost" ? "ws:" : "wss:";
+
+  const searchParams = new URLSearchParams(socketUrl.search);
+  if (searchParams.has("run")) {
+    currentRun = searchParams.get("run");
+  }
+
+  ws = new WebSocket(socketUrl.toString());
+
+  // After connection is made, authorize our stream by sending the server our JWT token.
+  ws.onopen = _ => {
+    ws.send(localStorage.getItem("jwt"));
+  };
+
+  ansi_up = new AnsiUp();
+  shouldScroll = true;
+  hasStartedScrolling = false;
+  displayTimerInterval = null;
+
+  ws.onmessage = handleWebsocketMessage;
+
+  getSessionAndCommitInfo();
+}
+
+main();
+
+function updateStatus(status) {
+  document.getElementById("status").innerText = status;
+  document.getElementById("status").dataset["status"] = status.toLowerCase();
+
+  if (status === "PENDING") {
+    document.getElementById("cancel").style.display = "flex";
+    document.getElementById("rerun").style.display = "none";
+  } else {
+    document.getElementById("cancel").style.display = "none";
+    document.getElementById("rerun").style.display = "flex";
+  }
+};
+
+function handleWebsocketMessage(event) {
+  const startScrollingAt = window.innerHeight;
+  const currentScroll = window.scrollY + window.innerHeight;
+  const totalScroll = document.body.scrollHeight;
+
+  if (!hasStartedScrolling && window.scrollY !== 0) {
+    hasStartedScrolling = true;
+  }
+
+  if (
+    (currentScroll + SCROLL_SNAP_OFFSET) < totalScroll &&
+    totalScroll > startScrollingAt &&
+    hasStartedScrolling
+  ) {
+    shouldScroll = false;
+  }
+
+  if (currentScroll > (totalScroll - SCROLL_SNAP_OFFSET)) {
+    shouldScroll = true;
+  }
+
+  const data = JSON.parse(event.data);
+
+  if ("stdout" in data) {
+    const lines = data.stdout.join("").replace(BACKSPACE_REGEX, "");
+    const html = ansi_up.ansi_to_html(lines);
+    const terminal = document.getElementById("terminal");
+
+    terminal.innerHTML += html;
+
+    if (shouldScroll) {
+      document.querySelector("main").scrollIntoView({
+        block: "end",
+        inline: "nearest",
+        // behavior: "smooth"
+      });
+    }
+  }
+  else if ("status" in data) {
+    updateStatus(data.status);
+
+    // TODO: get official stop time from WS, since our timer value might differ
+    // from what the server says
+    clearInterval(displayTimerInterval);
+  }
+  else if ("error" in data) {
+    const node = document.createElement("i");
+    node.innerText = data.error;
+
+    document.getElementById("terminal").innerHTML = node.outerHTML;
+  }
+}
+
+function getSessionAndCommitInfo() {
+  let url = `/session/${uuid}/session_info`;
+  if (currentRun) url += `?run=${currentRun}`;
+
+  cicadaFetch(url).then(e => {
+    if (!e.ok) {
+      const errorMsg = document.getElementById("error-msg");
+
+      errorMsg.style.display = "block";
+
+      errorMsg.innerText = e.status == 404 ?
+        "Session was not found" :
+        httpStatusToMessage(e.status);
+    }
+
+    e.json().then(e => {
+      const started_at = new Date(e.started_at);
+      const trigger = e.trigger.type;
+
+      currentRun = e.run;
+
+      document.getElementById("trigger").innerText = trigger;
+
+      document.getElementById("run-number").innerText = `run #${e.run}`;
+      document.getElementById("run-number").href = `/runs?session=${e.id}`;
+
+      const repository = e.trigger.repository_url;
+
+      if (trigger == "git.push") {
+        const { provider, message, sha, ref, committed_on, author } = e.trigger;
+
+        document.getElementById("sha").innerText = sha.substring(0, 8);
+
+        if (provider == "github") {
+          document.getElementById("sha").href = `${repository}/commit/${sha}`;
+        }
+        else if (provider == "gitlab") {
+          document.getElementById("sha").href = `${repository}/-/commit/${sha}`;
+        }
+
+        const shortRef = ref.split("/").slice(2).join("/");
+        document.getElementById("ref").innerText = shortRef;
+
+        if (provider == "github") {
+          document.getElementById("ref").href = `${repository}/tree/${shortRef}`;
+        }
+        else if (provider == "gitlab") {
+          // TODO: test this
+          document.getElementById("ref").href = `${repository}/-/tree/${shortRef}`;
+        }
+
+        document.getElementById("commit-author").innerText = author;
+        // TODO: pass this URL from the server instead
+        document.getElementById("commit-author").href = `https://github.com/${author}`;
+
+        document.getElementById("commit-message").innerText = message;
+        document.getElementById("committed-on").innerText = new Date(committed_on).toLocaleString();
+
+        document.title = message;
+
+        document.getElementById("commit-info").style.display = "block";
+      }
+      else if (["issue.open", "issue.close"].includes(trigger)) {
+        const { title, id, opened_at, closed_at, body, provider, submitted_by } = e.trigger;
+
+        if (provider == "github") {
+          document.getElementById("issue-id").href = `${repository}/issues/${id}`;
+        }
+        else if (provider == "gitlab") {
+          document.getElementById("issue-id").href = `${repository}/-/issues/${id}`;
+        }
+
+        document.getElementById("issue-id").innerText = `Issue #${id}`;
+
+        document.getElementById("issue-author").innerText = submitted_by;
+        // TODO: pass this URL from the server instead
+        document.getElementById("issue-author").href = `https://github.com/${submitted_by}`;
+
+        document.getElementById("opened-on").innerText = new Date(opened_at).toLocaleString();
+
+        if (closed_at) {
+          const display = `, closed on ${new Date(closed_at).toLocaleString()}`;
+          document.getElementById("closed-on").innerText = display;
+          document.getElementById("closed-on").style.display = "inline";
+        }
+
+        document.getElementById("issue-title").innerText = title;
+
+        document.getElementById("issue-body").innerText = body;
+
+        document.title = title;
+
+        document.getElementById("issue-info").style.display = "block";
+      }
+
+      const shortUrl = new URL(repository).pathname.substr(1);
+      document.getElementById("repo").href = `/repo/${e.trigger.provider}/${shortUrl}`;
+      document.getElementById("repo").innerText = shortUrl;
+
+      updateStatus(e.status);
+
+      // TODO: cleanup this function
+      const displayElapsedTime = () => {
+        const finished_at = e.finished_at ? new Date(e.finished_at) : new Date();
+
+        const diffSeconds = Math.floor((finished_at - started_at) / 1_000);
+
+        const seconds = String(Math.floor(diffSeconds % 60)).padStart(2, "0");
+        const mins = String(Math.floor((diffSeconds / 60) % 60)).padStart(2, "0");
+        const hours = String(Math.floor(diffSeconds / 3600)).padStart(2, "0");
+        const display = `${hours}:${mins}:${seconds}`;
+
+        document.getElementById("elapsed-time").innerText = display;
+      };
+
+      for (const el of document.querySelectorAll(".hide-by-default")) {
+        el.classList.remove("hide-by-default");
+      }
+
+      displayElapsedTime();
+
+      displayTimerInterval = setInterval(displayElapsedTime, 1_000);
+    });
+  });
+}
+
+function cancel(event) {
+  event.preventDefault();
+
+  if (ws.readyState === 3) {
+    // websocket is closed, make direct API call
+
+    cicadaFetch(`/session/${uuid}/stop`, {method: "POST"}).then(e => {
+      if (!e.ok) {
+        console.error(e);
+
+        return;
+      }
+
+      updateStatus("STOPPED");
+
+      clearInterval(displayTimerInterval);
+    });
+  } else {
+    ws.send("STOP");
+  }
+}
+
+function rerun(event) {
+  event.preventDefault();
+
+  document.getElementById("rerun").style.display = "none";
+  document.getElementById("run-number").classList.add("hide-by-default");
+  document.getElementById("terminal").innerHTML = "";
+  document.getElementById("elapsed-time").innerText = "--:--:--";
+  updateStatus("PENDING");
+
+  if (currentRun === undefined) currentRun = 1;
+  currentRun++;
+
+  // TODO: does this work cross browser?
+  window.history.replaceState(null, "", `?run=${currentRun}`);
+
+  cicadaFetch(`/session/${uuid}/rerun`, {method: "POST"}).then(e => {
+    if (!e.ok) {
+      const errorMsg = document.getElementById("error-msg");
+
+      errorMsg.style.display = "block";
+      errorMsg.innerText = httpStatusToMessage(e.status);
+
+      return;
+    }
+
+    const precheck = (count) => {
+      if (count === 0) return;
+
+      cicadaFetch(`/session/${uuid}/session_info?run=${currentRun}`).then(e => {
+        if (e.ok) {
+          main();
+        } else {
+          setTimeout(() => {precheck(--count)}, 1000);
+        }
+      });
+    };
+
+    precheck(5);
+  });
+}
+</script>
+</body>
+
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Cicada: CI/CD For The Modern Age</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+
+<body>
+
+<div class="navbar">
+  <a href="/login">Login</a>
+</div>
+
+<h1>Cicada</h1>
+<h2>CI/CD For The Modern Age</h2>
+
+<h3 style="margin: 3em 0 1em 0">Pick Your Git Provider</h3>
+
+<div class="git-providers">
+  <img src="/static/img/github-logo.svg" />
+  <img src="/static/img/gitlab-logo.svg" />
+  <img src="/static/img/ado.svg" />
+</div>
+
+<p class="ascii-art" style="margin-top: 1em">╰───────────┼───────────╯</p>
+<h3>Write Your Worfklows Once</h3>
+<p class="ascii-art" style="margin-top: 0.25em">│</p>
+
+<div class="code-block">
+  <p class="filename">hello_world.ci</p>
+  <!-- scrolling animation from: https://codepen.io/cschembri/pen/roMGRa -->
+  <span class="animation-wrapper">
+    <span id="on">on</span>
+    <div id="window">
+      <ul>
+        <li>git.push</li>
+        <li>git.tag</li>
+        <li>issue.open</li>
+        <li>issue.close</li>
+        <li>pull_request.open</li>
+        <li>pull_request.close</li>
+        <li>pull_request.comment</li>
+        <li>git.push</li>
+      </ul>
+    </div>
+  </span>
+
+  <span style="padding-top: 0">echo hello world!</span>
+</div>
+
+<p class="ascii-art" style="margin-bottom: 0.5em">│</p>
+<h3 style="margin: 0.25em">Let Cicada Handle The Rest</h3>
+
+<p class="ascii-art desktop" style="margin: 0">╭─────────────┴─────────────╮</p>
+
+<h4 class="mobile" style="margin-top: 2em">Hosting Options</h4>
+
+<div class="host-options">
+  <div class="desktop" style="flex: 1"></div>
+  <div class="card self-host">
+    <span>Self-host</span>
+
+    <p>
+      We
+      <svg xmlns="http://www.w3.org/2000/svg" id="heart" class="icon icon-tabler icon-tabler-heart-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <path d="M6.979 3.074a6 6 0 0 1 4.988 1.425l.037 .033l.034 -.03a6 6 0 0 1 4.733 -1.44l.246 .036a6 6 0 0 1 3.364 10.008l-.18 .185l-.048 .041l-7.45 7.379a1 1 0 0 1 -1.313 .082l-.094 -.082l-7.493 -7.422a6 6 0 0 1 3.176 -10.215z" stroke-width="0" fill="currentColor"></path>
+      </svg>
+      Open Source. AGPLv3 licensed.
+    </p>
+
+    <a href="https://github.com/Cicada-Software/cicada"><button>View on GitHub</button></a>
+  </div>
+
+  <div class="card cloud">
+    <span>Join Cloud Waitlist</span>
+    <form onSubmit="handleSubmit(event)" onInput="handleInput(event)">
+      <input type="text" name="email" placeholder="Email" autocomplete="off" />
+      <button type="submit" disabled>Notify Me</button>
+    </form>
+    <span id="post-notify" style="display: none"></span>
+  </div>
+  <div class="desktop" style="flex: 1"></div>
+</div>
+
+<script>
+const handleSubmit = e => {
+  e.preventDefault();
+
+  const box = document.getElementById("post-notify")
+  let msg = "";
+
+  fetch("/join_waitlist", {method: "POST", body: new FormData(e.target)})
+    .then(resp => {
+      resp.json().then(j => {
+        if (resp.ok) {
+          box.style.display = "block";
+          box.innerText = "Done! We'll keep you updated";
+
+          document.querySelector("input[name=email]").value = "";
+        } else {
+          box.style.display = "block";
+          box.innerText = j.detail;
+        }
+      });
+    })
+    .catch(err => console.log({err}));
+};
+
+const handleInput = e => {
+  document.querySelector("button[type=submit]").disabled = !e.target.value;
+};
+</script>
+
+<style>
+:root {
+  --background: #eee;
+  --foreground: #111;
+  --subtext: #555;
+  --faded-red: #e8dddd;
+  --faded-green: #e6ffd5;
+  --faded-blue: #d4e4e8;
+}
+
+@font-face {
+  font-family: "dejavu";
+  src: url("/static/fonts/DejaVuSans.ttf");
+}
+
+@font-face {
+  font-family: "jetbrains";
+  src: url("/static/fonts/JetBrainsMono.ttf");
+}
+
+body, html {
+  background: var(--faded-red);
+  color: var(--foreground);
+
+  font-family: dejavu;
+}
+
+.navbar {
+  display: flex;
+}
+
+.navbar > * {
+  margin-left: auto;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 3em;
+}
+
+h2, h4 {
+  color: var(--subtext);
+}
+
+h1, h2, h3, h4 {
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+
+.git-providers {
+  display: flex;
+  gap: 3em;
+  margin: auto;
+  width: 26em;
+}
+
+.git-providers > * {
+  flex: 1;
+
+  width: 0;
+}
+
+.ascii-art {
+  font-size: 1.35em;
+  text-align: center;
+  color: var(--foreground);
+  margin: 0.5em;
+}
+
+.code-block {
+  font-family: "jetbrains";
+  font-size: 1rem;
+
+  background: var(--background);
+  border: 2px solid var(--foreground);
+  border-radius: 0.5em;
+  width: min-content;
+  margin: auto;
+}
+
+.code-block p.filename {
+  color: var(--background);
+  background: var(--foreground);
+  padding: 0.5em;
+  margin: 0;
+  display: block;
+  border-radius: 0.3em 0.3em 0 0;
+}
+
+.code-block > span {
+  padding: 1em;
+  margin: 0;
+  display: inline-block;
+  width: max-content;
+}
+
+.animation-wrapper {
+  height: 1.25em;
+  display: inline-block;
+}
+
+#on {
+  vertical-align: top;
+}
+
+#window {
+  display: inline-block;
+  height: 100%;
+  overflow: hidden;
+}
+
+#window ul {
+  margin: 0;
+  padding: 0;
+  animation: scroll 12s linear infinite normal;
+  list-style: none;
+  white-space: normal;
+}
+
+#window li {
+  line-height: 1.5em;
+}
+
+.mobile {
+  display: none;
+}
+
+@media (max-width: 48em) {
+  .desktop { display: none; }
+  .mobile { display: block; }
+
+  .git-providers {
+    width: 20em;
+  }
+
+  .ascii-art {
+    font-size: 1.075em;
+  }
+
+  .host-options {
+    flex-direction: column;
+  }
+
+  .host-options div.card {
+    width: unset !important;
+  }
+
+  form input {
+    margin-left: 0;
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(calc(-100% + 1.5em));
+  }
+}
+
+#heart {
+  color: red;
+  width: 1em;
+  height: 1em;
+  vertical-align: top;
+}
+
+.host-options {
+  margin-top: 0.5em;
+  display: flex;
+  gap: 1em;
+}
+
+.host-options div.card {
+  text-align: center;
+  border: 2px solid var(--foreground);
+  border-radius: 0.3em;
+  padding: 1em;
+  width: 20em;
+}
+
+.host-options span {
+  font-weight: bold;
+}
+
+.self-host {
+  background: var(--faded-green);
+}
+
+.cloud {
+  background: var(--faded-blue);
+}
+
+button {
+  background: var(--foreground);
+  color: var(--background);
+  border: 0;
+  padding: 0.5em;
+  margin: auto;
+  border-radius: 0.3em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:disabled {
+  background: var(--subtext);
+  color: var(--background);
+  cursor: default;
+}
+
+input {
+  background: var(--background);
+  color: var(--foreground);
+  border: 2px solid var(--foreground);
+  border-radius: 0.3em;
+  margin: 1em;
+  padding: 0.5em;
+  width: calc(100% - 3em);
+}
+
+form {
+  display: flex;
+}
+</style>
+
+</body>
+
+</html>

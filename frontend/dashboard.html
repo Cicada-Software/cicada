@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="/static/common.css">
+<script src="/static/auth.js"></script>
+</head>
+
+<body>
+
+<main>
+  <div class="navbar">
+    <span id="version">Cicada (pre-alpha)</span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <div id="error-msg" style="display: none"></div>
+
+  <h1>Home</h1>
+
+  <div class="cards">
+    <div>
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <line x1="12" y1="5" x2="12" y2="19"></line>
+         <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+
+      <h2>Connect</h2>
+      <p>Add a new repo to Cicada</p>
+
+      <span class="button-wrapper">
+        <!-- TODO: allow for this to be set by the user -->
+        <a href="https://github.com/apps/cicada-sh/installations/new" class="connect">GitHub</a>
+        <button class="connect" disabled title="Coming soon!">Gitlab</button>
+        <button class="connect" disabled title="Coming soon!">AzureDevOps</button>
+      </span>
+    </div>
+
+    <a href="/runs">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-history" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+        <polyline points="12 8 12 12 14 14" />
+        <path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" />
+      </svg>
+
+      <h2>Recent</h2>
+      <p>View your most recent workflow runs</p>
+    </a>
+
+    <a href="/settings">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-settings" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+
+      <h2>Settings</h2>
+      <p>Change password, setup users and groups and more</p>
+    </a>
+
+    <a href="#" class="coming-soon" title="Coming soon!" tabindex="-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-123" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <path d="M3 10l2 -2v8"></path>
+         <path d="M9 8h3a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-2a1 1 0 0 0 -1 1v2a1 1 0 0 0 1 1h3"></path>
+         <path d="M17 8h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5"></path>
+      </svg>
+
+      <h2>Secrets/Variables</h2>
+
+      <p>Add, remove, or update secrets and environment variables</p>
+    </a>
+
+    <a href="#" class="coming-soon" title="Coming soon!" tabindex="-1">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-currency-dollar" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"></path>
+         <path d="M12 3v3m0 12v3"></path>
+      </svg>
+
+      <h2>Billing</h2>
+      <p>View you minutes for this month and previous months</p>
+    </a>
+  </div>
+
+  <h1 style="padding-top: 1em">Docs</h1>
+
+  <div class="cards">
+    <a href="https://github.com/Cicada-Software/cicada/blob/master/docs/ci-lang/getting-started.md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-book" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <path d="M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0"></path>
+         <path d="M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0"></path>
+         <path d="M3 6l0 13"></path>
+         <path d="M12 6l0 13"></path>
+         <path d="M21 6l0 13"></path>
+      </svg>
+
+      <h2>Introduction</h2>
+      <p>Learn the basics of Cicada</p>
+    </a>
+
+    <a href="https://github.com/Cicada-Software/cicada/tree/master/docs/ci-lang">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-code" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+         <path d="M7 8l-4 4l4 4"></path>
+         <path d="M17 8l4 4l-4 4"></path>
+         <path d="M14 4l-4 16"></path>
+      </svg>
+
+      <h2>Cicada DSL</h2>
+      <p>Reference guide for the Cicada DSL used to define workflows</p>
+    </a>
+  </div>
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  color: var(--white);
+  margin: 0;
+  font-size: 1.5em;
+}
+
+a {
+  color: var(--blue);
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+.navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+.navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#version {
+  color: var(--lightgray);
+  flex: 1;
+}
+
+.cards {
+  display: flex;
+  gap: 1.5em;
+  flex-wrap: wrap;
+}
+
+.cards > * {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  width: 20em;
+  height: 15em;
+  background: var(--gray);
+  color: var(--white);
+  text-decoration: none;
+  transition: background 150ms;
+}
+
+.cards > *:not(.coming-soon):hover {
+  background: var(--medium-gray);
+}
+
+.cards h2 {
+  margin: 0;
+  padding: 0.5em;
+  font-size: 1.25em;
+  text-align: center;
+}
+
+.cards svg {
+  stroke: var(--lightgray);
+  margin: 1.5em auto 0 auto;
+  width: 3em;
+  height: 3em;
+}
+
+.cards p {
+  color: var(--lightgray);
+  margin: 0 1.5em auto 1.5em;
+  font-size: 1em;
+  text-align: center;
+}
+
+.button-wrapper {
+  display: flex;
+  flex: 1;
+  margin: 0 auto 1em auto;
+  gap: 1em;
+}
+
+.connect {
+  background: var(--green);
+  color: var(--dark-green);
+  margin-top: auto;
+  padding: 0.5em;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+button.connect:disabled {
+  color: var(--black);
+  background: var(--dark-green);
+  cursor: default;
+}
+
+a.coming-soon {
+  opacity: 0.4;
+  cursor: default;
+}
+</style>
+
+<script>
+ping();
+</script>
+
+</body>
+
+</html>

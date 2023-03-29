@@ -1,0 +1,3 @@
+on issue.close
+
+echo I should be running only for closed issues

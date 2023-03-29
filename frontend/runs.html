@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Cicada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="/static/common.css">
+<script src="/static/auth.js"></script>
+</head>
+
+<body>
+
+<main>
+  <div class="navbar">
+    <a href="/dashboard" id="back">&#8592; Back</a>
+    <span id="version">Cicada (pre-alpha)</span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <span class="runs-title">Recent Runs</span>
+
+  <div id="error-msg" style="display: none"></div>
+
+  <ol reversed></ol>
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--blue);
+}
+
+#back {
+  transition: background 150ms;
+}
+
+#back:hover {
+  background: var(--medium-gray);
+}
+
+ol {
+  padding: 0;
+  margin: 0;
+  margin-top: -1em;
+  list-style: none;
+}
+
+ol.list-view {
+  padding-left: 2em;
+  list-style: revert;
+  color: var(--lightgray);
+}
+
+.no-recents {
+  display: block;
+  color: var(--lightgray);
+  margin-top: 1em;
+  font-style: italic;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+.provider {
+  text-transform: capitalize;
+  color: var(--lightgray);
+}
+
+.commit-message, .issue-title {
+  color: var(--lightgray);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+.navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+.runs-title {
+  color: var(--white);
+  font-weight: bold;
+}
+
+#version {
+  color: var(--lightgray);
+  flex: 1;
+  text-align: right;
+}
+
+#logout {
+  stroke: var(--lightgray);
+}
+
+.status-bar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  padding: 0.5em 0 0.5em 0;
+  background: var(--black);
+  cursor: pointer;
+}
+
+.status-bar > * {
+  padding: 0.5em;
+  background: var(--gray);
+  transition: background 150ms;
+}
+
+.status-bar:hover > * {
+  background: var(--medium-gray);
+}
+
+.trigger-type {
+  color: var(--blue);
+}
+
+.elapsed-time {
+  color: var(--lightgray);
+}
+</style>
+
+<script>
+const timers = {};
+
+// TODO: cleanup this function
+const generateElapsedDisplay = (element, session) => {
+  return () => {
+    const finished_at = session.finished_at ? new Date(session.finished_at) : new Date();
+    const started_at = new Date(session.started_at);
+
+    const diffSeconds = Math.floor((finished_at - started_at) / 1_000);
+
+    const seconds = String(Math.floor(diffSeconds % 60)).padStart(2, "0");
+    const mins = String(Math.floor((diffSeconds / 60) % 60)).padStart(2, "0");
+    const hours = String(Math.floor(diffSeconds / 3600)).padStart(2, "0");
+    const display = `${hours}:${mins}:${seconds}`;
+
+    element.querySelector(".elapsed-time").innerText = display;
+  };
+};
+
+const displayStatus = (element, status) => {
+  element.querySelector(".ci-status").innerText = status;
+  element.querySelector(".ci-status").dataset["status"] = status.toLowerCase();
+};
+
+const generateCommitUrl = (provider, repository, sha) => {
+  if (provider == "github") {
+    return `${repository}/commit/${sha}`;
+  }
+  if (provider == "gitlab") {
+    return `${repository}/-/commit/${sha}`;
+  }
+};
+
+const generateIssueUrl = (provider, repository, id) => {
+  if (provider == "github") {
+    return `${repository}/issues/${id}`;
+  }
+  if (provider == "gitlab") {
+    return `${repository}/-/issues/${id}`;
+  }
+};
+
+const renderCommitSession = (session) => {
+  const { message, sha, ref, repository_url, provider } = session.trigger;
+
+  const element = document.createElement("li");
+
+  // TODO: use <a> to allow for showing tooltip at bottom of browser
+  element.innerHTML = `
+  <div class="status-bar">
+    <span class="ci-status"></span>
+    <span>
+      <a class="repo"></a>
+      <span class="provider"></span>
+    </span>
+    <span class="trigger-type"></span>
+    <a class="sha"></a>
+    <span class="commit-message"></span>
+    <span class="elapsed-time">--:--:--</span>
+  </div>
+  `;
+
+  element.onclick = makeRunCallback(event, session);
+
+  displayStatus(element, session.status);
+  element.querySelector(".trigger-type").innerText = session.trigger.type;
+
+  element.querySelector(".provider").innerText = `(${provider})`;
+
+  const shortUrl = new URL(repository_url).pathname.substr(1);
+  element.querySelector(".repo").href = `/repo/${provider}/${shortUrl}`;
+  element.querySelector(".repo").innerText = shortUrl;
+
+  element.querySelector(".sha").href = generateCommitUrl(provider, repository_url, sha);
+
+  const shortSha = sha.substring(0, 8);
+  const shortRef = ref.split("/").slice(2).join("/");
+  element.querySelector(".sha").innerText = `${shortSha} (${shortRef})`;
+
+  element.querySelector(".commit-message").innerText = message.split("\n")[0];
+  element.querySelector(".commit-message").title = message;
+
+  const timer = generateElapsedDisplay(element, session);
+  timer();
+
+  if (!session.finished_at) {
+    timers[session.id] = setInterval(timer, 1_000);
+  }
+
+  document.querySelector("ol").insertAdjacentElement("beforeend", element);
+};
+
+const renderIssueSession = (session) => {
+  const { title, body, id, repository_url, provider } = session.trigger;
+
+  const element = document.createElement("li");
+
+  element.innerHTML = `
+  <div class="status-bar">
+    <span class="ci-status"></span>
+    <span>
+      <a class="repo"></a>
+      <span class="provider"></span>
+    </span>
+    <span class="trigger-type"></span>
+    <a class="issue-id"></a>
+    <span class="issue-title"></span>
+    <span class="elapsed-time">--:--:--</span>
+  </div>
+  `;
+
+  element.onclick = makeRunCallback(event, session);
+
+  displayStatus(element, session.status);
+  element.querySelector(".trigger-type").innerText = session.trigger.type;
+
+  element.querySelector(".provider").innerText = `(${provider})`;
+
+  const shortUrl = new URL(repository_url).pathname.substr(1);
+  element.querySelector(".repo").href = `/repo/${provider}/${shortUrl}`;
+  element.querySelector(".repo").innerText = shortUrl;
+
+  element.querySelector(".issue-id").href = generateIssueUrl(provider, repository_url, id);
+  element.querySelector(".issue-id").innerText = `Issue #${id}`;
+
+  element.querySelector(".issue-title").innerText = title;
+  element.querySelector(".issue-title").title = body ? `${title}\n\n${body}` : title;
+
+  const timer = generateElapsedDisplay(element, session);
+  timer();
+
+  if (!session.finished_at) {
+    timers[session.id] = setInterval(timer, 1_000);
+  }
+
+  document.querySelector("ol").insertAdjacentElement("beforeend", element);
+};
+
+function makeRunCallback(event, session) {
+  const f = (event) => {
+    if (!("href" in event.target)) {
+      let url = `/run/${session.id}`;
+
+      if (new URLSearchParams(window.location.search).has("session")) {
+        url += `?run=${session.run}`;
+      }
+
+      window.location.href = url;
+    }
+  };
+
+  return f;
+}
+
+cicadaFetch(`/session/recent${window.location.search}`).then(e => {
+  if (!e.ok) {
+    const errorMsg = document.getElementById("error-msg");
+
+    errorMsg.style.display = "block";
+    errorMsg.innerText = httpStatusToMessage(e.status);
+
+    return;
+  }
+
+  e.json().then(e => {
+    if (new URLSearchParams(window.location.search).has("session")) {
+      document.querySelector("ol").classList.add("list-view");
+    }
+
+    for (const session of e) {
+      const triggerType = session.trigger.type;
+
+      if (session.trigger.type == "git.push") {
+        renderCommitSession(session);
+      }
+      else if (["issue.open", "issue.close"].includes(triggerType)) {
+        renderIssueSession(session);
+      }
+    }
+
+    if (!e.length) {
+      document.querySelector("ol").innerHTML = '<span class="no-recents">No recent sessions!</span>';
+    }
+  });
+});
+</script>
+</body>
+
+</html>
