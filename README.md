@@ -2,10 +2,9 @@
 
 A FOSS, cross-platform version of GitHub Actions and Gitlab CI.
 
-![Workflow File Example](/docs/img/ci-file-example.png)
+![Workflow Run Example](/docs/img/ci-session-example.png)
 
-The above workflow runs on both GitHub and Gitlab with no modifications.
-To read more about the capabilities of Cicada, read the [docs](/docs/ci-lang/README.md).
+> Example workflow run is from the [demo](https://github.com/Cicada-Software/demo) repo.
 
 ## Installing
 
@@ -16,19 +15,19 @@ but in short:
 
 You will need to [make a GitHub App](/docs/making-a-github-app.md) that will communicate with the Cicada server.
 
-Then, you will need to create a Gitlab Webhook. The docs for doing so are not there, but you can use the
+Then, you will need to create a Gitlab Webhook. The docs for doing so are not fully there yet, but you can use Gitlab's
 [official docs](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#configure-a-webhook-in-gitlab)
-as a starting point. You'll need to remember to:
+as a starting point, making sure:
 
 * When setting the "URL" field, it must be in the form: `https://DOMAIN/gitlab_webhook`
-* Copy the "Secret Token" to the `GITLAB_WEBHOOK_SECRET` field in the `.env` file.
+* Also, copy the "Secret Token" to the `GITLAB_WEBHOOK_SECRET` field in the `.env` file.
 * Under the "Trigger" field, check:
   * Push events (All branches)
   * Tag push events
   * Issue events
 
 In addition, you will need to [create a PAT (personal access token)](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#create-a-personal-access-token)
-for this app, and store it in `GITLAB_ACCESS_TOKEN`.
+for on Gitlab, and store it in `GITLAB_ACCESS_TOKEN` in the `.env ` file.
 
 Then, build the workflow executor:
 
@@ -46,6 +45,11 @@ $ pip install -r requirements.txt
 $ python3 -m cicada.api.infra.migrate
 $ python3 -m cicada.api
 ```
+
+## Syntax Highlighting
+
+Syntax highlighting support (for Neovim) is available [here](https://github.com/Cicada-Software/tree-sitter-cicada).
+Built using [Tree-sitter](https://tree-sitter.github.io/tree-sitter/).
 
 ## Support
 
