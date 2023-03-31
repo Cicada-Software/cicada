@@ -88,9 +88,11 @@ def folder_get_runnable_ci_files(
             print("checking next file")
 
         except IgnoreWorkflow:
+            print("ignoring workflow")
             pass
 
         except AstError as err:
+            print("file contains errors")
             err.filename = str(file.relative_to(folder))
 
             files_or_errors.append(err)

@@ -95,7 +95,7 @@ $ pip install -r requirements.txt
 Run migrations and build docker executor image (these will need to be re-ran every update):
 
 ```
-$ python3 -m cicada.infra.migrate
+$ python3 -m cicada.api.infra.migrate
 $ docker build -f executor.Dockerfile -t cicada .
 ```
 

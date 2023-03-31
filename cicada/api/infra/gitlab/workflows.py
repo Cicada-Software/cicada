@@ -41,7 +41,7 @@ async def wrap_in_gitlab_status_check(
     commit = project.commits.get(str(session.trigger.sha))
 
     payload = {
-        "sha": session.trigger.sha,
+        "sha": str(session.trigger.sha),
         "state": "running",
         "name": "Cicada",
         "target_url": f"http://{settings.domain}/run/{session.id}",
