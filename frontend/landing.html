@@ -15,16 +15,7 @@
 <h1>Cicada</h1>
 <h2>CI/CD For The Modern Age</h2>
 
-<h3 style="margin: 3em 0 1em 0">Pick Your Git Provider</h3>
-
-<div class="git-providers">
-  <img src="/static/img/github-logo.svg" />
-  <img src="/static/img/gitlab-logo.svg" />
-  <img src="/static/img/ado.svg" />
-</div>
-
-<p class="ascii-art" style="margin-top: 1em">╰───────────┼───────────╯</p>
-<h3>Write Your Worfklows Once</h3>
+<h3 style="margin-top: 3em">Write your worfklow once</h3>
 <p class="ascii-art" style="margin-top: 0.25em">│</p>
 
 <div class="code-block">
@@ -46,13 +37,21 @@
     </div>
   </span>
 
-  <span style="padding-top: 0">echo hello world!</span>
+  <span style="padding-top: 0"><span id="echo">echo</span> hello world!</span>
 </div>
 
 <p class="ascii-art" style="margin-bottom: 0.5em">│</p>
-<h3 style="margin: 0.25em">Let Cicada Handle The Rest</h3>
+<h3>Run it on any platform</h3>
 
-<p class="ascii-art desktop" style="margin: 0">╭─────────────┴─────────────╮</p>
+<p class="ascii-art" style="margin-bottom: 1em">╭───────────┼───────────╮</p>
+
+<div class="git-providers">
+  <img src="/static/img/github-logo.svg" />
+  <img src="/static/img/gitlab-logo.svg" />
+  <img src="/static/img/ado.svg" />
+</div>
+
+<h3 style="margin: 2em 0 1em 0">Start using it today</h3>
 
 <h4 class="mobile" style="margin-top: 2em">Hosting Options</h4>
 
@@ -216,10 +215,12 @@ h1, h2, h3, h4 {
 }
 
 #on {
+  color: #bc2d2d;
   vertical-align: top;
 }
 
 #window {
+  color: #862aa8;
   display: inline-block;
   height: 100%;
   overflow: hidden;
@@ -235,6 +236,10 @@ h1, h2, h3, h4 {
 
 #window li {
   line-height: 1.5em;
+}
+
+#echo {
+  color: #336609;
 }
 
 .mobile {
