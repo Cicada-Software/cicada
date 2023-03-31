@@ -7,6 +7,7 @@ from cicada.api.settings import (
     DBSettings,
     GitHubSettings,
     GitlabSettings,
+    GitProviderSettings,
     JWTSettings,
     MigrationSettings,
 )
@@ -88,3 +89,28 @@ def test_github_key_file_must_be_valid_filename() -> None:
             patch.dict(os.environ, copy, clear=True),
         ):
             AllSettings()
+
+
+def test_enabled_providers_must_be_valid() -> None:
+    is_provider_list_valid = {
+        "github": True,
+        "gitlab": True,
+        "gitlab,github": True,
+        "gitlab, github": True,
+        " gitlab, github ": True,
+        "": True,
+        "xyz": False,
+        "github,xyz": False,
+        "github,gitlab,xyz": False,
+    }
+
+    for providers, is_valid in is_provider_list_valid.items():
+        copy = {**DEFAULT_ENV_VARS, "ENABLED_PROVIDERS": providers}
+
+        with patch.dict(os.environ, copy, clear=True):
+            if is_valid:
+                GitProviderSettings()
+
+            else:
+                with pytest.raises(ValueError, match="can only contain"):
+                    GitProviderSettings()

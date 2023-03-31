@@ -68,6 +68,9 @@ class DNSSettings:
 
 class GitProviderSettings(DNSSettings):
     repo_white_list: list[str]
+    enabled_providers: set[str]
+
+    AVAILABLE_PROVIDERS = {"github", "gitlab"}
 
     def __init__(self) -> None:
         super().__init__()
@@ -78,6 +81,19 @@ class GitProviderSettings(DNSSettings):
             raise ValueError(
                 "GITHUB_REPO_WHITE_LIST is empty, no workflows will be allowed"
             )
+
+        self.enabled_providers = {
+            stripped
+            for provider in os.getenv(
+                "ENABLED_PROVIDERS", "github,gitlab"
+            ).split(",")
+            if (stripped := provider.strip())
+        }
+
+        if self.enabled_providers - self.AVAILABLE_PROVIDERS:
+            providers = ", ".join(f'"{x}"' for x in self.AVAILABLE_PROVIDERS)
+
+            raise ValueError(f"ENABLED_PROVIDERS can only contain {providers}")
 
 
 class GitlabSettings(GitProviderSettings):

@@ -100,5 +100,5 @@ class TestEndpointWrapper:
 
     @contextmanager
     def inject_dummy_env_vars(self) -> Iterator[dict[str, str]]:
-        with patch.dict(os.environ, self.default_env, clear=True):
-            yield self.default_env
+        with patch.dict(os.environ, self.default_env, clear=True) as vars:
+            yield vars
