@@ -10,6 +10,7 @@ from cicada.ast.nodes import (
     BooleanValue,
     FileNode,
     IdentifierExpression,
+    IfExpression,
     LetExpression,
     MemberExpression,
     NodeVisitor,
@@ -200,3 +201,16 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             return UnreachableValue()
 
         return BooleanValue(True)
+
+    def visit_if_expr(self, node: IfExpression) -> Value:
+        cond = node.condition.accept(self)
+
+        assert isinstance(cond, BooleanValue)
+
+        last: Value = UnitValue()
+
+        if cond.value:
+            for expr in node.body:
+                last = expr.accept(self)
+
+        return last

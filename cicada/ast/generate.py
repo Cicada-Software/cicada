@@ -3,15 +3,18 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from itertools import groupby
+from typing import cast
 
 from cicada.ast.types import UnknownType
 from cicada.parse.token import (
     BooleanLiteralToken,
     CloseParenToken,
+    ColonToken,
     CommentToken,
     DanglingToken,
     EqualToken,
     IdentifierToken,
+    IfToken,
     IntegerLiteralToken,
     KeywordToken,
     LetToken,
@@ -35,6 +38,7 @@ from .nodes import (
     FileNode,
     FunctionExpression,
     IdentifierExpression,
+    IfExpression,
     LetExpression,
     LineInfo,
     MemberExpression,
@@ -175,42 +179,107 @@ class ParserState:
 
         self._peek_depth -= 1
 
+    def push_front(self, token: Token) -> None:
+        self._peeked_tokens.append([token])
+
     @property
     def current_token(self) -> Token:
         assert self._current_token
         return self._current_token
 
 
-def generate_ast_tree(tokens: Iterable[Token]) -> FileNode:
-    exprs: list[Node] = []
+def generate_if_expr(state: ParserState) -> IfExpression:
+    start = state.current_token
 
+    state.next_non_whitespace()
+    cond = generate_expr(state)
+    state.next_non_whitespace()
+
+    if not isinstance(state.current_token, ColonToken):
+        raise AstError("Expected `:`", state.current_token)
+
+    next(state)
+
+    if not isinstance(state.current_token, NewlineToken):
+        raise AstError("Expected newline", state.current_token)
+
+    next(state)
+
+    expected_whitespace = state.current_token
+
+    if not isinstance(expected_whitespace, WhiteSpaceToken):
+        raise AstError("Expected indentation", state.current_token)
+
+    body = generate_block(state, expected_whitespace)
+
+    # TODO: turn into func
+    return IfExpression(
+        info=LineInfo.from_token(start),
+        condition=cond,
+        body=cast(list[Expression], body),
+        type=UnknownType(),
+        is_constexpr=False,
+    )
+
+
+def generate_ast_tree(tokens: Iterable[Token]) -> FileNode:
     state = ParserState(tokens)
 
+    return FileNode(generate_block(state))
+
+
+def generate_block(
+    state: ParserState, whitespace: WhiteSpaceToken | None = None
+) -> list[Node]:
+    exprs: list[Node] = []
+    expected_whitespace = False
+
     for token in state:
-        if isinstance(token, LetToken):
-            exprs.append(generate_let_expr(state))
-
-        elif isinstance(token, OnToken):
-            exprs.append(generate_on_stmt(state))
-
-        elif isinstance(token, IdentifierToken):
-            if "." in token.content:
-                # TODO: use ident/member expr as callee for function expr
-                exprs.append(generate_member_expr(token))
-
-            else:
-                exprs.append(generate_function_expr(state))
-
-        elif isinstance(token, NewlineToken | WhiteSpaceToken | CommentToken):
+        if isinstance(token, CommentToken):
             continue
 
-        else:
-            assert False
+        if isinstance(token, NewlineToken):
+            expected_whitespace = True
+            continue
 
-        if not isinstance(state.current_token, NewlineToken):
-            state.next_newline_or_eof()
+        if isinstance(token, WhiteSpaceToken):
+            expected_whitespace = False
 
-    return FileNode(exprs)
+            if whitespace:
+                # TODO: replace with better error message
+                assert token.content == whitespace.content
+
+            continue
+
+        if expected_whitespace and whitespace:
+            state.push_front(token)
+            return exprs
+
+        exprs.append(generate_node(state))
+
+    return exprs
+
+
+def generate_node(state: ParserState) -> Node:
+    token = state.current_token
+
+    if isinstance(token, LetToken):
+        return generate_let_expr(state)
+
+    if isinstance(token, OnToken):
+        return generate_on_stmt(state)
+
+    if isinstance(token, IfToken):
+        return generate_if_expr(state)
+
+    if isinstance(token, IdentifierToken):
+        if "." in token.content:
+            # TODO: use ident/member expr as callee for function expr
+            return generate_member_expr(token)
+
+        return generate_function_expr(state)
+
+    raise NotImplementedError()
 
 
 def generate_member_expr(token: IdentifierToken) -> MemberExpression:
@@ -383,6 +452,8 @@ def generate_let_expr(state: ParserState) -> LetExpression:
     except StopIteration as ex:
         raise AstError.expected_token(last=state.current_token) from ex
 
+    state.next_newline_or_eof()
+
     return LetExpression(
         name=name.content,
         info=LineInfo.from_token(start),
@@ -521,6 +592,8 @@ def generate_on_stmt(state: ParserState) -> OnStatement:
             where = generate_expr(state)
 
             peek.drop_peeked_tokens()
+
+    state.next_newline_or_eof()
 
     return OnStatement(
         info=LineInfo.from_token(start),

@@ -8,6 +8,7 @@ from cicada.ast.nodes import (
     FileNode,
     FunctionExpression,
     IdentifierExpression,
+    IfExpression,
     LetExpression,
     LineInfo,
     MemberExpression,
@@ -508,3 +509,40 @@ f y
             return
 
     pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_basic_if_statement() -> None:
+    code = """\
+if true:
+    let x = 1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                IfExpression(
+                    condition=BooleanExpression(True),
+                    body=[LetExpression("x", NumericExpression(1))],
+                )
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_require_colon_after_if_expr_cond() -> None:
+    with pytest.raises(AstError, match="Expected `:`"):
+        generate_ast_tree(tokenize("if x x"))
+
+
+def test_require_newline_after_if_expr_cond() -> None:
+    with pytest.raises(AstError, match="Expected newline"):
+        generate_ast_tree(tokenize("if x: "))
+
+
+def test_require_whitespace_after_if_expr_cond() -> None:
+    with pytest.raises(AstError, match="Expected indentation"):
+        generate_ast_tree(tokenize("if x:\nx"))

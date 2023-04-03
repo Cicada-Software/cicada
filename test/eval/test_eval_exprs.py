@@ -147,3 +147,36 @@ def test_use_env_var_exprs() -> None:
 
     assert isinstance(symbol, StringValue)
     assert symbol.value == "123"
+
+
+def test_eval_truthy_if_expr() -> None:
+    code = """\
+if true:
+    let x = 1
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    # TODO: this shouldnt work due to how scoping will be implemented later.
+    # We will need to find a different way to check the statement ran
+    expr = visitor.symbols["x"]
+
+    assert isinstance(expr, NumericValue)
+    assert expr.value == 1
+
+
+def test_eval_falsey_if_expr() -> None:
+    code = """\
+if false:
+    let x = 1
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    assert "x" not in visitor.symbols

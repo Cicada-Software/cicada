@@ -56,6 +56,9 @@ let a = x.y
 let b = true
 let c = not true
 let e = 1 + 2
+
+if true:
+  let x = 123
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -93,6 +96,12 @@ FileNode:
     name=e
     expr=BinaryExpression(BinaryOperator.ADD): # 14:9..14:9
       NumericExpression(1) # 14:9..14:9
-      NumericExpression(2) # 14:13..14:13"""
+      NumericExpression(2) # 14:13..14:13
+  IfExpression: # 16:1..16:2
+    cond=BooleanExpression(True) # 16:4..16:7
+    body:
+      0=LetExpression(): # 17:3..17:5
+        name=x
+        expr=NumericExpression(123) # 17:11..17:13"""
 
     assert str(tree) == expected

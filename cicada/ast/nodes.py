@@ -470,6 +470,30 @@ class BinaryExpression(Expression):
 
 
 @dataclass
+class IfExpression(Expression):
+    """
+    An if expression is like an if statement, except that it can be directly
+    assigned to a variable, like any other expression. The result of an if
+    expression is the last expression to be evaluated in the if statement.
+    """
+
+    __match_args__ = ("condition", "body")
+
+    condition: Expression
+    body: list[Expression]
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_if_expr(self)
+
+    def __str__(self) -> str:
+        cond = f"  cond={self.condition}"
+        body = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.body))
+        body = indent(body, "    ")
+
+        return f"{type(self).__name__}: # {self.info}\n{cond}\n  body:\n{body}"
+
+
+@dataclass
 class Statement(Node):
     """
     Abstract class representing a statement. Statements cannot be used as
@@ -531,6 +555,9 @@ class NodeVisitor(Generic[T]):
     def visit_on_stmt(self, node: OnStatement) -> T:
         raise NotImplementedError()
 
+    def visit_if_expr(self, node: IfExpression) -> T:
+        raise NotImplementedError()
+
     def visit_unary_expr(self, node: UnaryExpression) -> T:
         raise NotImplementedError()
 
@@ -581,3 +608,9 @@ class TraversalVisitor(NodeVisitor[None]):
     def visit_binary_expr(self, node: BinaryExpression) -> None:
         node.lhs.accept(self)
         node.rhs.accept(self)
+
+    def visit_if_expr(self, node: IfExpression) -> None:
+        node.condition.accept(self)
+
+        for expr in node.body:
+            expr.accept(self)

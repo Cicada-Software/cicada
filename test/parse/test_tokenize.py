@@ -93,7 +93,9 @@ def test_group_leading_whitespace() -> None:
     code = """\
 line_1
  line_2
-  line_3"""
+  line_3
+
+  line_4"""
 
     tokens = list(group_chunks(chunk_stream(code)))
 
@@ -105,6 +107,10 @@ line_1
         Token("\n", 2, 8, 8),
         Token("  ", 3, 1, 2),
         Token("line_3", 3, 3, 8),
+        Token("\n", 3, 9, 9),
+        Token("\n", 4, 1, 1),
+        Token("  ", 5, 1, 2),
+        Token("line_4", 5, 3, 8),
     ]
 
 

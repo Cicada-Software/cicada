@@ -99,11 +99,15 @@ def group_chunks(chunks: Iterable[Chunk]) -> Generator[Token, None, Error]:
             yield from emit_token(Token.from_chunk(chunk))
 
             for chunk in chunks:
-                if not chunk.char.isspace():
+                if chunk.char == "\n":
+                    yield from emit_token(Token.from_chunk(chunk))
+
+                elif chunk.char.isspace():
+                    append_chunk(chunk)
+
+                else:
                     yield from emit_token()
                     break
-
-                append_chunk(chunk)
 
             else:
                 break
