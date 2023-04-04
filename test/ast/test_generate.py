@@ -546,3 +546,65 @@ def test_require_newline_after_if_expr_cond() -> None:
 def test_require_whitespace_after_if_expr_cond() -> None:
     with pytest.raises(AstError, match="Expected indentation"):
         generate_ast_tree(tokenize("if x:\nx"))
+
+
+def test_expr_statements() -> None:
+    code = """\
+123
+"abc"
+
+if true:
+    321
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                NumericExpression(123),
+                StringExpression("abc"),
+                IfExpression(
+                    condition=BooleanExpression(True),
+                    body=[NumericExpression(321)],
+                ),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_nested_let_exprs() -> None:
+    tree = generate_ast_tree(tokenize("let x = let y = 1"))
+
+    match tree:
+        case FileNode(
+            [
+                LetExpression("x", LetExpression("y", NumericExpression(1))),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
+    tree = generate_ast_tree(tokenize("f (x)\nf (y)"))
+
+    match tree:
+        case FileNode(
+            [
+                FunctionExpression(
+                    "f",
+                    [ParenthesisExpression(IdentifierExpression("x"))],
+                ),
+                FunctionExpression(
+                    "f",
+                    [ParenthesisExpression(IdentifierExpression("y"))],
+                ),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")

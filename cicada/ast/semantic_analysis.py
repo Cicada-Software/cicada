@@ -1,4 +1,6 @@
 from collections import ChainMap
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any, cast
 
 from cicada.api.common.json import asjson
@@ -10,6 +12,7 @@ from cicada.ast.nodes import (
     Expression,
     FunctionExpression,
     IdentifierExpression,
+    IfExpression,
     LetExpression,
     MemberExpression,
     OnStatement,
@@ -19,6 +22,7 @@ from cicada.ast.nodes import (
     UnaryOperator,
 )
 from cicada.ast.types import (
+    BOOL_LIKE_TYPES,
     BooleanType,
     NumericType,
     RecordField,
@@ -281,6 +285,30 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 )
 
         self.has_on_stmt = True
+
+    def visit_if_expr(self, node: IfExpression) -> None:
+        with self.new_scope():
+            super().visit_if_expr(node)
+
+            if node.condition.type not in BOOL_LIKE_TYPES:
+                raise AstError(
+                    f"Type `{node.condition.type}` cannot be converted to bool",
+                    node.condition.info,
+                )
+
+            if not node.body:
+                raise AstError("If expression must have body", node.info)
+
+            node.is_constexpr = all(self.is_constexpr(x) for x in node.body)
+            node.type = node.body[-1].type
+
+    @contextmanager
+    def new_scope(self) -> Iterator[None]:
+        self.symbols = self.symbols.new_child()
+
+        yield
+
+        self.symbols = self.symbols.parents
 
     def is_constexpr(self, node: Expression) -> bool:
         if isinstance(node, IdentifierExpression):

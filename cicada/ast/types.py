@@ -78,3 +78,6 @@ class RecordType(Type):
     def __str__(self) -> str:
         # TODO: return more descriptive string type
         return "record"
+
+
+BOOL_LIKE_TYPES = (BooleanType(), NumericType(), StringType())

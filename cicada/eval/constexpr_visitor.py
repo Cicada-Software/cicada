@@ -1,4 +1,6 @@
 from collections import ChainMap
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import cast
 
 from cicada.api.domain.triggers import Trigger
@@ -203,14 +205,23 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         return BooleanValue(True)
 
     def visit_if_expr(self, node: IfExpression) -> Value:
-        cond = node.condition.accept(self)
+        with self.new_scope():
+            cond = node.condition.accept(self)
 
-        assert isinstance(cond, BooleanValue)
+            assert isinstance(cond, BooleanValue | NumericValue | StringValue)
 
-        last: Value = UnitValue()
+            last: Value = UnitValue()
 
-        if cond.value:
-            for expr in node.body:
-                last = expr.accept(self)
+            if cond.value:
+                for expr in node.body:
+                    last = expr.accept(self)
 
-        return last
+            return last
+
+    @contextmanager
+    def new_scope(self) -> Iterator[None]:
+        self.symbols = self.symbols.new_child()
+
+        yield
+
+        self.symbols = self.symbols.parents

@@ -1,3 +1,5 @@
+import pytest
+
 from cicada.ast.common import json_to_record
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import BooleanValue, NumericValue, StringValue
@@ -149,10 +151,29 @@ def test_use_env_var_exprs() -> None:
     assert symbol.value == "123"
 
 
-def test_eval_truthy_if_expr() -> None:
+@pytest.mark.xfail(reason="assignment operator not implemented yet")
+def test_eval_if_condition_truthiness() -> None:
     code = """\
+let a = false
+let b = false
+let c = false
+let d = false
+let e = false
+let f = false
+
+if 1:
+    a = true
 if true:
-    let x = 1
+    b = true
+if "abc":
+    c = true
+
+if 0:
+    d = true
+if false:
+    e = true
+if "":
+    f = true
 """
 
     tree = parse_and_analyze(code)
@@ -160,12 +181,14 @@ if true:
     visitor = EvalVisitor()
     tree.accept(visitor)
 
-    # TODO: this shouldnt work due to how scoping will be implemented later.
-    # We will need to find a different way to check the statement ran
-    expr = visitor.symbols["x"]
+    for symbol in ("a", "b", "c", "d", "e", "f"):
+        expr = visitor.symbols[symbol]
 
-    assert isinstance(expr, NumericValue)
-    assert expr.value == 1
+        assert isinstance(expr, BooleanValue)
+
+        expect_true = symbol in ("a", "b", "c")
+
+        assert expr.value == expect_true
 
 
 def test_eval_falsey_if_expr() -> None:

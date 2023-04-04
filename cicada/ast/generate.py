@@ -263,23 +263,24 @@ def generate_block(
 def generate_node(state: ParserState) -> Node:
     token = state.current_token
 
-    if isinstance(token, LetToken):
-        return generate_let_expr(state)
-
     if isinstance(token, OnToken):
         return generate_on_stmt(state)
 
-    if isinstance(token, IfToken):
-        return generate_if_expr(state)
-
-    if isinstance(token, IdentifierToken):
+    if isinstance(token, IdentifierToken) and not isinstance(
+        token, LetToken | IfToken
+    ):
         if "." in token.content:
             # TODO: use ident/member expr as callee for function expr
             return generate_member_expr(token)
 
         return generate_function_expr(state)
 
-    raise NotImplementedError()
+    expr = generate_expr(state)
+
+    if not isinstance(expr, IfExpression):
+        state.next_newline_or_eof()
+
+    return expr
 
 
 def generate_member_expr(token: IdentifierToken) -> MemberExpression:
@@ -414,6 +415,10 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
                     generate_interpolated_string(state, leading_tokens)
                 )
 
+                if isinstance(state.current_token, NewlineToken):
+                    state.push_front(state.current_token)
+                    break
+
             else:
                 arg.append(token)
 
@@ -451,8 +456,6 @@ def generate_let_expr(state: ParserState) -> LetExpression:
 
     except StopIteration as ex:
         raise AstError.expected_token(last=state.current_token) from ex
-
-    state.next_newline_or_eof()
 
     return LetExpression(
         name=name.content,
@@ -519,6 +522,12 @@ def generate_expr(state: ParserState) -> Expression:
         rhs = generate_expr(state)
 
         expr = UnaryExpression.from_expr(UnaryOperator.NEGATE, rhs, token)
+
+    elif isinstance(token, LetToken):
+        expr = generate_let_expr(state)
+
+    elif isinstance(token, IfToken):
+        expr = generate_if_expr(state)
 
     elif isinstance(token, IntegerLiteralToken):
         expr = NumericExpression.from_token(token)

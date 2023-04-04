@@ -343,3 +343,39 @@ def test_ast_error_with_filename() -> None:
     err.filename = "file.ci"
 
     assert str(err) == "file.ci:1:2: Test"
+
+
+def test_if_expr_condition_must_be_bool_like() -> None:
+    msg = "Type `record` cannot be converted to bool"
+
+    with pytest.raises(AstError, match=msg):
+        # TODO: replace "event" with different type once more exprs types are
+        # added
+        code = """\
+if event:
+    echo nope
+"""
+
+        parse_and_analyze(code, trigger=build_trigger("xyz"))
+
+
+def test_if_expr_must_have_body() -> None:
+    with pytest.raises(AstError, match="If expression must have body"):
+        code = """\
+if true:
+    # comment
+"""
+
+        parse_and_analyze(code)
+
+
+def test_if_expr_creates_its_own_scope() -> None:
+    with pytest.raises(AstError, match="is not defined"):
+        code = """\
+if true:
+    let x = 1
+
+echo (x)
+"""
+
+        parse_and_analyze(code)
