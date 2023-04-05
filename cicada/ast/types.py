@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 
@@ -81,3 +82,44 @@ class RecordType(Type):
 
 
 BOOL_LIKE_TYPES = (BooleanType(), NumericType(), StringType())
+
+
+class UnionType(Type):
+    """
+    A union type is a type which can be one of 2 or more types. A value with a
+    union type will need to be type checked in order to make sure it is of the
+    desired types.
+    """
+
+    types: tuple[Type, ...]
+
+    def __init__(self, types: Sequence[Type]) -> None:
+        copy: list[Type] = []
+
+        # Copy unique types while maintaining order
+        for ty in types:
+            if ty not in copy:
+                copy.append(ty)
+
+        self.types = tuple(copy)
+
+        if len(self.types) < 2:
+            raise ValueError("Union must have 2 or more types")
+
+    def __eq__(self, o: object) -> bool:
+        if not (isinstance(o, UnionType) and len(o.types) == len(self.types)):
+            return False
+
+        copy = list(o.types)
+
+        for lhs in self.types:
+            for i, rhs in enumerate(copy):
+                if lhs == rhs:
+                    copy.pop(i)
+                    break
+            else:
+                return False
+        return True
+
+    def __str__(self) -> str:
+        return " | ".join(str(ty) for ty in self.types)

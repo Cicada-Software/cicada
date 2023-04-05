@@ -29,6 +29,8 @@ from cicada.ast.types import (
     RecordType,
     StringType,
     Type,
+    UnionType,
+    UnknownType,
 )
 
 
@@ -300,7 +302,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 raise AstError("If expression must have body", node.info)
 
             node.is_constexpr = all(self.is_constexpr(x) for x in node.body)
-            node.type = node.body[-1].type
+            node.type = UnionType((node.body[-1].type, UnknownType()))
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:
