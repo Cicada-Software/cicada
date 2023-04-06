@@ -38,14 +38,14 @@ def update_github_repo_perms(  # type: ignore
         case {
             "sender": {
                 "type": "User",
-                "login": login,
+                "login": sender_username,
             },
             "repository": {
                 "html_url": repo_url,
-                "owner": {"login": username},
+                "owner": {"login": repository_owner_username},
             },
         }:
-            if login == username:
+            if sender_username == repository_owner_username:
                 perms = "owner"
             elif event_type == "push":
                 perms = "write"
@@ -65,7 +65,7 @@ def update_github_repo_perms(  # type: ignore
     )
 
     user_id = user_repo.create_or_update_user(
-        User(id=uuid4(), username=username, provider="github")
+        User(id=uuid4(), username=sender_username, provider="github")
     )
 
     repository_repo.update_user_perms_for_repo(

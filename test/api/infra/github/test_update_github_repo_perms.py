@@ -123,10 +123,10 @@ def test_auto_deduce_perms_from_event_type() -> None:
     event = {
         "sender": {
             "type": "User",
-            "login": "user A",
+            "login": "sender",
         },
         "repository": {
-            "owner": {"login": "user B"},
+            "owner": {"login": "owner"},
             "html_url": "some url",
         },
     }
@@ -141,9 +141,15 @@ def test_auto_deduce_perms_from_event_type() -> None:
 
         assert di.connection
         rows = di.connection.execute(
-            "SELECT perms FROM _user_repos"
+            """
+            SELECT ur.perms, u.username FROM _user_repos ur
+            JOIN users u ON u.id = ur.user_id
+            """
         ).fetchall()
 
         assert len(rows) == 1
 
-        assert rows[0][0] == perm
+        user_perms, username = rows[0]
+
+        assert user_perms == perm
+        assert username == "sender"
