@@ -19,7 +19,7 @@ def test_github_user_repo_perms_caching() -> None:
         },
     }
 
-    update_github_repo_perms(di, event)
+    update_github_repo_perms(di, event, "any event")
 
     assert di.connection
     rows = di.connection.execute(
@@ -69,7 +69,7 @@ def test_no_new_entries_for_the_same_repository() -> None:
         },
     }
 
-    update_github_repo_perms(di, event)
+    update_github_repo_perms(di, event, "any event")
 
     assert di.connection
 
@@ -77,7 +77,7 @@ def test_no_new_entries_for_the_same_repository() -> None:
         "SELECT uuid FROM users WHERE username='new_user'"
     ).fetchone()[0]
 
-    update_github_repo_perms(di, event)
+    update_github_repo_perms(di, event, "any event")
 
     new_user_id = di.connection.execute(
         "SELECT uuid FROM users WHERE username='new_user'"
@@ -94,10 +94,10 @@ def test_invalid_events_are_ignored() -> None:
     di = TestDiContainer()
     di.reset()
 
-    update_github_repo_perms(di, {})
-    update_github_repo_perms(di, {"sender": {}})
-    update_github_repo_perms(di, {"sender": {"type": "Robot"}})
-    update_github_repo_perms(di, {"sender": {"type": "User"}})
+    update_github_repo_perms(di, {}, "any event")
+    update_github_repo_perms(di, {"sender": {}}, "any event")
+    update_github_repo_perms(di, {"sender": {"type": "Robot"}}, "any event")
+    update_github_repo_perms(di, {"sender": {"type": "User"}}, "any event")
 
     event = {
         "sender": {
@@ -108,9 +108,42 @@ def test_invalid_events_are_ignored() -> None:
             "owner": {"login": "user B"},
         },
     }
-    update_github_repo_perms(di, event)
+    update_github_repo_perms(di, event, "any event")
 
     assert di.connection
     rows = di.connection.execute("SELECT * FROM _user_repos").fetchall()
 
     assert not rows
+
+
+def test_auto_deduce_perms_from_event_type() -> None:
+    di = TestDiContainer()
+    di.reset()
+
+    event = {
+        "sender": {
+            "type": "User",
+            "login": "user A",
+        },
+        "repository": {
+            "owner": {"login": "user B"},
+            "html_url": "some url",
+        },
+    }
+
+    event_types = {
+        "push": "write",
+        "issues": "read",
+    }
+
+    for event_type, perm in event_types.items():
+        update_github_repo_perms(di, event, event_type)
+
+        assert di.connection
+        rows = di.connection.execute(
+            "SELECT perms FROM _user_repos"
+        ).fetchall()
+
+        assert len(rows) == 1
+
+        assert rows[0][0] == perm

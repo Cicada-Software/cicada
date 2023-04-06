@@ -49,12 +49,17 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
 
         return Repository(repo_id, provider=provider, url=url)
 
-    def can_user_see_repo(self, user: User, repo: Repository) -> bool:
+    def can_user_see_repo(
+        self, user: User, repo: Repository, permission: Permission = "owner"
+    ) -> bool:
         # TODO: test this
 
         if user.is_admin:
             return True
 
+        # TODO: perms check will fail if user has more than 1 permission for a
+        # given repo. The perms field should probably be turned into a JSON
+        # array since doing string parsing here would be a mess.
         exists = self.conn.execute(
             """
             SELECT EXISTS (
@@ -67,10 +72,17 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
                     AND u.platform=?
                     AND r.provider=?
                     AND r.url=?
+                    AND ur.perms=?
                 )
             );
             """,
-            [user.username, user.provider, repo.provider, repo.url],
+            [
+                user.username,
+                user.provider,
+                repo.provider,
+                repo.url,
+                permission,
+            ],
         ).fetchone()[0]
 
         return bool(exists)
@@ -86,7 +98,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
                 (SELECT id FROM users WHERE uuid=?),
                 ?
             )
-            ON CONFLICT DO NOTHING;
+            ON CONFLICT DO UPDATE SET perms=excluded.perms;
             """,
             [repo.id, str(user_id), ",".join(permissions)],
         )

@@ -111,7 +111,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
             return
 
     if event_type in ("push", "issues"):
-        update_github_repo_perms(di, event)
+        update_github_repo_perms(di, event, event_type)
 
     if event_type == "push":
         if event["deleted"] is not True:

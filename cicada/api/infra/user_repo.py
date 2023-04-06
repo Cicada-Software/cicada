@@ -1,7 +1,6 @@
 from uuid import UUID
 
 from cicada.api.common.password_hash import PasswordHash
-from cicada.api.domain.repository import RepositoryId
 from cicada.api.domain.user import User
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.user_repo import IUserRepo
@@ -42,7 +41,9 @@ class UserRepo(IUserRepo, DbConnection):
                 platform
             )
             VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT DO UPDATE SET hash=?, is_admin=?
+            ON CONFLICT DO UPDATE SET
+                hash=excluded.hash,
+                is_admin=excluded.is_admin
             RETURNING uuid;
             """,
             [
@@ -51,14 +52,9 @@ class UserRepo(IUserRepo, DbConnection):
                 pw_hash,
                 user.is_admin,
                 user.provider,
-                pw_hash,
-                user.is_admin,
             ],
         ).fetchone()[0]
 
         self.conn.commit()
 
         return UUID(user_id)
-
-    def can_user_see_repo(self, user_id: UUID, repo_id: RepositoryId) -> bool:
-        return False

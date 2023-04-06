@@ -6,7 +6,7 @@ from cicada.api.domain.repository import Repository, RepositoryId
 from cicada.api.domain.user import User
 
 # TODO: replace with enum
-Permission = Literal["owner"]
+Permission = Literal["owner", "read", "write"]
 
 
 class IRepositoryRepo(ABC):
