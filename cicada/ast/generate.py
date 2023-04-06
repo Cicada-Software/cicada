@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from itertools import groupby
 from typing import cast
@@ -86,43 +86,25 @@ class AstError(ValueError):
 
 
 class ParserState:
-    tokens: Iterator[Token]
-    _current_token: Token | None
+    tokens: list[Token]
 
-    _peeked_tokens: list[list[Token]]
-    _peek_depth: int
+    _current_index: int
 
-    def __init__(self, tokens: Iterable[Token]) -> None:
-        self.tokens = iter(tokens)
-        self._current_token = None
-
-        self._peeked_tokens = []
-        self._peek_depth = 0
+    def __init__(self, tokens: Sequence[Token]) -> None:
+        self.tokens = list(tokens)
+        self._current_index = 0
 
     def __iter__(self) -> ParserState:
         return self
 
     def __next__(self) -> Token:
-        if self._peek_depth:
-            self._current_token = next(self.tokens)
-            self._peeked_tokens[-1].append(self._current_token)
-        else:
-            if self._peeked_tokens:
-                while True:
-                    if not self._peeked_tokens:
-                        self._current_token = next(self.tokens)
-                        break
+        if self._current_index >= len(self.tokens):
+            raise StopIteration()
 
-                    if self._peeked_tokens[0]:
-                        self._current_token = self._peeked_tokens[0].pop(0)
-                        break
+        token = self.tokens[self._current_index]
+        self._current_index += 1
 
-                    self._peeked_tokens.pop(0)
-
-            else:
-                self._current_token = next(self.tokens)
-
-        return self._current_token
+        return token  # noqa: RET504
 
     def next_non_whitespace_or_eof(self) -> Token | None:
         try:
@@ -164,28 +146,31 @@ class ParserState:
         `drop_peeked_tokens()` method. `peek()` calls can be nested.
         """
 
-        self._peek_depth += 1
-        old_current = self._current_token
-        index = len(self._peeked_tokens)
-        self._peeked_tokens.append([])
+        old_index = self._current_index
 
         peeker = self.Peeker()
         yield peeker
 
-        if peeker.drop_tokens:
-            self._peeked_tokens.pop(index)
+        if not peeker.drop_tokens:
+            self.rewind(old_index)
+
+    def rewind(self, index: int) -> None:
+        """
+        Rewind the parser to a previous state. If `index` is negative, rewind
+        relative to the current position. If `index` is positive, rewind to the
+        specified position.
+        """
+
+        if index < 0:
+            self._current_index += index
         else:
-            self._current_token = old_current
-
-        self._peek_depth -= 1
-
-    def push_front(self, token: Token) -> None:
-        self._peeked_tokens.append([token])
+            self._current_index = index
 
     @property
     def current_token(self) -> Token:
-        assert self._current_token
-        return self._current_token
+        index = self._current_index - 1 if self._current_index else 0
+
+        return self.tokens[index]
 
 
 def generate_if_expr(state: ParserState) -> IfExpression:
@@ -223,7 +208,7 @@ def generate_if_expr(state: ParserState) -> IfExpression:
 
 
 def generate_ast_tree(tokens: Iterable[Token]) -> FileNode:
-    state = ParserState(tokens)
+    state = ParserState(list(tokens))
 
     return FileNode(generate_block(state))
 
@@ -252,7 +237,7 @@ def generate_block(
             continue
 
         if expected_whitespace and whitespace:
-            state.push_front(token)
+            state.rewind(-1)
             return exprs
 
         exprs.append(generate_node(state))
@@ -416,7 +401,7 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
                 )
 
                 if isinstance(state.current_token, NewlineToken):
-                    state.push_front(state.current_token)
+                    state.rewind(-1)
                     break
 
             else:
