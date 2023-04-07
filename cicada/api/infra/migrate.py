@@ -492,6 +492,11 @@ def migrate_v27(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=28)
+def migrate_v28(db: sqlite3.Connection) -> None:
+    db.execute("ALTER TABLE users ADD COLUMN last_login TEXT;")
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

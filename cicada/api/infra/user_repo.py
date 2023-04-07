@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.password_hash import PasswordHash
 from cicada.api.domain.user import User
 from cicada.api.infra.db_connection import DbConnection
@@ -11,7 +12,7 @@ class UserRepo(IUserRepo, DbConnection):
     def get_user_by_username(self, username: str) -> User | None:
         row = self.conn.execute(
             """
-            SELECT uuid, username, hash, is_admin, platform
+            SELECT uuid, username, hash, is_admin, platform, last_login
             FROM users WHERE username=?
             """,
             [username],
@@ -24,6 +25,9 @@ class UserRepo(IUserRepo, DbConnection):
                 password_hash=PasswordHash(row[2]) if row[2] else None,
                 is_admin=row[3],
                 provider=row[4],
+                last_login=(
+                    UtcDatetime.fromisoformat(row[5]) if row[5] else None
+                ),
             )
 
         return None
@@ -58,3 +62,11 @@ class UserRepo(IUserRepo, DbConnection):
         self.conn.commit()
 
         return UUID(user_id)
+
+    def update_last_login(self, user: User) -> None:
+        self.conn.execute(
+            "UPDATE users SET last_login=? WHERE uuid=?",
+            [str(UtcDatetime.now()), str(user.id)],
+        )
+
+        self.conn.commit()

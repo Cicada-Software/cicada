@@ -6,6 +6,7 @@ from unittest.mock import patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from cicada.api.application.exceptions import CicadaException
 from cicada.api.application.session.stop_session import SessionTerminator
 from cicada.api.di import DiContainer
 from cicada.api.infra.environment_repo import EnvironmentRepo
@@ -14,6 +15,7 @@ from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
+from cicada.api.middleware import cicada_exception_handler
 from cicada.api.repo.environment_repo import IEnvironmentRepo
 from cicada.api.repo.repository_repo import IRepositoryRepo
 from cicada.api.repo.session_repo import ISessionRepo
@@ -96,6 +98,9 @@ class TestEndpointWrapper:
             cls.di.reset()
             cls.app.dependency_overrides[DiContainer] = lambda: cls.di
 
+        cls.app.add_exception_handler(
+            CicadaException, cicada_exception_handler
+        )
         cls.client = TestClient(cls.app)
 
     @contextmanager

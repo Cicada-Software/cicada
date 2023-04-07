@@ -12,3 +12,7 @@ class IUserRepo(ABC):
     @abstractmethod
     def create_or_update_user(self, user: User) -> UUID:
         pass
+
+    @abstractmethod
+    def update_last_login(self, user: User) -> None:
+        pass

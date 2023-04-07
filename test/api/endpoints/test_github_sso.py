@@ -51,3 +51,4 @@ class TestGithubSSO(TestEndpointWrapper):
 
             assert got_user
             assert got_user.username == "github_username"
+            assert got_user.last_login

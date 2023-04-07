@@ -56,6 +56,10 @@ async def generate_jwt_from_github_sso(di: DiContainer, code: str) -> str:
 
     new_github_user = User(id=uuid4(), username=username, provider="github")
 
-    di.user_repo().create_or_update_user(new_github_user)
+    user_repo = di.user_repo()
+
+    new_github_user.id = user_repo.create_or_update_user(new_github_user)
+
+    user_repo.update_last_login(new_github_user)
 
     return create_jwt(subject=username, issuer="github")

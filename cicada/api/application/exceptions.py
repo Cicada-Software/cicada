@@ -6,6 +6,10 @@ class Unauthorized(CicadaException):
     pass
 
 
+class Forbidden(CicadaException):
+    pass
+
+
 class NotFound(CicadaException):
     pass
 

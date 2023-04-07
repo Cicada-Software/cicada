@@ -14,16 +14,6 @@ from cicada.api.repo.user_repo import IUserRepo
 from cicada.api.settings import JWTSettings
 
 
-def authenticate_user(
-    repo: IUserRepo, username: str, password: str
-) -> User | None:
-    if user := repo.get_user_by_username(username):
-        if user.password_hash and user.password_hash.verify(password):
-            return user
-
-    return None
-
-
 def create_jwt(  # type: ignore
     *,
     subject: str,

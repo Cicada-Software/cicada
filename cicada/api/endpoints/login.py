@@ -7,12 +7,12 @@ from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import HTMLResponse
 
 from cicada.api.application.user.change_password import ChangePassword
+from cicada.api.application.user.local_user_login import LocalUserLogin
 from cicada.api.endpoints.di import Di, JWTToken, PasswordForm
 from cicada.api.settings import GitHubSettings
 
 from .login_util import (
     CurrentUser,
-    authenticate_user,
     create_access_token,
     get_user_and_payload_from_jwt,
 )
@@ -25,16 +25,8 @@ async def login(  # type: ignore
     di: Di,
     form_data: PasswordForm,
 ) -> dict[str, Any]:
-    user = authenticate_user(
-        di.user_repo(), form_data.username, form_data.password
-    )
-
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    cmd = LocalUserLogin(di.user_repo())
+    user = cmd.handle(form_data.username, form_data.password)
 
     return create_access_token(user)
 
