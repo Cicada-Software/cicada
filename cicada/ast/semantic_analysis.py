@@ -9,6 +9,7 @@ from cicada.ast.generate import SHELL_ALIASES, AstError
 from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
+    BlockExpression,
     Expression,
     FunctionExpression,
     IdentifierExpression,
@@ -298,11 +299,17 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     node.condition.info,
                 )
 
-            if not node.body:
-                raise AstError("If expression must have body", node.info)
+            node.is_constexpr = node.body.is_constexpr
+            node.type = UnionType((node.body.type, UnknownType()))
 
-            node.is_constexpr = all(self.is_constexpr(x) for x in node.body)
-            node.type = UnionType((node.body[-1].type, UnknownType()))
+    def visit_block_expr(self, node: BlockExpression) -> None:
+        super().visit_block_expr(node)
+
+        if not node.exprs:
+            raise AstError("Block cannot be empty", node.info)
+
+        node.is_constexpr = all(self.is_constexpr(x) for x in node.exprs)
+        node.type = node.exprs[-1].type
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

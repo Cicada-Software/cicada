@@ -8,6 +8,7 @@ from cicada.ast.common import trigger_to_record
 from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
+    BlockExpression,
     BooleanExpression,
     BooleanValue,
     FileNode,
@@ -210,13 +211,18 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             assert isinstance(cond, BooleanValue | NumericValue | StringValue)
 
-            last: Value = UnitValue()
-
             if cond.value:
-                for expr in node.body:
-                    last = expr.accept(self)
+                return node.body.accept(self)
 
-            return last
+            return UnitValue()
+
+    def visit_block_expr(self, node: BlockExpression) -> Value:
+        last: Value = UnitValue()
+
+        for expr in node.exprs:
+            last = expr.accept(self)
+
+        return last
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

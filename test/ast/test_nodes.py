@@ -99,7 +99,7 @@ FileNode:
       NumericExpression(2) # 14:13..14:13
   IfExpression: # 16:1..16:2
     cond=BooleanExpression(True) # 16:4..16:7
-    body:
+    body=BlockExpression: # 17:3..17:3
       0=LetExpression(): # 17:3..17:5
         name=x
         expr=NumericExpression(123) # 17:11..17:13"""

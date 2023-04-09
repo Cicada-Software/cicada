@@ -82,6 +82,7 @@ extend-ignore = ["F405", "N818", "S101", "B011", "PT012", "SIM102"]
 "cicada/parse/token.py" = ["E701"]
 "cicada/api/*" = ["B008"]
 "cicada/*" = ["PT"]
+"test/ast/test_generate.py" = ["W293"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

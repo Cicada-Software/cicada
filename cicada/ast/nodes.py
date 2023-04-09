@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from textwrap import indent
@@ -118,6 +119,50 @@ class Expression(Node):
 
     type: Type
     is_constexpr: bool
+
+
+@dataclass
+class BlockExpression(Expression):
+    """
+    A block expr is an expression which is comprised of a list of expressions,
+    the last expression being the result of the block.
+    """
+
+    __match_args__ = ("exprs",)
+
+    exprs: list[Expression]
+    indentation: int
+    is_tabs: bool
+
+    @classmethod
+    def from_exprs(
+        cls, exprs: Sequence[Expression], whitespace: Token
+    ) -> BlockExpression:
+        # TODO: throw AstError
+        assert exprs
+
+        return cls(
+            exprs=list(exprs),
+            indentation=len(whitespace.content),
+            is_tabs=whitespace.content[0] == "\t",
+            info=LineInfo(
+                line=exprs[0].info.line,
+                column_start=exprs[0].info.column_start,
+                line_end=exprs[-1].info.line_end,
+                column_end=exprs[-1].info.column_start,
+            ),
+            type=exprs[-1].type,
+            is_constexpr=False,
+        )
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_block_expr(self)
+
+    def __str__(self) -> str:
+        body = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.exprs))
+        body = indent(body, "  ")
+
+        return f"{type(self).__name__}: # {self.info}\n{body}"
 
 
 @dataclass
@@ -480,17 +525,16 @@ class IfExpression(Expression):
     __match_args__ = ("condition", "body")
 
     condition: Expression
-    body: list[Expression]
+    body: BlockExpression
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
         return visitor.visit_if_expr(self)
 
     def __str__(self) -> str:
-        cond = f"  cond={self.condition}"
-        body = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.body))
-        body = indent(body, "    ")
+        args = f"cond={self.condition}\nbody={self.body}"
+        args = indent(args, "  ")
 
-        return f"{type(self).__name__}: # {self.info}\n{cond}\n  body:\n{body}"
+        return f"{type(self).__name__}: # {self.info}\n{args}"
 
 
 @dataclass
@@ -564,6 +608,9 @@ class NodeVisitor(Generic[T]):
     def visit_binary_expr(self, node: BinaryExpression) -> T:
         raise NotImplementedError()
 
+    def visit_block_expr(self, node: BlockExpression) -> T:
+        raise NotImplementedError()
+
 
 class TraversalVisitor(NodeVisitor[None]):
     def visit_file_node(self, node: FileNode) -> None:
@@ -612,5 +659,8 @@ class TraversalVisitor(NodeVisitor[None]):
     def visit_if_expr(self, node: IfExpression) -> None:
         node.condition.accept(self)
 
-        for expr in node.body:
+        node.body.accept(self)
+
+    def visit_block_expr(self, node: BlockExpression) -> None:
+        for expr in node.exprs:
             expr.accept(self)

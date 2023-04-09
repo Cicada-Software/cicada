@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from enum import Enum
 from itertools import groupby
 from typing import cast
 
@@ -33,6 +34,7 @@ from .nodes import (
     TOKEN_TO_BINARY_OPER,
     BinaryExpression,
     BinaryOperator,
+    BlockExpression,
     BooleanExpression,
     Expression,
     FileNode,
@@ -85,14 +87,25 @@ class AstError(ValueError):
         return ":".join(str(x) for x in parts)
 
 
+class IndentStyle(Enum):
+    UNKNOWN = None
+    SPACE = " "
+    TAB = "\t"
+
+
 class ParserState:
     tokens: list[Token]
 
     _current_index: int
 
+    _current_indent_level: int
+    _indent_style: IndentStyle
+
     def __init__(self, tokens: Sequence[Token]) -> None:
         self.tokens = list(tokens)
         self._current_index = 0
+        self._current_indent_level = 0
+        self._indent_style = IndentStyle.UNKNOWN
 
     def __iter__(self) -> ParserState:
         return self
@@ -172,6 +185,63 @@ class ParserState:
 
         return self.tokens[index]
 
+    @contextmanager
+    def indent(self, whitespace: WhiteSpaceToken | None) -> Iterator[None]:
+        """
+        Update the indent level for the duration of this context manager (if
+        whitespace is passed, otherwise do nothing). If this function is called
+        with an invalid whitespace token (ie, whitespace is under-indented),
+        then the function will raise an AstError.
+        """
+
+        if not whitespace:
+            yield
+            return
+
+        whitespace_chars = set(whitespace.content)
+
+        if len(whitespace_chars) > 1:
+            raise AstError("Cannot mix spaces and tabs", whitespace)
+
+        indent_style = IndentStyle(whitespace.content[0])
+
+        if self._indent_style == IndentStyle.UNKNOWN:
+            self._indent_style = indent_style
+
+        elif indent_style != self._indent_style:
+            raise AstError("Cannot mix spaces and tabs", whitespace)
+
+        whitespace_len = len(whitespace.content)
+
+        if whitespace_len <= self._current_indent_level:
+            raise AstError(
+                "Indentation cannot be smaller than previous block",
+                whitespace,
+            )
+
+        old_indent_level = self._current_indent_level
+
+        self._current_indent_level = whitespace_len
+        yield
+        self._current_indent_level = old_indent_level
+
+    def is_over_indented(self, whitespace: WhiteSpaceToken) -> bool:
+        """
+        Return true if the passed whitespace token is indented further than
+        expected, indicating that there is a whitespace mismatch.
+        """
+
+        return len(whitespace.content) > self._current_indent_level
+
+    def is_under_indented(self, whitespace: WhiteSpaceToken) -> bool:
+        """
+        Return true if the passed whitespace is less than the current
+        indentation level, indicating that the block is finished, and that
+        the whitespace should be handled by the parent block.
+        """
+
+        return len(whitespace.content) < self._current_indent_level
+
 
 def generate_if_expr(state: ParserState) -> IfExpression:
     start = state.current_token
@@ -195,13 +265,14 @@ def generate_if_expr(state: ParserState) -> IfExpression:
     if not isinstance(expected_whitespace, WhiteSpaceToken):
         raise AstError("Expected indentation", state.current_token)
 
-    body = generate_block(state, expected_whitespace)
+    exprs = cast(list[Expression], generate_block(state, expected_whitespace))
+    block = BlockExpression.from_exprs(exprs, expected_whitespace)
 
     # TODO: turn into func
     return IfExpression(
         info=LineInfo.from_token(start),
         condition=cond,
-        body=cast(list[Expression], body),
+        body=block,
         type=UnknownType(),
         is_constexpr=False,
     )
@@ -219,28 +290,31 @@ def generate_block(
     exprs: list[Node] = []
     expected_whitespace = False
 
-    for token in state:
-        if isinstance(token, CommentToken):
-            continue
+    with state.indent(whitespace):
+        for token in state:
+            if isinstance(token, CommentToken | NewlineToken):
+                continue
 
-        if isinstance(token, NewlineToken):
+            if isinstance(token, WhiteSpaceToken):
+                expected_whitespace = False
+
+                if whitespace:
+                    if state.is_over_indented(token):
+                        # TODO: test this
+                        raise AstError("Unexpected indentation", token)
+
+                    if state.is_under_indented(token):
+                        state.rewind(-2)
+                        return exprs
+
+                continue
+
+            if expected_whitespace and whitespace:
+                state.rewind(-1)
+                return exprs
+
+            exprs.append(generate_node(state))
             expected_whitespace = True
-            continue
-
-        if isinstance(token, WhiteSpaceToken):
-            expected_whitespace = False
-
-            if whitespace:
-                # TODO: replace with better error message
-                assert token.content == whitespace.content
-
-            continue
-
-        if expected_whitespace and whitespace:
-            state.rewind(-1)
-            return exprs
-
-        exprs.append(generate_node(state))
 
     return exprs
 
@@ -262,7 +336,7 @@ def generate_node(state: ParserState) -> Node:
 
     expr = generate_expr(state)
 
-    if not isinstance(expr, IfExpression):
+    if not isinstance(state.current_token, NewlineToken):
         state.next_newline_or_eof()
 
     return expr
@@ -437,7 +511,19 @@ def generate_let_expr(state: ParserState) -> LetExpression:
             raise AstError.unexpected_token(equal, expected="=")
 
         state.next_non_whitespace()
-        expr = generate_expr(state)
+
+        if isinstance(state.current_token, NewlineToken):
+            whitespace = next(state)
+
+            # TODO: move to generate_block
+            assert isinstance(whitespace, WhiteSpaceToken)
+
+            exprs = cast(list[Expression], generate_block(state, whitespace))
+
+            expr: Expression = BlockExpression.from_exprs(exprs, whitespace)
+
+        else:
+            expr = generate_expr(state)
 
     except StopIteration as ex:
         raise AstError.expected_token(last=state.current_token) from ex

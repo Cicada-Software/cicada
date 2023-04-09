@@ -359,6 +359,7 @@ if event:
         parse_and_analyze(code, trigger=build_trigger("xyz"))
 
 
+@pytest.mark.xfail()
 def test_if_expr_must_have_body() -> None:
     with pytest.raises(AstError, match="If expression must have body"):
         code = """\

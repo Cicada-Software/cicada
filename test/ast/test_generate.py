@@ -4,6 +4,7 @@ from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
+    BlockExpression,
     BooleanExpression,
     FileNode,
     FunctionExpression,
@@ -524,7 +525,9 @@ if true:
             [
                 IfExpression(
                     condition=BooleanExpression(True),
-                    body=[LetExpression("x", NumericExpression(1))],
+                    body=BlockExpression(
+                        [LetExpression("x", NumericExpression(1))]
+                    ),
                 )
             ]
         ):
@@ -566,7 +569,7 @@ if true:
                 StringExpression("abc"),
                 IfExpression(
                     condition=BooleanExpression(True),
-                    body=[NumericExpression(321)],
+                    body=BlockExpression([NumericExpression(321)]),
                 ),
             ]
         ):
@@ -608,3 +611,198 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
             return
 
     pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_allow_if_expr_in_let_expr() -> None:
+    # TODO: this will fail once I tighten up if semantics, but the thing being
+    # tested is that the AST generator doesnt fail.
+
+    code = """\
+let x = if true:
+    1
+
+f
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                LetExpression(
+                    "x",
+                    IfExpression(
+                        condition=BooleanExpression(True),
+                        body=BlockExpression([NumericExpression(1)]),
+                    ),
+                ),
+                FunctionExpression("f", []),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_allow_let_expr_value_to_be_on_newline() -> None:
+    code = """\
+let x =
+    1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                LetExpression("x", BlockExpression([NumericExpression(1)])),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_nested_blocks_dont_interfere_with_trailing_nodes() -> None:
+    code = """\
+let x =
+  if true:
+      1
+
+f
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                LetExpression(
+                    "x",
+                    BlockExpression(
+                        [
+                            IfExpression(
+                                condition=BooleanExpression(True),
+                                body=BlockExpression([NumericExpression(1)]),
+                            ),
+                        ],
+                    ),
+                ),
+                FunctionExpression("f", []),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_blocks_must_have_consistent_indentation() -> None:
+    code = """\
+if true:
+  if true:
+ if true:
+  1
+"""
+
+    msg = "Indentation cannot be smaller than previous block"
+
+    with pytest.raises(AstError, match=msg):
+        generate_ast_tree(tokenize(code))
+
+
+def test_many_nested_blocks_in_block() -> None:
+    code = """\
+if true:
+  if true:
+    1
+  if true:
+    1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                IfExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression(
+                        [
+                            IfExpression(
+                                condition=BooleanExpression(True),
+                                body=BlockExpression([NumericExpression(1)]),
+                            ),
+                            IfExpression(
+                                condition=BooleanExpression(True),
+                                body=BlockExpression([NumericExpression(1)]),
+                            ),
+                        ],
+                    ),
+                ),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_stray_indented_whitespace_is_ok() -> None:
+    code = """\
+if true:
+  if true:
+    1
+    
+  if true:
+    1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree:
+        case FileNode(
+            [
+                IfExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression(
+                        [
+                            IfExpression(
+                                condition=BooleanExpression(True),
+                                body=BlockExpression([NumericExpression(1)]),
+                            ),
+                            IfExpression(
+                                condition=BooleanExpression(True),
+                                body=BlockExpression([NumericExpression(1)]),
+                            ),
+                        ],
+                    ),
+                ),
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_blocks_cannot_mix_tabs_and_spaces() -> None:
+    code = """\
+if true:
+\t 1
+
+---
+
+if true:
+\tif true:
+  1
+
+---
+
+if true:
+ if true:
+\t\t1
+"""
+
+    tests = code.split("---")
+
+    for test in tests:
+        with pytest.raises(AstError, match="Cannot mix spaces and tabs"):
+            generate_ast_tree(tokenize(test))
