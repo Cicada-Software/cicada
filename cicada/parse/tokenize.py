@@ -64,6 +64,9 @@ KEYWORD_NAMES = {
 RESERVED_TOKENS = TOKEN_SEPARATORS | KEYWORD_NAMES
 
 
+BOM = "\N{BYTE ORDER MARK}"
+
+
 Error = str | None
 
 
@@ -95,12 +98,32 @@ def group_chunks(chunks: Iterable[Chunk]) -> Generator[Token, None, Error]:
             yield extra_token
 
     for chunk in chunks:
+        if chunk.char == "\r":
+            yield from emit_token()
+
+            append_chunk(chunk)
+            continue
+
         if chunk.char == "\n":
-            yield from emit_token(Token.from_chunk(chunk))
+            if token and token.content == "\r":
+                append_chunk(chunk)
+
+                yield from emit_token()
+            else:
+                yield from emit_token(Token.from_chunk(chunk))
 
             for chunk in chunks:
+                if chunk.char == "\r":
+                    append_chunk(chunk)
+                    continue
+
                 if chunk.char == "\n":
-                    yield from emit_token(Token.from_chunk(chunk))
+                    if token and token.content == "\r":
+                        append_chunk(chunk)
+
+                        yield from emit_token()
+                    else:
+                        yield from emit_token(Token.from_chunk(chunk))
 
                 elif chunk.char.isspace():
                     append_chunk(chunk)
@@ -143,7 +166,11 @@ def group_chunks(chunks: Iterable[Chunk]) -> Generator[Token, None, Error]:
 
             continue
 
-        elif chunk.char in TOKEN_SEPARATORS or chunk.char.isspace():
+        elif (
+            chunk.char in TOKEN_SEPARATORS
+            or chunk.char.isspace()
+            or chunk.char == BOM
+        ):
             yield from emit_token(Token.from_chunk(chunk))
 
             continue
@@ -166,7 +193,15 @@ def tokenize(code: str) -> Generator[Token, None, Error]:
 
     wrapper = GeneratorWrapper(tokens)
 
-    for token in wrapper:
+    for i, token in enumerate(wrapper):
+        if token.content == BOM:
+            if i != 0:
+                raise ValueError("BOM must be at the start of the file")
+
+            # TODO: return token for this in the future so that we can do
+            # source to source generation (ie, code formatting).
+            continue
+
         if token.content.startswith(('"', "'")):
             yield StringLiteralToken(**asdict(token))
 
@@ -175,6 +210,15 @@ def tokenize(code: str) -> Generator[Token, None, Error]:
 
         elif ty := RESERVED_TOKENS.get(token.content):
             yield ty(**asdict(token))
+
+        elif token.content == "\r\n":
+            # Treat \r\n as a single character instead of 2.
+            data = {**asdict(token), "column_end": token.column_start}
+
+            yield NewlineToken(**data)  # type: ignore
+
+        elif token.content.isspace():
+            yield WhiteSpaceToken(**asdict(token))
 
         elif token.content in ("true", "false"):
             yield BooleanLiteralToken(**asdict(token))
@@ -188,9 +232,6 @@ def tokenize(code: str) -> Generator[Token, None, Error]:
         elif IDENTIFIER_REGEX.match(token.content):
             # TODO: validate identifier token
             yield IdentifierToken(**asdict(token))
-
-        elif token.content.isspace():
-            yield WhiteSpaceToken(**asdict(token))
 
         else:
             yield DanglingToken(**asdict(token))

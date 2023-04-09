@@ -1,7 +1,10 @@
+import pytest
+
 from cicada.common.generator_wrapper import GeneratorWrapper
 from cicada.parse.token import (
     BooleanLiteralToken,
     IdentifierToken,
+    NewlineToken,
     WhiteSpaceToken,
 )
 from cicada.parse.tokenize import (
@@ -123,6 +126,23 @@ def test_token_separators_create_their_own_tokens() -> None:
         assert [token.content for token in tokens] == ["a", separator, "b"]
 
 
+def test_crlf_is_treated_as_newline() -> None:
+    assert list(group_chunks(chunk_stream("a\r\nb"))) == [
+        Token("a", 1, 1, 1),
+        Token("\r\n", 1, 2, 3),
+        Token("b", 2, 1, 1),
+    ]
+
+
+def test_multiple_crlf() -> None:
+    assert list(group_chunks(chunk_stream("a\r\n\r\nb"))) == [
+        Token("a", 1, 1, 1),
+        Token("\r\n", 1, 2, 3),
+        Token("\r\n", 2, 1, 2),
+        Token("b", 3, 1, 1),
+    ]
+
+
 def test_basic_token_classification() -> None:
     for code, ty in TOKEN_SEPARATORS.items():
         tokens = list(tokenize(code))
@@ -205,3 +225,30 @@ def test_parse_identifier_with_dot() -> None:
     tokens = list(tokenize("a.b.c"))
 
     assert tokens == [IdentifierToken("a.b.c", 1, 1, 5)]
+
+
+def test_classify_crlf() -> None:
+    tokens = list(tokenize("\r\n"))
+
+    match tokens:
+        case [NewlineToken("\r\n", 1, 1, 1)]:
+            return
+
+    pytest.fail(f"Invalid token(s): {tokens}")
+
+
+def test_utf8_bom_ignored() -> None:
+    tokens = list(tokenize("\uFEFFabc"))
+
+    match tokens:
+        case [IdentifierToken("abc", 1, 2, 4)]:
+            return
+
+    pytest.fail(f"Invalid token(s): {tokens}")
+
+
+def test_utf8_bom_not_at_start_is_error() -> None:
+    msg = "BOM must be at the start of the file"
+
+    with pytest.raises(ValueError, match=msg):
+        list(tokenize("abc\uFEFF"))
