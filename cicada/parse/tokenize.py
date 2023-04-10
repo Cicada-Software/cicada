@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import re
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Sequence
 from dataclasses import asdict
 
-from ..common.generator_wrapper import GeneratorWrapper
 from .token import *  # noqa: F403
 
 
@@ -70,117 +71,142 @@ BOM = "\N{BYTE ORDER MARK}"
 Error = str | None
 
 
-def group_chunks(chunks: Iterable[Chunk]) -> Generator[Token, None, Error]:
-    token: Token | None = None
+class ChunkGrouper:
+    tokens: list[Token]
 
-    chunks = iter(chunks)
+    _token: Token | None
 
-    def append_chunk(chunk: Chunk) -> None:
-        nonlocal token
+    _chunks: Sequence[Chunk]
+    _chunk_index: int
 
-        if token:
-            token.content += chunk.char
-            token.column_end += 1
+    def __init__(self, chunks: Sequence[Chunk]) -> None:
+        self._token = None
+        self.tokens = []
+
+        self._chunks = chunks
+        self._chunk_index = 0
+
+    def __iter__(self) -> ChunkGrouper:
+        return self
+
+    def __next__(self) -> Chunk:
+        if self._chunk_index >= len(self._chunks):
+            raise StopIteration()
+
+        chunk = self._chunks[self._chunk_index]
+        self._chunk_index += 1
+
+        return chunk  # noqa: RET504
+
+    @property
+    def current_chunk(self) -> Chunk:
+        return self._chunks[self._chunk_index - 1]
+
+    def append_chunk(self, chunk: Chunk) -> None:
+        if self._token:
+            self._token.content += chunk.char
+            self._token.column_end += 1
 
         else:
-            token = Token.from_chunk(chunk)
+            self._token = Token.from_chunk(chunk)
 
-    def emit_token(
-        extra_token: Token | None = None,
-    ) -> Generator[Token, None, None]:
-        nonlocal token
+    def emit(self, chunk: Chunk | None = None) -> None:
+        if self._token:
+            self.tokens.append(self._token)
+            self._token = None
 
-        if token:
-            yield token
-            token = None
+        if chunk:
+            self.tokens.append(Token.from_chunk(chunk))
 
-        if extra_token:
-            yield extra_token
+    def rewind(self) -> None:
+        self._chunk_index -= 1
 
-    for chunk in chunks:
-        if chunk.char == "\r":
-            yield from emit_token()
 
-            append_chunk(chunk)
-            continue
+def group_string(state: ChunkGrouper) -> None:
+    quote = state.current_chunk.char
 
+    state.append_chunk(state.current_chunk)
+
+    for chunk in state:
+        state.append_chunk(chunk)
+
+        if chunk.char == quote:
+            state.emit()
+            return
+
+    else:
+        raise ValueError("string was not closed")
+
+
+def group_crlf(state: ChunkGrouper) -> None:
+    state.emit()
+    state.append_chunk(state.current_chunk)
+
+    newline = next(state, None)
+
+    if not newline or newline.char != "\n":
+        raise ValueError(r"Expected `\n`")
+
+    state.append_chunk(newline)
+    state.emit()
+
+
+def group_comment(state: ChunkGrouper) -> None:
+    state.append_chunk(state.current_chunk)
+
+    for chunk in state:
         if chunk.char == "\n":
-            if token and token.content == "\r":
-                append_chunk(chunk)
+            state.emit(chunk)
 
-                yield from emit_token()
-            else:
-                yield from emit_token(Token.from_chunk(chunk))
+            break
 
-            for chunk in chunks:
-                if chunk.char == "\r":
-                    append_chunk(chunk)
-                    continue
+        state.append_chunk(chunk)
 
-                if chunk.char == "\n":
-                    if token and token.content == "\r":
-                        append_chunk(chunk)
 
-                        yield from emit_token()
-                    else:
-                        yield from emit_token(Token.from_chunk(chunk))
+def group_whitespace(state: ChunkGrouper) -> None:
+    state.emit()
+    state.append_chunk(state.current_chunk)
 
-                elif chunk.char.isspace():
-                    append_chunk(chunk)
+    for chunk in state:
+        c = chunk.char
 
-                else:
-                    yield from emit_token()
-                    break
+        if c.isspace() and c not in "\r\n":
+            state.append_chunk(chunk)
 
-            else:
-                break
+        else:
+            state.emit()
+            state.rewind()
 
-        if chunk.char in ('"', "'"):
-            quote = chunk.char
+            break
 
-            append_chunk(chunk)
 
-            for chunk in chunks:
-                append_chunk(chunk)
+def group_chunks(chunks: Sequence[Chunk]) -> list[Token]:
+    state = ChunkGrouper(chunks)
 
-                if chunk.char == quote:
-                    yield from emit_token()
+    separators = {*TOKEN_SEPARATORS.keys(), BOM}
 
-                    break
+    for chunk in state:
+        if chunk.char == "\r":
+            group_crlf(state)
 
-            else:
-                return "string was not closed"
+        elif chunk.char in separators:
+            state.emit(chunk)
 
-            continue
+        elif chunk.char.isspace():
+            group_whitespace(state)
+
+        elif chunk.char in ('"', "'"):
+            group_string(state)
 
         elif chunk.char == "#":
-            append_chunk(chunk)
+            group_comment(state)
 
-            for chunk in chunks:
-                if chunk.char == "\n":
-                    yield from emit_token(Token.from_chunk(chunk))
+        else:
+            state.append_chunk(chunk)
 
-                    break
+    state.emit()
 
-                append_chunk(chunk)
-
-            continue
-
-        elif (
-            chunk.char in TOKEN_SEPARATORS
-            or chunk.char.isspace()
-            or chunk.char == BOM
-        ):
-            yield from emit_token(Token.from_chunk(chunk))
-
-            continue
-
-        append_chunk(chunk)
-
-    if token:
-        yield token
-
-    return None
+    return state.tokens
 
 
 INTEGER_REGEX = re.compile(r"^(\d+|0b[01]+|0x[A-Za-z0-9]+|0o[0-7]+)$")
@@ -188,12 +214,10 @@ FLOAT_REGEX = re.compile(r"\d+\.\d+")
 IDENTIFIER_REGEX = re.compile(r"[._A-Za-z][_A-Za-z0-9\.]*")
 
 
-def tokenize(code: str) -> Generator[Token, None, Error]:
-    tokens = group_chunks(chunk_stream(code))
+def tokenize(code: str) -> Generator[Token, None, None]:
+    tokens = group_chunks(list(chunk_stream(code)))
 
-    wrapper = GeneratorWrapper(tokens)
-
-    for i, token in enumerate(wrapper):
+    for i, token in enumerate(tokens):
         if token.content == BOM:
             if i != 0:
                 raise ValueError("BOM must be at the start of the file")
@@ -235,5 +259,3 @@ def tokenize(code: str) -> Generator[Token, None, Error]:
 
         else:
             yield DanglingToken(**asdict(token))
-
-    return wrapper.value

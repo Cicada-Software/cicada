@@ -1,6 +1,5 @@
 import pytest
 
-from cicada.common.generator_wrapper import GeneratorWrapper
 from cicada.parse.token import (
     BooleanLiteralToken,
     IdentifierToken,
@@ -38,17 +37,17 @@ def test_newline_will_increment_line_field() -> None:
 
 
 def test_group_basic_chunks() -> None:
-    chunks = chunk_stream("abc")
+    chunks = list(chunk_stream("abc"))
 
-    assert list(group_chunks(chunks)) == [
+    assert group_chunks(chunks) == [
         Token("abc", line=1, column_start=1, column_end=3)
     ]
 
 
 def test_group_chunks() -> None:
-    chunks = chunk_stream("a b")
+    chunks = list(chunk_stream("a b"))
 
-    assert list(group_chunks(chunks)) == [
+    assert group_chunks(chunks) == [
         Token("a", 1, 1, 1),
         Token(" ", 1, 2, 2),
         Token("b", 1, 3, 3),
@@ -56,22 +55,22 @@ def test_group_chunks() -> None:
 
 
 def test_whitespace_at_eof_is_included() -> None:
-    assert list(group_chunks(chunk_stream("a "))) == [
+    assert group_chunks(list(chunk_stream("a "))) == [
         Token("a", 1, 1, 1),
         Token(" ", 1, 2, 2),
     ]
 
 
 def test_group_strings_as_one_token() -> None:
-    assert list(group_chunks(chunk_stream('"hello world"'))) == [
+    assert group_chunks(list(chunk_stream('"hello world"'))) == [
         Token('"hello world"', 1, 1, 13),
     ]
 
-    assert list(group_chunks(chunk_stream("'hello world'"))) == [
+    assert group_chunks(list(chunk_stream("'hello world'"))) == [
         Token("'hello world'", 1, 1, 13),
     ]
 
-    assert list(group_chunks(chunk_stream('"hello world" xyz'))) == [
+    assert group_chunks(list(chunk_stream('"hello world" xyz'))) == [
         Token('"hello world"', 1, 1, 13),
         Token(" ", 1, 14, 14),
         Token("xyz", 1, 15, 17),
@@ -81,7 +80,7 @@ def test_group_strings_as_one_token() -> None:
 def test_group_comments_as_one_token() -> None:
     code = "line_1 # this is a comment\nline_2"
 
-    tokens = list(group_chunks(chunk_stream(code)))
+    tokens = group_chunks(list(chunk_stream(code)))
 
     assert tokens == [
         Token("line_1", 1, 1, 6),
@@ -100,7 +99,7 @@ line_1
 
   line_4"""
 
-    tokens = list(group_chunks(chunk_stream(code)))
+    tokens = group_chunks(list(chunk_stream(code)))
 
     assert tokens == [
         Token("line_1", 1, 1, 6),
@@ -121,13 +120,13 @@ def test_token_separators_create_their_own_tokens() -> None:
     for separator in TOKEN_SEPARATORS:
         code = f"a{separator}b"
 
-        tokens = group_chunks(chunk_stream(code))
+        tokens = group_chunks(list(chunk_stream(code)))
 
         assert [token.content for token in tokens] == ["a", separator, "b"]
 
 
 def test_crlf_is_treated_as_newline() -> None:
-    assert list(group_chunks(chunk_stream("a\r\nb"))) == [
+    assert group_chunks(list(chunk_stream("a\r\nb"))) == [
         Token("a", 1, 1, 1),
         Token("\r\n", 1, 2, 3),
         Token("b", 2, 1, 1),
@@ -135,7 +134,7 @@ def test_crlf_is_treated_as_newline() -> None:
 
 
 def test_multiple_crlf() -> None:
-    assert list(group_chunks(chunk_stream("a\r\n\r\nb"))) == [
+    assert group_chunks(list(chunk_stream("a\r\n\r\nb"))) == [
         Token("a", 1, 1, 1),
         Token("\r\n", 1, 2, 3),
         Token("\r\n", 2, 1, 2),
@@ -214,11 +213,8 @@ def test_keyword_classification() -> None:
 
 
 def test_unclosed_string_returns_error() -> None:
-    wrapper = GeneratorWrapper(tokenize('"no closing quote'))
-    result = list(wrapper)
-
-    assert not result
-    assert wrapper.value == "string was not closed"
+    with pytest.raises(ValueError, match="string was not closed"):
+        list(tokenize('"no closing quote'))
 
 
 def test_parse_identifier_with_dot() -> None:
@@ -252,3 +248,8 @@ def test_utf8_bom_not_at_start_is_error() -> None:
 
     with pytest.raises(ValueError, match=msg):
         list(tokenize("abc\uFEFF"))
+
+
+def test_stray_carriage_return_throws_error() -> None:
+    with pytest.raises(ValueError, match=r"Expected `\\n`"):
+        list(tokenize("\r"))
