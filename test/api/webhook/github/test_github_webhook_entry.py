@@ -190,6 +190,8 @@ class TestGitHubWebhooks(TestEndpointWrapper):
 
         with (
             patch(f"{pkg}.update_github_repo_perms"),
+            patch(f"{pkg}.create_or_update_github_installation"),
+            patch(f"{pkg}.create_or_update_github_user"),
             patch(f"{pkg}.run_workflow") as run_workflow,
             patch(f"{pkg}.gather_issue_workflows", return_value=True) as gather_issues,
             patch(f"{pkg}.gather_workflows_via_trigger", return_value=True) as gather_git_pushes,

@@ -12,7 +12,11 @@ from cicada.api.application.session.make_session_from_trigger import (
 )
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
-from cicada.api.infra.github.auth import update_github_repo_perms
+from cicada.api.infra.github.auth import (
+    create_or_update_github_installation,
+    create_or_update_github_user,
+    update_github_repo_perms,
+)
 from cicada.api.infra.github.common import gather_workflows_via_trigger
 from cicada.api.infra.github.workflows import (
     gather_issue_workflows,
@@ -110,10 +114,16 @@ async def handle_github_event(request: Request, di: Di) -> None:
         case _:
             return
 
-    if event_type in ("push", "issues"):
-        update_github_repo_perms(di, event, event_type)
+    user = create_or_update_github_user(di.user_repo(), event)
 
-    if event_type == "push":
+    if user:
+        update_github_repo_perms(di, user.id, event, event_type)
+
+    if event_type in ("installation", "installation_repositories"):
+        if user:
+            create_or_update_github_installation(di, user.id, event)
+
+    elif event_type == "push":
         if event["deleted"] is not True:
             handle_github_push_event(di, event)
 

@@ -497,6 +497,33 @@ def migrate_v28(db: sqlite3.Connection) -> None:
     db.execute("ALTER TABLE users ADD COLUMN last_login TEXT;")
 
 
+@auto_migrate(version=29)
+def migrate_v29(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE installations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            provider TEXT NOT NULL,
+            scope TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX ux_installations_name_provider
+        ON installations(name, provider);
+
+        CREATE TABLE _installation_users (
+            installation_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            perms TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX ux_installation_users
+        ON _installation_users(installation_id, user_id);
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

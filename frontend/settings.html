@@ -22,6 +22,12 @@
 
   <h1>Settings</h1>
 
+  <div id="installation-hider" style="display: none">
+    <h3>Your Installations</h3>
+
+    <div id="installations"></div>
+  </div>
+
   <h3>Change Password</h3>
 
   <form id="change-pwd" onSubmit="handleChangePassword(event)" onInput="handleInput(event)">
@@ -131,6 +137,22 @@ main {
   flex: 1;
 }
 
+#installations {
+  padding: 1em 0 1em 0;
+}
+
+.installation-card {
+  width: 30em;
+  background: var(--gray);
+  color: var(--lightgray);
+  padding: 1em;
+  cursor: normal;
+}
+
+.installation-name {
+  color: var(--blue);
+}
+
 #post-change-password {
   display: none;
   color: var(--lightgray);
@@ -153,6 +175,41 @@ if (jwtPayload["iss"] !== "cicada") {
 }
 
 ping();
+
+cicadaFetch("/installations")
+  .then(resp => {
+    if (!resp.ok) return;
+
+    resp.json().then(installations => {
+      if (installations.length !== 0) {
+        const template = `
+          <div class="installation-card">
+            <span>
+              <span class="installation-name"></span>
+              on
+              <span class="installation-provider"></span>
+              <span class="installation-perms"></span>
+            </span>
+          </div>
+        `;
+
+        for (const installation of installations) {
+          const { name, provider } = installation;
+
+          const element = document.createElement("div");
+
+          element.innerHTML = template;
+          element.querySelector(".installation-name").innerText = `@${name}`;
+          element.querySelector(".installation-provider").innerText = normalizeProvider(provider);
+          element.querySelector(".installation-perms").innerText = "(Admin)";
+
+          document.getElementById("installations").insertAdjacentElement("beforeend", element);
+        }
+
+        document.getElementById("installation-hider").style.display = "block";
+      }
+    });
+  });
 
 const handleChangePassword = e => {
   e.preventDefault();
@@ -193,6 +250,15 @@ const handleInput = e => {
     box.style.display = "none";
   }
 };
+
+// TODO: dedupe
+function normalizeProvider(provider) {
+  switch (provider.toLowerCase()) {
+    case "github": return "GitHub";
+    case "gitlab": return "Gitlab";
+    default: return provider;
+  }
+}
 </script>
 
 </body>

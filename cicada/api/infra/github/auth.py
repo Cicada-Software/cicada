@@ -1,12 +1,32 @@
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from cicada.api.di import DiContainer
+from cicada.api.domain.installation import Installation, InstallationScope
 from cicada.api.domain.user import User
+from cicada.api.repo.user_repo import IUserRepo
+
+
+def create_or_update_github_user(  # type: ignore
+    user_repo: IUserRepo, event: dict[str, Any]
+) -> User | None:
+    match event:
+        case {"sender": {"type": "User", "login": sender_username}}:
+            user = User(
+                id=uuid4(), username=sender_username, provider="github"
+            )
+            user.id = user_repo.create_or_update_user(user)
+
+            return user
+
+    return None
 
 
 def update_github_repo_perms(  # type: ignore
-    di: DiContainer, event: dict[str, Any], event_type: str
+    di: DiContainer,
+    user_id: UUID,
+    event: dict[str, Any],
+    event_type: str,
 ) -> None:
     """
     Determine a user's permissions for a given repository based soley on the
@@ -57,17 +77,43 @@ def update_github_repo_perms(  # type: ignore
         case _:
             return
 
-    user_repo = di.user_repo()
     repository_repo = di.repository_repo()
 
     repo = repository_repo.update_or_create_repository(
         url=repo_url, provider="github"
     )
 
-    user_id = user_repo.create_or_update_user(
-        User(id=uuid4(), username=sender_username, provider="github")
-    )
-
     repository_repo.update_user_perms_for_repo(
         repo, user_id, [perms]  # type: ignore
     )
+
+
+def create_or_update_github_installation(  # type: ignore
+    di: DiContainer, user_id: UUID, event: dict[str, Any]
+) -> None:
+    match event:
+        case {
+            "action": "added" | "created",
+            "installation": {
+                "account": {"login": name},
+                "target_type": "User" | "Organization" as target_type,
+            },
+        }:
+            installation = Installation(
+                id=uuid4(),
+                name=name,
+                provider="github",
+                scope=(
+                    InstallationScope.USER
+                    if target_type == "User"
+                    else InstallationScope.ORGANIZATION
+                ),
+                admin_id=user_id,
+            )
+
+            repo = di.installation_repo()
+
+            repo.create_installation(installation)
+
+        case _:
+            return

@@ -32,6 +32,8 @@ class SqliteTestWrapper:
                 DELETE FROM waitlist;
                 DELETE FROM env_vars;
                 DELETE FROM users WHERE username != 'admin';
+                DELETE FROM installations;
+                DELETE FROM _installation_users;
                 """
             )
             cls.connection.commit()

@@ -1,12 +1,14 @@
 from cicada.api.application.session.stop_session import SessionTerminator
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.github.stop_session import github_session_terminator
+from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
 from cicada.api.repo.environment_repo import IEnvironmentRepo
+from cicada.api.repo.installation_repo import IInstallationRepo
 from cicada.api.repo.repository_repo import IRepositoryRepo
 from cicada.api.repo.session_repo import ISessionRepo
 from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
@@ -40,6 +42,10 @@ class DiContainer:  # pragma: no cover
     @classmethod
     def environment_repo(cls) -> IEnvironmentRepo:
         return EnvironmentRepo()
+
+    @classmethod
+    def installation_repo(cls) -> IInstallationRepo:
+        return InstallationRepo()
 
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:

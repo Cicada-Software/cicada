@@ -10,6 +10,7 @@ from cicada.api.application.exceptions import CicadaException
 from cicada.api.application.session.stop_session import SessionTerminator
 from cicada.api.di import DiContainer
 from cicada.api.infra.environment_repo import EnvironmentRepo
+from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
@@ -17,6 +18,7 @@ from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
 from cicada.api.middleware import cicada_exception_handler
 from cicada.api.repo.environment_repo import IEnvironmentRepo
+from cicada.api.repo.installation_repo import IInstallationRepo
 from cicada.api.repo.repository_repo import IRepositoryRepo
 from cicada.api.repo.session_repo import ISessionRepo
 from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
@@ -61,6 +63,12 @@ class TestDiContainer(SqliteTestWrapper, DiContainer):
         cls._setup()
 
         return EnvironmentRepo(cls.connection)
+
+    @classmethod
+    def installation_repo(cls) -> IInstallationRepo:
+        cls._setup()
+
+        return InstallationRepo(cls.connection)
 
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:

@@ -1,4 +1,12 @@
-from cicada.api.infra.github.auth import update_github_repo_perms
+from uuid import uuid4
+
+from cicada.api.domain.installation import InstallationScope
+from cicada.api.domain.user import User
+from cicada.api.infra.github.auth import (
+    create_or_update_github_installation,
+    create_or_update_github_user,
+    update_github_repo_perms,
+)
 from test.api.endpoints.common import TestDiContainer
 
 
@@ -19,7 +27,10 @@ def test_github_user_repo_perms_caching() -> None:
         },
     }
 
-    update_github_repo_perms(di, event, "any event")
+    user = create_or_update_github_user(di.user_repo(), event)
+    assert user
+
+    update_github_repo_perms(di, user.id, event, "any event")
 
     assert di.connection
     rows = di.connection.execute(
@@ -35,13 +46,17 @@ def test_github_user_repo_perms_caching() -> None:
     assert perms == "owner"
 
     users = di.connection.execute(
-        "SELECT username, platform FROM users WHERE id=?", [user_id]
+        """
+        SELECT uuid, username, platform FROM users WHERE id=?
+        """,
+        [user_id],
     ).fetchall()
 
     assert len(users) == 1
 
-    assert users[0][0] == "new_user"
-    assert users[0][1] == "github"
+    assert users[0][0] == str(user.id)
+    assert users[0][1] == "new_user"
+    assert users[0][2] == "github"
 
     repos = di.connection.execute(
         "SELECT url FROM repositories WHERE id=?", [repo_id]
@@ -69,7 +84,10 @@ def test_no_new_entries_for_the_same_repository() -> None:
         },
     }
 
-    update_github_repo_perms(di, event, "any event")
+    user = create_or_update_github_user(di.user_repo(), event)
+    assert user
+
+    update_github_repo_perms(di, user.id, event, "any event")
 
     assert di.connection
 
@@ -77,7 +95,7 @@ def test_no_new_entries_for_the_same_repository() -> None:
         "SELECT uuid FROM users WHERE username='new_user'"
     ).fetchone()[0]
 
-    update_github_repo_perms(di, event, "any event")
+    update_github_repo_perms(di, user_id, event, "any event")
 
     new_user_id = di.connection.execute(
         "SELECT uuid FROM users WHERE username='new_user'"
@@ -94,10 +112,14 @@ def test_invalid_events_are_ignored() -> None:
     di = TestDiContainer()
     di.reset()
 
-    update_github_repo_perms(di, {}, "any event")
-    update_github_repo_perms(di, {"sender": {}}, "any event")
-    update_github_repo_perms(di, {"sender": {"type": "Robot"}}, "any event")
-    update_github_repo_perms(di, {"sender": {"type": "User"}}, "any event")
+    update_github_repo_perms(di, uuid4(), {}, "any event")
+    update_github_repo_perms(di, uuid4(), {"sender": {}}, "any event")
+    update_github_repo_perms(
+        di, uuid4(), {"sender": {"type": "Robot"}}, "any event"
+    )
+    update_github_repo_perms(
+        di, uuid4(), {"sender": {"type": "User"}}, "any event"
+    )
 
     event = {
         "sender": {
@@ -108,7 +130,8 @@ def test_invalid_events_are_ignored() -> None:
             "owner": {"login": "user B"},
         },
     }
-    update_github_repo_perms(di, event, "any event")
+
+    update_github_repo_perms(di, uuid4(), event, "any event")
 
     assert di.connection
     rows = di.connection.execute("SELECT * FROM _user_repos").fetchall()
@@ -137,7 +160,10 @@ def test_auto_deduce_perms_from_event_type() -> None:
     }
 
     for event_type, perm in event_types.items():
-        update_github_repo_perms(di, event, event_type)
+        user = create_or_update_github_user(di.user_repo(), event)
+        assert user
+
+        update_github_repo_perms(di, user.id, event, event_type)
 
         assert di.connection
         rows = di.connection.execute(
@@ -153,3 +179,43 @@ def test_auto_deduce_perms_from_event_type() -> None:
 
         assert user_perms == perm
         assert username == "sender"
+
+
+def test_create_installation() -> None:
+    di = TestDiContainer()
+    di.reset()
+
+    user = User(id=uuid4(), username="bob", provider="github")
+
+    di.user_repo().create_or_update_user(user)
+
+    event = {
+        "action": "added",
+        "installation": {
+            "account": {"login": "username"},
+            "target_type": "User",
+        },
+    }
+
+    create_or_update_github_installation(di, user.id, event)
+
+    installation_repo = di.installation_repo()
+
+    installations = installation_repo.get_installations_for_user(user)
+
+    assert len(installations) == 1
+
+    installation = installations[0]
+
+    assert installation.id
+    assert installation.name == "username"
+    assert installation.provider == "github"
+    assert installation.scope == InstallationScope.USER
+    assert installation.admin_id == user.id
+
+    # test re-adding installation doesnt create new installation
+    create_or_update_github_installation(di, user.id, event)
+
+    installations = installation_repo.get_installations_for_user(user)
+
+    assert len(installations) == 1
