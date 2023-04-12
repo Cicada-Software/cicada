@@ -246,6 +246,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         self.has_ran_function = True
 
+        node.type = RecordType()
+
     def visit_on_stmt(self, node: OnStatement) -> None:
         if self.has_on_stmt:
             # TODO: include location of existing on stmt

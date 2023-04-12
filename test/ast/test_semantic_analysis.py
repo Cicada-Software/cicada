@@ -380,3 +380,12 @@ echo (x)
 """
 
         parse_and_analyze(code)
+
+
+def test_single_func_expr_in_if_failing() -> None:
+    code = """\
+if true:
+    echo hi
+"""
+
+    parse_and_analyze(code)
