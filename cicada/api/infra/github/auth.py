@@ -95,8 +95,10 @@ def create_or_update_github_installation(  # type: ignore
         case {
             "action": "added" | "created",
             "installation": {
-                "account": {"login": name},
+                "account": {"login": str(name)},
                 "target_type": "User" | "Organization" as target_type,
+                "html_url": str(url),
+                "id": installation_id,
             },
         }:
             installation = Installation(
@@ -109,6 +111,8 @@ def create_or_update_github_installation(  # type: ignore
                     else InstallationScope.ORGANIZATION
                 ),
                 admin_id=user_id,
+                provider_id=str(installation_id),
+                provider_url=url,
             )
 
             repo = di.installation_repo()

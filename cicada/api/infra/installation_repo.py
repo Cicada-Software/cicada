@@ -10,8 +10,10 @@ class InstallationRepo(IInstallationRepo, DbConnection):
     def create_installation(self, installation: Installation) -> UUID:
         installation_id = self.conn.execute(
             """
-            INSERT INTO installations (uuid, name, provider, scope)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO installations (
+                uuid, name, provider, scope, provider_id, provider_url
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT DO UPDATE SET name=name
             RETURNING uuid;
             """,
@@ -20,6 +22,8 @@ class InstallationRepo(IInstallationRepo, DbConnection):
                 installation.name,
                 installation.provider,
                 str(installation.scope),
+                installation.provider_id or "",
+                installation.provider_url or "",
             ],
         ).fetchone()[0]
 
@@ -48,6 +52,8 @@ class InstallationRepo(IInstallationRepo, DbConnection):
                 i.name,
                 i.provider,
                 i.scope,
+                i.provider_id,
+                i.provider_url,
                 u.uuid
             FROM installations i
             JOIN _installation_users iu ON iu.installation_id = i.id
@@ -66,7 +72,9 @@ class InstallationRepo(IInstallationRepo, DbConnection):
                     name=row[1],
                     provider=row[2],
                     scope=InstallationScope(row[3]),
-                    admin_id=UUID(row[4]),
+                    provider_id=row[4],
+                    provider_url=row[5],
+                    admin_id=UUID(row[6]),
                 )
             )
 

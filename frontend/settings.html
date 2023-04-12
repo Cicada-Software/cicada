@@ -146,7 +146,7 @@ main {
   background: var(--gray);
   color: var(--lightgray);
   padding: 1em;
-  cursor: normal;
+  cursor: pointer;
 }
 
 .installation-name {
@@ -194,7 +194,7 @@ cicadaFetch("/installations")
         `;
 
         for (const installation of installations) {
-          const { name, provider } = installation;
+          const { id, name, provider } = installation;
 
           const element = document.createElement("div");
 
@@ -204,6 +204,8 @@ cicadaFetch("/installations")
           element.querySelector(".installation-perms").innerText = "(Admin)";
 
           document.getElementById("installations").insertAdjacentElement("beforeend", element);
+
+          element.onclick = () => window.location.href = `/installation/${id}`;
         }
 
         document.getElementById("installation-hider").style.display = "block";

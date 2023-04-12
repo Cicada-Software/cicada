@@ -524,6 +524,26 @@ def migrate_v29(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=30)
+def migrate_v30(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        ALTER TABLE installations
+        ADD COLUMN provider_id TEXT NOT NULL
+        DEFAULT '';
+
+        ALTER TABLE installations
+        ADD COLUMN provider_url TEXT NOT NULL
+        DEFAULT '';
+
+        DROP INDEX ux_installations_name_provider;
+
+        CREATE UNIQUE INDEX ux_installations_provider_info
+        ON installations(name, provider, provider_id, provider_url);
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

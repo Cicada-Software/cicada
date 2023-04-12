@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<link rel="stylesheet" href="/static/common.css">
+<script src="/static/auth.js"></script>
+<title>Manage Installation</title>
+</head>
+
+<body>
+
+<main>
+  <div class="navbar">
+    <a href="/dashboard" id="back">&#8592; Back</a>
+    <span id="version">Cicada (pre-alpha)</span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <div id="container" style="display: block">
+    <h1>Manage Installation</h1>
+
+    <span class="installation-info">
+      Installed via
+      <span id="installation-type">user</span>
+      <span id="installation-name">@dosisod</span> on
+      <span class="installation-provider">GitHub</span>
+    </span>
+
+    <h3>Actions</h3>
+
+    <a href="#" id="manage">
+      Manage on <span class="installation-provider">GitHub</span>
+    </a>
+    <br>
+
+    <a href="#" id="billing" disabled>Manage billing (coming soon)</a>
+    <br>
+
+    <h3>Users</h3>
+    <span class="note">
+      Note: Cicada will automatically create placeholder users based on events
+      we recieve from <span class="installation-provider">GitHub</span>. Creating
+      proper accounts will users to see workflow runs without having to trigger
+      an event first.
+    </span>
+
+    <br>
+    <br>
+
+    <span class="note" style="font-style: italic">
+      User management feature is under construction
+    </span>
+  </div>
+
+  <div id="error-msg" style="display: none"></div>
+</main>
+
+<style>
+* {
+  font-family: "jetbrains", monospace;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#container {
+  width: 70vw;
+}
+
+h1 {
+  color: var(--white);
+  margin: 0;
+  font-size: 1.5em;
+}
+
+h3 {
+  padding-top: 2em;
+  padding-bottom: 1em;
+  color: var(--white);
+  margin: 0;
+}
+
+#installation-name {
+  color: var(--blue);
+}
+
+.installation-info {
+  color: var(--lightgray);
+  font-style: italic;
+}
+
+.note {
+  color: var(--lightgray);
+}
+
+/* TODO: dedupe */
+a {
+  color: var(--blue);
+}
+
+a[disabled] {
+  color: var(--dark-blue);
+  cursor: default;
+}
+
+#back {
+  transition: background 150ms;
+}
+
+#back:hover {
+  background: var(--medium-gray);
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+  padding: 1em;
+  min-height: 100%;
+  box-sizing: border-box;
+  background: var(--black);
+}
+
+.navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+.navbar > * {
+  padding: 0.5em;
+  background: var(--gray);
+}
+
+#version {
+  color: var(--lightgray);
+  flex: 1;
+}
+</style>
+
+<script>
+const uuid = new URL(window.location.href).pathname.split("/").pop();
+
+cicadaFetch(`/api/installation/${uuid}`)
+  .then(resp => {
+    if (!resp.ok) return;
+
+    resp.json().then(j => {
+      const { name, provider, scope, provider_url } = j;
+
+      document.getElementById("installation-type").innerText = scope === "USER" ? "user" : "organization";
+      document.getElementById("installation-name").innerText = `@${name}`;
+      document.getElementById("manage").href = provider_url;
+
+      for (const element of document.querySelectorAll(".installation-provider")) {
+        element.innerText = normalizeProvider(provider);
+      }
+    });
+  });
+
+// TODO: dedupe
+function normalizeProvider(provider) {
+  switch (provider.toLowerCase()) {
+    case "github": return "GitHub";
+    case "gitlab": return "Gitlab";
+    default: return provider;
+  }
+}
+</script>
+
+</body>
+
+</html>

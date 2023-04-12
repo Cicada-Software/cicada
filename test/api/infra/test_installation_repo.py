@@ -34,6 +34,8 @@ class TestInstallationRepo(SqliteTestWrapper):
             provider="github",
             scope=InstallationScope.ORGANIZATION,
             admin_id=user.id,
+            provider_id="1337",
+            provider_url="https://example.com",
         )
 
         installation_id = self.installation_repo.create_installation(

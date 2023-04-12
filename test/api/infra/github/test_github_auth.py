@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from cicada.api.domain.installation import InstallationScope
+from cicada.api.domain.installation import Installation, InstallationScope
 from cicada.api.domain.user import User
 from cicada.api.infra.github.auth import (
     create_or_update_github_installation,
@@ -194,6 +194,8 @@ def test_create_installation() -> None:
         "installation": {
             "account": {"login": "username"},
             "target_type": "User",
+            "html_url": "url",
+            "id": "1337",
         },
     }
 
@@ -207,11 +209,15 @@ def test_create_installation() -> None:
 
     installation = installations[0]
 
-    assert installation.id
-    assert installation.name == "username"
-    assert installation.provider == "github"
-    assert installation.scope == InstallationScope.USER
-    assert installation.admin_id == user.id
+    assert installation == Installation(
+        id=installation.id,
+        name="username",
+        provider="github",
+        scope=InstallationScope.USER,
+        admin_id=user.id,
+        provider_id="1337",
+        provider_url="url",
+    )
 
     # test re-adding installation doesnt create new installation
     create_or_update_github_installation(di, user.id, event)
@@ -219,3 +225,4 @@ def test_create_installation() -> None:
     installations = installation_repo.get_installations_for_user(user)
 
     assert len(installations) == 1
+    assert installations[0] == installation

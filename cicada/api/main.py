@@ -136,6 +136,11 @@ async def settings() -> FileResponse:
     return FileResponse("./frontend/settings.html")
 
 
+@app.get("/installation/{uuid}")
+async def installation(uuid: UUID) -> FileResponse:
+    return FileResponse("./frontend/installation.html")
+
+
 @app.get("/repo/{_:path}")
 async def repo(_: str) -> FileResponse:
     return FileResponse("./frontend/repo.html")
