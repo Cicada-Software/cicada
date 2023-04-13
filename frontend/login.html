@@ -19,7 +19,7 @@
       <button type="submit">Login</button>
     </form>
 
-    <p class="sso-divider">or</p>
+    <p class="lightgray m-auto">or</p>
 
     <a
       href="https://github.com/login/oauth/authorize?client_id=CLIENT_ID&redirect_uri=REDIRECT_URI&state=state&allow_signup=false"
@@ -33,22 +33,6 @@
 </main>
 
 <style>
-* {
-  font-family: "jetbrains", monospace;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.sso-divider {
-  color: var(--lightgray);
-  margin: auto;
-}
-
 a.github-sso {
   color: var(--dark-green);
   background: var(--green);
@@ -77,8 +61,6 @@ form {
 }
 
 #error-msg {
-  color: var(--red);
-  background: var(--dark-red);
   padding: 1em;
   text-align: center;
 }
@@ -104,55 +86,6 @@ button {
 
 p, pre {
   margin: 0;
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1em;
-  padding: 1em;
-  min-height: 100%;
-  box-sizing: border-box;
-  background: var(--black);
-}
-
-#navbar {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  margin: 0;
-  color: var(--white);
-  font-weight: bold;
-}
-
-#navbar > * {
-  padding: 0.5em;
-  background: var(--gray);
-}
-
-#navbar-filler {
-  color: var(--lightgray);
-}
-
-.navbar-filler {
-  flex: 1;
-  text-align: right;
-}
-
-#status-bar {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  margin: -1em;
-  padding: 1em;
-  position: sticky;
-  top: 0;
-  background: var(--black);
-}
-
-#status-bar > * {
-  padding: 0.5em;
-  background: var(--gray);
 }
 
 @media (max-width: 48em) {

@@ -10,6 +10,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.responses import FileResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from cicada.api.application.exceptions import CicadaException
@@ -34,6 +35,7 @@ app.include_router(session_router)
 app.include_router(env_router)
 app.include_router(installation_router)
 app.add_middleware(SlowRequestMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=512)
 app.add_exception_handler(CicadaException, cicada_exception_handler)
 
 

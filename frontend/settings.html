@@ -6,13 +6,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="stylesheet" href="/static/common.css">
-<script src="/static/auth.js"></script>
+<script src="/static/common.js"></script>
 </head>
 
 <body>
 
 <main>
-  <div class="navbar">
+  <div id="navbar">
     <a href="/dashboard" id="back">&#8592; Back</a>
     <span id="version">Cicada (pre-alpha)</span>
     <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
@@ -41,21 +41,10 @@
     <button type="submit" disabled>Update</button>
   </form>
 
-  <span id="post-change-password" style="display: none;"></span>
+  <span id="post-change-password" class="none lightgray italic"></span>
 </main>
 
 <style>
-* {
-  font-family: "jetbrains", monospace;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
 h1 {
   color: var(--white);
   margin: 0;
@@ -66,10 +55,6 @@ h1 {
 h3 {
   color: var(--lightgray);
   margin: 0;
-}
-
-a {
-  color: var(--blue);
 }
 
 form {
@@ -99,44 +84,6 @@ button:disabled {
   color: var(--black);
 }
 
-/* TODO: dedupe */
-#back {
-  transition: background 150ms;
-}
-
-#back:hover {
-  background: var(--medium-gray);
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1em;
-  padding: 1em;
-  min-height: 100%;
-  box-sizing: border-box;
-  background: var(--black);
-}
-
-.navbar {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  margin: 0;
-  color: var(--white);
-  font-weight: bold;
-}
-
-.navbar > * {
-  padding: 0.5em;
-  background: var(--gray);
-}
-
-#version {
-  color: var(--lightgray);
-  flex: 1;
-}
-
 #installations {
   padding: 1em 0 1em 0;
 }
@@ -147,16 +94,6 @@ main {
   color: var(--lightgray);
   padding: 1em;
   cursor: pointer;
-}
-
-.installation-name {
-  color: var(--blue);
-}
-
-#post-change-password {
-  display: none;
-  color: var(--lightgray);
-  font-style: italic;
 }
 </style>
 
@@ -185,7 +122,7 @@ cicadaFetch("/installations")
         const template = `
           <div class="installation-card">
             <span>
-              <span class="installation-name"></span>
+              <span class="installation-name blue"></span>
               on
               <span class="installation-provider"></span>
               <span class="installation-perms"></span>
@@ -252,15 +189,6 @@ const handleInput = e => {
     box.style.display = "none";
   }
 };
-
-// TODO: dedupe
-function normalizeProvider(provider) {
-  switch (provider.toLowerCase()) {
-    case "github": return "GitHub";
-    case "gitlab": return "Gitlab";
-    default: return provider;
-  }
-}
 </script>
 
 </body>

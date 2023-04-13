@@ -6,13 +6,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <link rel="stylesheet" href="/static/common.css">
-<script src="/static/auth.js"></script>
+<script src="/static/common.js"></script>
 </head>
 
 <body>
 
 <main>
-  <div class="navbar">
+  <div id="navbar">
     <span id="version">Cicada (pre-alpha)</span>
     <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
   </div>
@@ -33,7 +33,7 @@
       <p>Add a new repo to Cicada</p>
 
       <span class="button-wrapper">
-        <!-- TODO: allow for this to be set by the user -->
+        <!-- TODO: allow for this to be set by the server -->
         <a href="https://github.com/apps/cicada-sh/installations/new" class="connect">GitHub</a>
         <button class="connect" disabled title="Coming soon!">Gitlab</button>
         <button class="connect" disabled title="Coming soon!">AzureDevOps</button>
@@ -119,54 +119,14 @@
 </main>
 
 <style>
-* {
-  font-family: "jetbrains", monospace;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
 h1 {
   color: var(--white);
   margin: 0;
   font-size: 1.5em;
 }
 
-a {
-  color: var(--blue);
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1em;
-  padding: 1em;
-  min-height: 100%;
-  box-sizing: border-box;
-  background: var(--black);
-}
-
-.navbar {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  margin: 0;
-  color: var(--white);
-  font-weight: bold;
-}
-
-.navbar > * {
-  padding: 0.5em;
-  background: var(--gray);
-}
-
 #version {
-  color: var(--lightgray);
-  flex: 1;
+  text-align: left;
 }
 
 .cards {

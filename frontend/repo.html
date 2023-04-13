@@ -3,13 +3,13 @@
 
 <head>
 <link rel="stylesheet" href="/static/common.css">
-<script src="/static/auth.js"></script>
+<script src="/static/common.js"></script>
 </head>
 
 <body>
 
 <main>
-  <div class="navbar">
+  <div id="navbar">
     <a href="/dashboard" id="back">&#8592; Back</a>
     <span id="version">Cicada (pre-alpha)</span>
     <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
@@ -43,17 +43,6 @@
 </main>
 
 <style>
-* {
-  font-family: "jetbrains", monospace;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
 #container {
   width: 70vw;
 }
@@ -92,10 +81,6 @@ td {
   padding-top: 1em;
   padding-right: 1em;
   vertical-align: top;
-}
-
-a {
-  color: var(--blue);
 }
 
 input, textarea {
@@ -138,44 +123,6 @@ button#add {
 button:disabled {
   background: var(--dark-green);
   color: var(--black);
-}
-
-/* TODO: dedupe */
-#back {
-  transition: background 150ms;
-}
-
-#back:hover {
-  background: var(--medium-gray);
-}
-
-main {
-  display: flex;
-  flex-direction: column;
-  row-gap: 1em;
-  padding: 1em;
-  min-height: 100%;
-  box-sizing: border-box;
-  background: var(--black);
-}
-
-.navbar {
-  display: flex;
-  flex-direction: row;
-  gap: 1em;
-  margin: 0;
-  color: var(--white);
-  font-weight: bold;
-}
-
-.navbar > * {
-  padding: 0.5em;
-  background: var(--gray);
-}
-
-#version {
-  color: var(--lightgray);
-  flex: 1;
 }
 
 #post-change-password {
@@ -247,14 +194,6 @@ function getGitUrl(provider, shortUrl) {
   return `https://${repo.provider}.com/${repo.shortUrl}`;
 }
 
-function normalizeProvider(provider) {
-  switch (provider.toLowerCase()) {
-    case "github": return "GitHub";
-    case "gitlab": return "Gitlab";
-    default: return provider;
-  }
-}
-
 function addRow(key, value) {
   const row = document.createElement("tr");
 
@@ -298,8 +237,6 @@ document.getElementById("save").addEventListener("click", (event) => {
 
     data["env_vars"][key] = value;
   });
-
-  console.log(data);
 
   cicadaFetch("/env/repo_env_vars", {
     method: "POST",

@@ -50,3 +50,20 @@ const ping = () => {
     errorMsg.innerText = httpStatusToMessage(e.status);
   });
 };
+
+const getWebSocketUrl = () => {
+  const socketUrl = new URL(window.location.href);
+
+  // TODO: update this to wss only once I setup self-signed certs
+  socketUrl.protocol = socketUrl.hostname == "localhost" ? "ws:" : "wss:";
+
+  return socketUrl;
+};
+
+const normalizeProvider = (provider) => {
+  switch (provider.toLowerCase()) {
+    case "github": return "GitHub";
+    case "gitlab": return "Gitlab";
+    default: return provider;
+  }
+}
