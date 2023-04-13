@@ -1,14 +1,16 @@
+import asyncio
 from asyncio import Task, create_task
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
 from cicada.api.application.session.rerun_session import RerunSession
 from cicada.api.application.session.stop_session import StopSession
 from cicada.api.common.json import asjson
+from cicada.api.domain.session import SessionStatus
 from cicada.api.endpoints.di import Di
-from cicada.api.endpoints.login_util import CurrentUser
+from cicada.api.endpoints.login_util import CurrentUser, get_user_from_jwt
 from cicada.api.infra.github.common import (
     gather_workflows_via_trigger as gather_github_git_push_workflows,
 )
@@ -111,3 +113,69 @@ async def get_recent_sessions(
         recent = session_repo.get_recent_sessions(user)
 
     return JSONResponse([asjson(session) for session in recent])
+
+
+@router.websocket("/ws/session/watch_status")
+async def websocket_endpoint(
+    websocket: WebSocket, di: Di
+) -> None:  # pragma: no cover
+    """
+    Open a websocket to listen for status updates for certain sessions. Once
+    connected, the user sends their JWT token to authenticate, then they send
+    a JSON array of string-encoded UUIDs for the sessions they want to listen
+    to. Then, as the sessions start to finish, the session data will be
+    returned to the user. Once all requested sessions have finished the
+    websocket will close.
+
+    This probably should be replaced with a pub-sub implementation that will
+    handle all of this for me.
+    """
+
+    try:
+        await websocket.accept()
+
+        # TODO: add timeout here
+        jwt = await websocket.receive_text()
+
+        user = get_user_from_jwt(di.user_repo(), jwt)
+
+        if not user:
+            await websocket.send_json(
+                {"error": "Websocket connection failed: Unauthorized"}
+            )
+            return await websocket.close()
+
+        # TODO: add timeout here
+        # TODO: limit size of JSON payload
+        data = await websocket.receive_json()
+
+        try:
+            session_ids = {UUID(x) for x in data}
+        except (TypeError, ValueError):
+            await websocket.send_json(
+                {"error": "Invalid JSON, expected array of UUIDs"}
+            )
+            return await websocket.close()
+
+        session_repo = di.session_repo()
+
+        while session_ids:
+            for session_id in session_ids.copy():
+                session = session_repo.get_session_by_session_id(
+                    session_id, user=user
+                )
+
+                if not session:
+                    session_ids.remove(session_id)
+
+                if session and session.status != SessionStatus.PENDING:
+                    session_ids.remove(session_id)
+
+                    await websocket.send_json(asjson(session))
+
+            await asyncio.sleep(1)
+
+        await websocket.close()
+
+    except WebSocketDisconnect:
+        pass

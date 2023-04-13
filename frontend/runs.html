@@ -150,7 +150,8 @@ main {
 </style>
 
 <script>
-const timers = {};
+const timerData = {};
+const sessionStatuses = [];
 
 // TODO: cleanup this function
 const generateElapsedDisplay = (element, session) => {
@@ -232,11 +233,12 @@ const renderCommitSession = (session) => {
   element.querySelector(".commit-message").innerText = message.split("\n")[0];
   element.querySelector(".commit-message").title = message;
 
-  const timer = generateElapsedDisplay(element, session);
-  timer();
+  const display = generateElapsedDisplay(element, session);
+  display();
 
   if (!session.finished_at) {
-    timers[session.id] = setInterval(timer, 1_000);
+    timerData[session.id] = {element, timer: setInterval(display, 1_000)};
+    sessionStatuses.push(session.id);
   }
 
   document.querySelector("ol").insertAdjacentElement("beforeend", element);
@@ -278,11 +280,12 @@ const renderIssueSession = (session) => {
   element.querySelector(".issue-title").innerText = title;
   element.querySelector(".issue-title").title = body ? `${title}\n\n${body}` : title;
 
-  const timer = generateElapsedDisplay(element, session);
-  timer();
+  const display = generateElapsedDisplay(element, session);
+  display();
 
   if (!session.finished_at) {
-    timers[session.id] = setInterval(timer, 1_000);
+    timerData[session.id] = {element, timer: setInterval(display, 1_000)};
+    sessionStatuses.push(session.id);
   }
 
   document.querySelector("ol").insertAdjacentElement("beforeend", element);
@@ -330,11 +333,40 @@ cicadaFetch(`/session/recent${window.location.search}`).then(e => {
       }
     }
 
+    listenForSessionStatusUpdates();
+
     if (!e.length) {
       document.querySelector("ol").innerHTML = '<span class="no-recents">No recent sessions!</span>';
     }
   });
 });
+
+function listenForSessionStatusUpdates() {
+  if (sessionStatuses.length === 0) return;
+
+  // TODO: dedupe this logic
+  const socketUrl = new URL(window.location.href);
+  socketUrl.pathname = "/ws/session/watch_status";
+  socketUrl.protocol = socketUrl.hostname == "localhost" ? "ws:" : "wss:";
+
+  const ws = new WebSocket(socketUrl.toString());
+
+  ws.onopen = () => {
+    ws.send(localStorage.getItem("jwt"));
+    ws.send(JSON.stringify(sessionStatuses));
+  };
+
+  ws.onmessage = (event) => {
+    const session = JSON.parse(event.data);
+
+    const { timer, element } = timerData[session.id];
+
+    clearInterval(timer);
+
+    generateElapsedDisplay(element, session)();
+    displayStatus(element, session.status);
+  }
+}
 </script>
 </body>
 
