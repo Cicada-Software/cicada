@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any
 
 from cicada.api.common.json import asjson
@@ -28,7 +29,7 @@ def json_to_record(j: Any) -> Value:  # type: ignore
     if isinstance(j, str):
         return StringValue(j)
 
-    if isinstance(j, int):
-        return NumericValue(j)
+    if isinstance(j, int | float):
+        return NumericValue(Decimal(j))
 
     raise NotImplementedError()

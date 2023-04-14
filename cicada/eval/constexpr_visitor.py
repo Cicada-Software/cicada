@@ -1,6 +1,7 @@
 from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
+from decimal import Decimal
 from typing import cast
 
 from cicada.api.domain.triggers import Trigger
@@ -157,19 +158,19 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             if node.oper == BinaryOperator.DIVIDE:
                 # TODO: move this to semantic layer
-                return NumericValue(int(lhs.value / rhs.value))
+                return NumericValue(lhs.value / rhs.value)
 
             if node.oper == BinaryOperator.MODULUS:
                 return NumericValue(lhs.value % rhs.value)
 
             if node.oper == BinaryOperator.AND:
-                return NumericValue(lhs.value & rhs.value)
+                return NumericValue(Decimal(int(lhs.value) & int(rhs.value)))
 
             if node.oper == BinaryOperator.OR:
-                return NumericValue(lhs.value | rhs.value)
+                return NumericValue(Decimal(int(lhs.value) | int(rhs.value)))
 
             if node.oper == BinaryOperator.XOR:
-                return NumericValue(lhs.value ^ rhs.value)
+                return NumericValue(Decimal(int(lhs.value) ^ int(rhs.value)))
 
             if node.oper == BinaryOperator.LESS_THAN:
                 return BooleanValue(lhs.value < rhs.value)

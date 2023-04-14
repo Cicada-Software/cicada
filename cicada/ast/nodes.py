@@ -4,6 +4,7 @@ import ast
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from decimal import Decimal
 from enum import Enum, auto
 from textwrap import indent
 from typing import Final, Generic, TypeVar
@@ -71,7 +72,7 @@ class UnreachableValue(Value):
 
 @dataclass
 class NumericValue(Value):
-    value: int
+    value: Decimal
     type: Type = field(default_factory=NumericType)
 
 
@@ -377,9 +378,14 @@ class NumericExpression(Expression, NumericValue):
 
     @classmethod
     def from_token(cls, token: Token) -> NumericExpression:
+        try:
+            value = Decimal(int(token.content, 0))
+        except ValueError:
+            value = Decimal(token.content)
+
         return cls(
             info=LineInfo.from_token(token),
-            value=int(token.content, 0),
+            value=value,
             type=NumericType(),
         )
 
@@ -387,7 +393,7 @@ class NumericExpression(Expression, NumericValue):
         return visitor.visit_num_expr(self)
 
     def __str__(self) -> str:
-        return f"{type(self).__name__}({self.value!r}) # {self.info}"
+        return f"{type(self).__name__}({self.value}) # {self.info}"
 
 
 class UnaryOperator(Enum):

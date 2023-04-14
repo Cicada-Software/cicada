@@ -14,6 +14,7 @@ from cicada.parse.token import (
     CommentToken,
     DanglingToken,
     EqualToken,
+    FloatLiteralToken,
     IdentifierToken,
     IfToken,
     IntegerLiteralToken,
@@ -600,7 +601,7 @@ def generate_expr(state: ParserState) -> Expression:
     elif isinstance(token, IfToken):
         expr = generate_if_expr(state)
 
-    elif isinstance(token, IntegerLiteralToken):
+    elif isinstance(token, IntegerLiteralToken | FloatLiteralToken):
         expr = NumericExpression.from_token(token)
 
     elif isinstance(token, StringLiteralToken):

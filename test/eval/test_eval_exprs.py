@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 
 from cicada.ast.common import json_to_record
@@ -203,3 +205,15 @@ if false:
     tree.accept(visitor)
 
     assert "x" not in visitor.symbols
+
+
+def test_eval_float_exprs() -> None:
+    tree = parse_and_analyze("let x = 0.1 + 0.2")
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == Decimal("0.3")
