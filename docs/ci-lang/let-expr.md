@@ -1,6 +1,6 @@
-# The `let` Statement
+# The `let` Expression
 
-The `let` statement allows for defining variables. A simple example of a variable
+The `let` expression allows for defining variables. A simple example of a variable
 declaration would be:
 
 ```
@@ -24,3 +24,18 @@ let num = num * 2
 In this contrived example, we first assign the value `1` to `num`, then create a new
 variable (also called `num`) and assign it the value `2`. Whenever `num` is referenced
 now, the most recently assigned `num`, in this case, the second one, will be used.
+
+While `let` can be used as a statement (that is, on it's own line), it can also be used
+in other expressions such as the `if` expression:
+
+```
+if let number = 123:
+  echo your number is (number)
+
+# Error, number is not defined here.
+echo (number)
+```
+
+In the above example, `number` is created using a `let` expression. Since `123` is truthy,
+the `if` condition passes, and the first `echo` command would be ran. The second `echo`
+command causes an error though, since `number` is only scoped to the body of the `if` expression.
