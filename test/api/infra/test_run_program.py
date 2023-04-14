@@ -2,8 +2,9 @@ from asyncio import create_task, wait_for
 
 import pytest
 
+from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.infra.run_program import run_program
+from cicada.api.infra.run_program import exit_code_to_status_code, run_program
 
 
 async def test_basic_stdout_capturing() -> None:
@@ -66,3 +67,16 @@ async def test_explicitly_stopping_terminal_will_kill_process() -> None:
 
     except TimeoutError:
         pytest.fail("Program was not terminated in time")
+
+
+def test_exit_code_mappings() -> None:
+    tests = {
+        -1: SessionStatus.STOPPED,
+        0: SessionStatus.SUCCESS,
+        1: SessionStatus.FAILURE,
+        2: SessionStatus.FAILURE,
+        3: SessionStatus.FAILURE,
+    }
+
+    for exit_code, expected in tests.items():
+        assert exit_code_to_status_code(exit_code) == expected

@@ -1,7 +1,7 @@
 import json
 from asyncio import create_subprocess_exec, create_task, subprocess
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
@@ -66,7 +66,7 @@ EXIT_CODE_MAPPINGS = {
 
 
 def exit_code_to_status_code(exit_code: int) -> SessionStatus:
-    return cast(SessionStatus, EXIT_CODE_MAPPINGS.get(exit_code, "FAILURE"))
+    return EXIT_CODE_MAPPINGS.get(exit_code, SessionStatus.FAILURE)
 
 
 @dataclass
