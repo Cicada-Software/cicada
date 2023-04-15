@@ -1,15 +1,11 @@
-from functools import cache
-from pathlib import Path
 from typing import Any
-from urllib.parse import quote as url_escape
 
 from fastapi import APIRouter, Form, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 
 from cicada.api.application.user.change_password import ChangePassword
 from cicada.api.application.user.local_user_login import LocalUserLogin
 from cicada.api.endpoints.di import Di, JWTToken, PasswordForm
-from cicada.api.settings import GitHubSettings
 
 from .login_util import (
     CurrentUser,
@@ -59,18 +55,6 @@ async def refresh_token(  # type: ignore
     )
 
 
-@cache
-def get_login_page() -> str:
-    settings = GitHubSettings()
-
-    return (
-        Path("frontend/login.html")
-        .read_text()
-        .replace("CLIENT_ID", settings.client_id)
-        .replace("REDIRECT_URI", url_escape(settings.sso_redirect_uri))
-    )
-
-
 @router.get("/login")
-def login_page() -> HTMLResponse:
-    return HTMLResponse(get_login_page())
+def login_page() -> FileResponse:
+    return FileResponse("./frontend/login.html")

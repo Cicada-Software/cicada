@@ -11,22 +11,6 @@ class TestLoginEndpoints(TestEndpointWrapper):
 
         cls.app.include_router(login_router)
 
-    def test_login_page_injects_client_id_and_domain(self) -> None:
-        with self.inject_dummy_env_vars() as vars:
-            response = self.client.get("/login")
-
-            assert response.status_code == 200
-
-            html = response.text
-
-            domain = vars["CICADA_DOMAIN"]
-            client_id = vars["GITHUB_APP_CLIENT_ID"]
-
-            assert domain
-            assert domain in html
-            assert client_id
-            assert client_id in html
-
     def test_login_and_refresh_token_works(self) -> None:
         response = self.client.post(
             "/login",

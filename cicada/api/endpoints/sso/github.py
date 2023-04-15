@@ -1,7 +1,9 @@
+from functools import cache
+from urllib.parse import quote as url_escape
 from uuid import uuid4
 
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from githubkit import GitHub, OAuthWebAuthStrategy
 
 from cicada.api.di import DiContainer
@@ -12,6 +14,28 @@ from cicada.api.settings import GitHubSettings
 from ..login_util import create_jwt
 
 router = APIRouter()
+
+
+@cache
+def get_github_sso_link() -> str:
+    settings = GitHubSettings()
+
+    # TODO: use an actual URL constructor instead
+    params = {
+        "state": "state",
+        "allow_signup": "false",
+        "client_id": settings.client_id,
+        "redirect_uri": url_escape(settings.sso_redirect_uri),
+    }
+
+    url_params = "&".join(f"{key}={value}" for key, value in params.items())
+
+    return f"https://github.com/login/oauth/authorize?{url_params}"
+
+
+@router.get("/github_sso_link")
+async def github_sso_link() -> RedirectResponse:
+    return RedirectResponse(get_github_sso_link(), status_code=302)
 
 
 @router.get("/github_sso")
