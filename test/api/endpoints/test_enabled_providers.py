@@ -29,11 +29,11 @@ class TestEndabledProviders(TestEndpointWrapper):
 
             client = TestClient(app)
 
-            response = client.post("/github_webhook")
+            response = client.post("/api/github_webhook")
 
             assert response.status_code != 404
 
-            response = client.post("/gitlab_webhook")
+            response = client.post("/api/gitlab_webhook")
 
             assert response.status_code == 404
 
@@ -46,10 +46,10 @@ class TestEndabledProviders(TestEndpointWrapper):
 
             client = TestClient(app)
 
-            response = client.post("/gitlab_webhook")
+            response = client.post("/api/gitlab_webhook")
 
             assert response.status_code != 404
 
-            response = client.post("/github_webhook")
+            response = client.post("/api/github_webhook")
 
             assert response.status_code == 404

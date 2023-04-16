@@ -148,7 +148,7 @@ async def repo(_: str) -> FileResponse:
     return FileResponse("./frontend/repo.html")
 
 
-@app.get("/ping")
+@app.get("/api/ping")
 async def ping(_: CurrentUser) -> str:
     """
     A simple heartbeat. Can be used for checking if the user has access to the
@@ -158,7 +158,7 @@ async def ping(_: CurrentUser) -> str:
     return "pong"
 
 
-@app.post("/join_waitlist")
+@app.post("/api/join_waitlist")
 async def join_waitlist(di: Di, email: Annotated[str, Form()] = "") -> None:
     try:
         di.waitlist_repo().insert_email(email)

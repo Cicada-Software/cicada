@@ -98,7 +98,7 @@ class TestJwtLogic(TestEndpointWrapper):
         # is actually happening.
 
         with self.inject_dummy_env_vars():
-            response = self.client.get("/ping")
+            response = self.client.get("/api/ping")
 
             assert response.status_code == 401
             assert response.json() == {"detail": "Not authenticated"}
@@ -111,7 +111,7 @@ class TestJwtLogic(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.get(
-                "/ping",
+                "/api/ping",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -125,7 +125,7 @@ class TestJwtLogic(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.get(
-                "/ping",
+                "/api/ping",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -149,7 +149,7 @@ class TestJwtLogic(TestEndpointWrapper):
             )
 
             response = self.client.get(
-                "/ping",
+                "/api/ping",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 

@@ -16,7 +16,7 @@ from .login_util import (
 router = APIRouter()
 
 
-@router.post("/login", response_model=None)
+@router.post("/api/login", response_model=None)
 async def login(  # type: ignore
     di: Di,
     form_data: PasswordForm,
@@ -27,7 +27,7 @@ async def login(  # type: ignore
     return create_access_token(user)
 
 
-@router.post("/change_password")
+@router.post("/api/change_password")
 async def change_password(
     user: CurrentUser,
     di: Di,
@@ -38,7 +38,7 @@ async def change_password(
     cmd.handle(user, password)
 
 
-@router.post("/refresh_token")
+@router.post("/api/refresh_token")
 async def refresh_token(  # type: ignore
     di: Di,
     token: JWTToken,

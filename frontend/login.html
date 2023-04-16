@@ -21,7 +21,7 @@
 
     <p class="lightgray m-auto">or</p>
 
-    <a href="/github_sso_link" class="github-sso">Sign-in with GitHub</a>
+    <a href="/api/github_sso_link" class="github-sso">Sign-in with GitHub</a>
 
     <span id="error-msg" style="display: none"></span>
   </div>
@@ -98,7 +98,7 @@ const handleLogin = e => {
   const errorMsg = document.getElementById("error-msg");
   errorMsg.style.display = "none";
 
-  fetch("/login", {method: "POST", body: new FormData(e.target)})
+  fetch("/api/login", {method: "POST", body: new FormData(e.target)})
     .then(resp => {
       if (resp.ok) {
         resp.json().then(j => {

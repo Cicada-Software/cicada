@@ -27,7 +27,11 @@ class TestMainEndpoints(TestEndpointWrapper):
         assert response.status_code == 422
 
     def test_no_unauthorized_access_to_api_endpoints(self) -> None:
-        urls = ("/session/recent", f"session/{uuid4()}/session_info", "/ping")
+        urls = (
+            "/api/session/recent",
+            f"/api/session/{uuid4()}/session_info",
+            "/api/ping",
+        )
 
         for url in urls:
             response = self.client.get(url)
@@ -36,7 +40,7 @@ class TestMainEndpoints(TestEndpointWrapper):
 
     def test_invalid_email_on_waitlist_page_returns_400_error(self) -> None:
         response = self.client.post(
-            "/join_waitlist", data={"email": "invalid"}
+            "/api/join_waitlist", data={"email": "invalid"}
         )
 
         assert response.status_code == 400
@@ -45,7 +49,7 @@ class TestMainEndpoints(TestEndpointWrapper):
 
     def test_valid_email_inserts_into_waitlist(self) -> None:
         response = self.client.post(
-            "/join_waitlist", data={"email": "valid@email.com"}
+            "/api/join_waitlist", data={"email": "valid@email.com"}
         )
 
         assert response.status_code == 200

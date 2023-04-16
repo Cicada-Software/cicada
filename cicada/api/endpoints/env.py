@@ -22,7 +22,7 @@ class EnvVars:
     env_vars: dict[str, str]
 
 
-@router.post("/env/repo_env_vars")
+@router.post("/api/env/repo_env_vars")
 def set_repo_env_vars(env_vars: EnvVars, user: CurrentUser, di: Di) -> None:
     cmd = AddEnvironmentVariablesToRepository(
         user_repo=di.user_repo(),
@@ -38,7 +38,7 @@ def set_repo_env_vars(env_vars: EnvVars, user: CurrentUser, di: Di) -> None:
     )
 
 
-@router.get("/env/repo_env_vars")
+@router.get("/api/env/repo_env_vars")
 def get_repo_env_vars(
     user: CurrentUser,
     di: Di,

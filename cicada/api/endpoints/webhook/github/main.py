@@ -92,7 +92,7 @@ async def verify_webhook_is_signed_by_github(request: Request) -> None:
     raise HTTPException(status_code=401, detail="HMAC is not signed by GitHub")
 
 
-@router.post("/github_webhook")
+@router.post("/api/github_webhook")
 async def handle_github_event(request: Request, di: Di) -> None:
     await verify_webhook_is_signed_by_github(request)
 

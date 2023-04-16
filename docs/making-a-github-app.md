@@ -13,9 +13,9 @@ as a starting point, but before you click "Create GitHub App", make sure to adju
 
 ### Basic Setup
 
-In "Callback URL" add your URL in the following form: `https://DOMAIN/github_sso`
+In "Callback URL" add your URL in the following form: `https://DOMAIN/api/github_sso`
 
-In "Webhook URL" add your URL in the following form: `https://DOMAIN/github_webhook`
+In "Webhook URL" add your URL in the following form: `https://DOMAIN/api/github_webhook`
 
 In the webhook secret add a long, secure password. Be sure to save it in the `GITHUB_WEBHOOK_SECRET`
 environment variable.

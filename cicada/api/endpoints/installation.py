@@ -22,7 +22,7 @@ def InstallationDto(installation: Installation) -> dict[str, Any]:  # type: igno
     return data  # type: ignore
 
 
-@router.get("/installations")
+@router.get("/api/installations")
 def get_installations_for_current_user(
     user: CurrentUser,
     di: Di,
@@ -32,7 +32,6 @@ def get_installations_for_current_user(
     return JSONResponse([InstallationDto(x) for x in installations])
 
 
-# TODO: move all API endpoints to /api
 @router.get("/api/installation/{uuid}")
 def get_installation_by_id(
     user: CurrentUser,

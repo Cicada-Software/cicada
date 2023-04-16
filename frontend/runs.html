@@ -249,7 +249,7 @@ function makeRunCallback(event, session) {
   return f;
 }
 
-cicadaFetch(`/session/recent${window.location.search}`).then(e => {
+cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
   if (!e.ok) {
     const errorMsg = document.getElementById("error-msg");
 

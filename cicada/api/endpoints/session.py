@@ -27,7 +27,7 @@ from cicada.api.infra.gitlab.workflows import (
 router = APIRouter()
 
 
-@router.post("/session/{session_id}/stop")
+@router.post("/api/session/{session_id}/stop")
 async def stop_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
     cmd = StopSession(di.session_repo(), di.session_terminators())
 
@@ -37,7 +37,7 @@ async def stop_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
 TASK_QUEUE: set[Task[None]] = set()
 
 
-@router.post("/session/{session_id}/rerun")
+@router.post("/api/session/{session_id}/rerun")
 async def rerun_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
     # TODO: move to application
     # TODO: test this
@@ -76,7 +76,7 @@ async def rerun_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
     task.add_done_callback(TASK_QUEUE.discard)
 
 
-@router.get("/session/{uuid}/session_info")
+@router.get("/api/session/{uuid}/session_info")
 async def get_session_info(
     uuid: UUID,
     di: Di,
@@ -92,7 +92,7 @@ async def get_session_info(
     raise HTTPException(status_code=404, detail="Session not found")
 
 
-@router.get("/session/recent")
+@router.get("/api/session/recent")
 async def get_recent_sessions(
     di: Di,
     user: CurrentUser,

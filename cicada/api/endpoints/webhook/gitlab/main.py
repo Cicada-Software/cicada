@@ -78,7 +78,7 @@ def handle_gitlab_issue_event(  # type: ignore
     task.add_done_callback(TASK_QUEUE.discard)
 
 
-@router.post("/gitlab_webhook")
+@router.post("/api/gitlab_webhook")
 async def handle_github_event(request: Request, di: Di) -> None:
     verify_webhook_came_from_gitlab(request)
 

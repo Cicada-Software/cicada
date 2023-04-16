@@ -154,7 +154,7 @@ function main() {
     const gitUrl = getGitUrl(provider, shortUrl);
     document.getElementById("view-source").href = gitUrl;
 
-    const url = `/env/repo_env_vars?provider=${provider}&url=${encodeURIComponent(gitUrl)}`;
+    const url = `/api/env/repo_env_vars?provider=${provider}&url=${encodeURIComponent(gitUrl)}`;
 
     cicadaFetch(url).then(resp => {
       if (resp.ok) {
@@ -238,7 +238,7 @@ document.getElementById("save").addEventListener("click", (event) => {
     data["env_vars"][key] = value;
   });
 
-  cicadaFetch("/env/repo_env_vars", {
+  cicadaFetch("/api/env/repo_env_vars", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
     body: JSON.stringify(data),

@@ -26,7 +26,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
 
     def test_unsigned_webhook_is_rejected(self) -> None:
         with self.inject_dummy_env_vars():
-            response = self.client.post("/github_webhook", json={})
+            response = self.client.post("/api/github_webhook", json={})
 
             assert response.status_code == 401
             assert "not signed" in response.text
@@ -57,7 +57,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             mocks["gather_issues"].return_value = [1]
 
             response = self.client.post(
-                "/github_webhook",
+                "/api/github_webhook",
                 json=event,
                 headers={"x-github-event": "issues"},
             )
@@ -102,7 +102,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             mocks["gather_git_pushes"].return_value = [1]
 
             response = self.client.post(
-                "/github_webhook",
+                "/api/github_webhook",
                 json=event,
                 headers={"x-github-event": "push"},
             )
@@ -139,7 +139,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             self.mock_github_infra_details(),
         ):
             response = self.client.post(
-                "/github_webhook",
+                "/api/github_webhook",
                 json=event,
                 headers={"x-github-event": "push"},
             )
@@ -162,7 +162,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             self.mock_github_infra_details(),
         ):
             response = self.client.post(
-                "/github_webhook",
+                "/api/github_webhook",
                 json={},
                 headers={"x-github-event": "push"},
             )

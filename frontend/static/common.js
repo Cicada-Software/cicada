@@ -11,7 +11,7 @@ const cicadaFetch = (url, args) => {
 };
 
 const refreshToken = () => {
-  cicadaFetch("/refresh_token", {method: "POST"})
+  cicadaFetch("/api/refresh_token", {method: "POST"})
     .then(resp => {
       if (resp.ok) {
         resp.json().then(j => {
@@ -41,7 +41,7 @@ const httpStatusToMessage = (code) => {
 };
 
 const ping = () => {
-  cicadaFetch("/ping").then(e => {
+  cicadaFetch("/api/ping").then(e => {
     if (e.ok) return;
 
     const errorMsg = document.getElementById("error-msg");

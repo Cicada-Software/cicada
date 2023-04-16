@@ -90,7 +90,7 @@ const handleSubmit = e => {
   const box = document.getElementById("post-notify")
   let msg = "";
 
-  fetch("/join_waitlist", {method: "POST", body: new FormData(e.target)})
+  fetch("/api/join_waitlist", {method: "POST", body: new FormData(e.target)})
     .then(resp => {
       resp.json().then(j => {
         if (resp.ok) {

@@ -156,7 +156,7 @@ class GitHubSettings(GitProviderSettings):
         if not self.webhook_secret:
             raise ValueError("GITHUB_WEBHOOK_SECRET must be defined")
 
-        self.sso_redirect_uri = f"https://{self.domain}/github_sso"
+        self.sso_redirect_uri = f"https://{self.domain}/api/github_sso"
 
 
 Seconds = int

@@ -13,7 +13,7 @@ class TestLoginEndpoints(TestEndpointWrapper):
 
     def test_login_and_refresh_token_works(self) -> None:
         response = self.client.post(
-            "/login",
+            "/api/login",
             data={"username": "admin", "password": self.test_admin_pw},
         )
 
@@ -38,7 +38,7 @@ class TestLoginEndpoints(TestEndpointWrapper):
         # refresh token logic tests
 
         response = self.client.post(
-            "/refresh_token",
+            "/api/refresh_token",
             headers={"Authorization": f"bearer {jwt}"},
         )
 
@@ -59,7 +59,7 @@ class TestLoginEndpoints(TestEndpointWrapper):
 
     def test_non_existent_user_login_returns_unauthorized(self) -> None:
         response = self.client.post(
-            "/login",
+            "/api/login",
             data={"username": "invalid", "password": "password"},
         )
 
@@ -68,7 +68,7 @@ class TestLoginEndpoints(TestEndpointWrapper):
 
     def test_invalid_jwt_is_not_allowed(self) -> None:
         response = self.client.post(
-            "/refresh_token",
+            "/api/refresh_token",
             headers={"Authorization": "bearer invalid"},
         )
 

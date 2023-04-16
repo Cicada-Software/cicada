@@ -26,7 +26,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
 
     def test_incorrect_or_unset_token_secret_is_rejected(self) -> None:
         with self.inject_dummy_env_vars():
-            response = self.client.post("/gitlab_webhook", json={})
+            response = self.client.post("/api/gitlab_webhook", json={})
 
             assert response.status_code == 401
             assert "Webhook did not come from Gitlab" in response.text
@@ -57,7 +57,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             mocks["gather_issue_workflows"].return_value = [1]
 
             response = self.client.post(
-                "/gitlab_webhook",
+                "/api/gitlab_webhook",
                 json=event,
                 headers={"x-gitlab-token": vars["GITLAB_WEBHOOK_SECRET"]},
             )
@@ -102,7 +102,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             mocks["gather_workflows"].return_value = [1]
 
             response = self.client.post(
-                "/gitlab_webhook",
+                "/api/gitlab_webhook",
                 json=event,
                 headers={"x-gitlab-token": vars["GITLAB_WEBHOOK_SECRET"]},
             )
@@ -139,7 +139,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.inject_dummy_env_vars() as vars,
         ):
             response = self.client.post(
-                "/gitlab_webhook",
+                "/api/gitlab_webhook",
                 json=event,
                 headers={"x-gitlab-token": vars["GITLAB_WEBHOOK_SECRET"]},
             )
@@ -162,7 +162,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.inject_dummy_env_vars() as vars,
         ):
             response = self.client.post(
-                "/gitlab_webhook",
+                "/api/gitlab_webhook",
                 json={},
                 headers={"x-gitlab-token": vars["GITLAB_WEBHOOK_SECRET"]},
             )

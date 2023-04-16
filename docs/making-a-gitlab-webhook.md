@@ -11,7 +11,7 @@ first.
 Next, follow along with the [official docs](https://docs.gitlab.com/ee/user/project/integrations/webhooks.html#configure-a-webhook-in-gitlab),
 and, in addition to those steps, make sure that:
 
-* The "URL" field must be in the form: `https://DOMAIN_HERE/gitlab_webhook`
+* The "URL" field must be in the form: `https://DOMAIN_HERE/api/gitlab_webhook`
 * Copy whatever you put in the "Secret Token" field to the `GITLAB_WEBHOOK_SECRET` field in the `.env` file.
 * Under the "Trigger" field, check:
   * Push events (All branches)

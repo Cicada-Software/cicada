@@ -113,7 +113,7 @@ if (jwtPayload["iss"] !== "cicada") {
 
 ping();
 
-cicadaFetch("/installations")
+cicadaFetch("/api/installations")
   .then(resp => {
     if (!resp.ok) return;
 
@@ -156,7 +156,7 @@ const handleChangePassword = e => {
   const box = document.getElementById("post-change-password");
   let msg = "";
 
-  cicadaFetch("/change_password", {method: "POST", body: new FormData(e.target)})
+  cicadaFetch("/api/change_password", {method: "POST", body: new FormData(e.target)})
     .then(resp => {
       resp.json().then(j => {
         document.querySelector("input[name=password]").value = "";

@@ -27,7 +27,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.post(
-                f"/session/{session.id}/stop",
+                f"/api/session/{session.id}/stop",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -51,7 +51,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.get(
-                "/session/recent",
+                "/api/session/recent",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -79,7 +79,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.get(
-                f"/session/{session.id}/session_info",
+                f"/api/session/{session.id}/session_info",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -89,7 +89,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
             assert response.json() == asjson(run_2)
 
             response = self.client.get(
-                f"/session/{session.id}/session_info?run=1",
+                f"/api/session/{session.id}/session_info?run=1",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 
@@ -105,7 +105,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
             jwt = create_access_token(user)["access_token"]
 
             response = self.client.get(
-                f"/session/{uuid4()}/session_info",
+                f"/api/session/{uuid4()}/session_info",
                 headers={"Authorization": f"Bearer {jwt}"},
             )
 

@@ -33,12 +33,12 @@ def get_github_sso_link() -> str:
     return f"https://github.com/login/oauth/authorize?{url_params}"
 
 
-@router.get("/github_sso_link")
+@router.get("/api/github_sso_link")
 async def github_sso_link() -> RedirectResponse:
     return RedirectResponse(get_github_sso_link(), status_code=302)
 
 
-@router.get("/github_sso")
+@router.get("/api/github_sso")
 async def github_sso(di: Di, code: str) -> HTMLResponse:  # pragma: no cover
     # TODO: if "setup_action" query param is set to "install" redirect user to
     # docs/setup/onboarding info.

@@ -269,7 +269,7 @@ function handleWebsocketMessage(event) {
 }
 
 function getSessionAndCommitInfo() {
-  let url = `/session/${uuid}/session_info`;
+  let url = `/api/session/${uuid}/session_info`;
   if (currentRun) url += `?run=${currentRun}`;
 
   cicadaFetch(url).then(e => {
@@ -400,7 +400,7 @@ function cancel(event) {
   if (ws.readyState === 3) {
     // websocket is closed, make direct API call
 
-    cicadaFetch(`/session/${uuid}/stop`, {method: "POST"}).then(e => {
+    cicadaFetch(`/api/session/${uuid}/stop`, {method: "POST"}).then(e => {
       if (!e.ok) {
         console.error(e);
 
@@ -431,7 +431,7 @@ function rerun(event) {
   // TODO: does this work cross browser?
   window.history.replaceState(null, "", `?run=${currentRun}`);
 
-  cicadaFetch(`/session/${uuid}/rerun`, {method: "POST"}).then(e => {
+  cicadaFetch(`/api/session/${uuid}/rerun`, {method: "POST"}).then(e => {
     if (!e.ok) {
       const errorMsg = document.getElementById("error-msg");
 
@@ -444,7 +444,7 @@ function rerun(event) {
     const precheck = (count) => {
       if (count === 0) return;
 
-      cicadaFetch(`/session/${uuid}/session_info?run=${currentRun}`).then(e => {
+      cicadaFetch(`/api/session/${uuid}/session_info?run=${currentRun}`).then(e => {
         if (e.ok) {
           main();
         } else {

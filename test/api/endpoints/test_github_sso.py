@@ -63,7 +63,7 @@ class TestGithubSSO(TestEndpointWrapper):
     def test_github_sso_link_injects_proper_env_vars(self) -> None:
         with self.inject_dummy_env_vars() as vars:
             response = self.client.get(
-                "/github_sso_link", follow_redirects=False
+                "/api/github_sso_link", follow_redirects=False
             )
 
             assert response.status_code == 302
