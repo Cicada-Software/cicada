@@ -1,6 +1,7 @@
 import os
 from contextlib import suppress
 from pathlib import Path
+from typing import Final
 
 from cicada.api.domain.triggers import Trigger, json_to_trigger
 
@@ -39,6 +40,20 @@ class DBSettings:
             raise ValueError("DB_URL must be defined")
 
 
+class ExecutionSettings:
+    executor: str
+
+    AVAILABLE_EXECUTORS: Final = {"docker", "podman"}
+
+    def __init__(self) -> None:
+        self.executor = os.getenv("CICADA_EXECUTOR", "docker")
+
+        if self.executor not in self.AVAILABLE_EXECUTORS:
+            executors = ", ".join(f'"{x}"' for x in self.AVAILABLE_EXECUTORS)
+
+            raise ValueError(f"CICADA_EXECUTOR must be one of: {executors}")
+
+
 class DNSSettings:
     domain: str
     host: str
@@ -70,7 +85,7 @@ class GitProviderSettings(DNSSettings):
     repo_white_list: list[str]
     enabled_providers: set[str]
 
-    AVAILABLE_PROVIDERS = {"github", "gitlab"}
+    AVAILABLE_PROVIDERS: Final = {"github", "gitlab"}
 
     def __init__(self) -> None:
         super().__init__()

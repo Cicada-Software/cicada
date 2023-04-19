@@ -17,11 +17,10 @@ from cicada.api.domain.triggers import CommitTrigger, GitSha, Trigger
 from cicada.api.infra.gitlab.common import gitlab_clone_url
 from cicada.api.infra.repo_get_ci_files import repo_get_ci_files
 from cicada.api.infra.run_program import (
-    ExecutionContext,
     exit_code_to_status_code,
-    run_docker_workflow,
+    get_execution_type,
 )
-from cicada.api.settings import GitlabSettings
+from cicada.api.settings import ExecutionSettings, GitlabSettings
 
 
 @asynccontextmanager
@@ -80,15 +79,17 @@ async def run_workflow(
 
     try:
         async with wrapper:
-            exit_code = await run_docker_workflow(
-                ExecutionContext(
-                    url=url,
-                    trigger_type=session.trigger.type,
-                    trigger=asjson(session.trigger),
-                    terminal=terminal,
-                    env=env,
-                )
+            executor_type = ExecutionSettings().executor
+
+            ctx = get_execution_type(executor_type)(
+                url=url,
+                trigger_type=session.trigger.type,
+                trigger=asjson(session.trigger),
+                terminal=terminal,
+                env=env,
             )
+
+            exit_code = await ctx.run()
 
             session.finish(exit_code_to_status_code(exit_code))
 

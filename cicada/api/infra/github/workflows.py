@@ -20,11 +20,10 @@ from cicada.api.domain.triggers import (
     Trigger,
 )
 from cicada.api.infra.run_program import (
-    ExecutionContext,
     exit_code_to_status_code,
-    run_docker_workflow,
+    get_execution_type,
 )
-from cicada.api.settings import DNSSettings
+from cicada.api.settings import DNSSettings, ExecutionSettings
 
 from .common import (
     gather_workflows_via_trigger,
@@ -109,7 +108,9 @@ async def wrap_in_github_check_run(
 
 
 async def run_workflow(
-    session: Session, terminal: TerminalSession, env: dict[str, str]
+    session: Session,
+    terminal: TerminalSession,
+    env: dict[str, str],
 ) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
 
@@ -128,15 +129,17 @@ async def run_workflow(
             trigger = asjson(session.trigger)
             trigger["env"] = env
 
-            exit_code = await run_docker_workflow(
-                ExecutionContext(
-                    url=url,
-                    trigger_type=session.trigger.type,
-                    trigger=trigger,
-                    terminal=terminal,
-                    env=env,
-                )
+            executor_type = ExecutionSettings().executor
+
+            ctx = get_execution_type(executor_type)(
+                url=url,
+                trigger_type=session.trigger.type,
+                trigger=trigger,
+                terminal=terminal,
+                env=env,
             )
+
+            exit_code = await ctx.run()
 
             session.finish(exit_code_to_status_code(exit_code))
 

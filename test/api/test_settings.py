@@ -5,6 +5,7 @@ import pytest
 
 from cicada.api.settings import (
     DBSettings,
+    ExecutionSettings,
     GitHubSettings,
     GitlabSettings,
     GitProviderSettings,
@@ -114,3 +115,23 @@ def test_enabled_providers_must_be_valid() -> None:
             else:
                 with pytest.raises(ValueError, match="can only contain"):
                     GitProviderSettings()
+
+
+def test_executor_must_be_valid() -> None:
+    is_executor_valid = {
+        "docker": True,
+        "podman": True,
+        "": False,
+        "xyz": False,
+    }
+
+    for executor, is_valid in is_executor_valid.items():
+        copy = {**DEFAULT_ENV_VARS, "CICADA_EXECUTOR": executor}
+
+        with patch.dict(os.environ, copy, clear=True):
+            if is_valid:
+                ExecutionSettings()
+
+            else:
+                with pytest.raises(ValueError, match="must be one of"):
+                    ExecutionSettings()

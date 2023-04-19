@@ -77,19 +77,55 @@ class ExecutionContext:  # type: ignore
     terminal: TerminalSession
     env: dict[str, str]
 
+    async def run(self) -> int:
+        raise NotImplementedError()
 
-async def run_docker_workflow(ctx: ExecutionContext) -> int:
-    return await run_program(
-        [
-            "docker",
-            "run",
-            "-e",
-            f"CLONE_URL={ctx.url}",
-            "-e",
-            f"CICADA_TRIGGER={json.dumps(ctx.trigger, separators=(',', ':'))}",
-            "--rm",
-            "-t",
-            "cicada",
-        ],
-        ctx.terminal,
-    )
+
+class DockerExecutionContext(ExecutionContext):
+    async def run(self) -> int:
+        trigger = json.dumps(self.trigger, separators=(",", ":"))
+
+        return await run_program(
+            [
+                "docker",
+                "run",
+                "-e",
+                f"CLONE_URL={self.url}",
+                "-e",
+                f"CICADA_TRIGGER={trigger}",
+                "--rm",
+                "-t",
+                "cicada",
+            ],
+            self.terminal,
+        )
+
+
+class PodmanExecutionContext(ExecutionContext):
+    async def run(self) -> int:
+        trigger = json.dumps(self.trigger, separators=(",", ":"))
+
+        return await run_program(
+            [
+                "podman",
+                "run",
+                "-e",
+                f"CLONE_URL={self.url}",
+                "-e",
+                f"CICADA_TRIGGER={trigger}",
+                "--rm",
+                "-t",
+                "cicada",
+            ],
+            self.terminal,
+        )
+
+
+EXECUTOR_MAPPING = {
+    "docker": DockerExecutionContext,
+    "podman": PodmanExecutionContext,
+}
+
+
+def get_execution_type(name: str) -> type[ExecutionContext]:
+    return EXECUTOR_MAPPING[name]

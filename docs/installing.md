@@ -27,6 +27,7 @@ JWT_TOKEN_SECRET=change-this-to-something-different
 JWT_TOKEN_EXPIRE_SECONDS=300
 REPO_WHITE_LIST=".*"
 ENABLED_PROVIDERS=github,gitlab
+CICADA_EXECUTOR=docker
 ```
 
 Some of these can be as-is, but others should be changed immediately:
@@ -57,6 +58,9 @@ workflows for the `repo` repository owned by `alice`.
 
 * `ENABLED_PROVIDERS`: A comma-separated list of enabled providers. For example, if `github` is
 specified in that list, Cicada will recieve webhooks from GitHub, as well as enable GitHub SSO.
+
+* `CICADA_EXECUTOR`: The exexutor used to run workflows. Currently workflows can only be ran using
+`docker` or `podman`. If this env var is not set, `docker` is used by default.
 
 ## Next Steps
 
