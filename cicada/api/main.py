@@ -1,4 +1,4 @@
-from asyncio import Task, create_task
+from asyncio import CancelledError, InvalidStateError, Task, create_task
 from typing import Annotated
 from uuid import UUID
 
@@ -100,15 +100,31 @@ async def websocket_endpoint(
         task = create_task(command_sender())
 
         async for data in stream.stream(uuid, run):
-            # TODO: somehow data is still being sent after disconnect
             await websocket.send_json(data)
 
     except WebSocketDisconnect:
         return
 
+    except RuntimeError:
+        # A RuntimeError is thrown whenever trying to send data after the
+        # websocket is disconnected. There is no good way to detect this since
+        # uvicorn wraps the websocket connection, and the actual state of the
+        # websocket is not forwarded.
+
+        pass
+
     finally:
         if task:
             task.cancel()
+
+            try:
+                task.result()
+
+            except (CancelledError, InvalidStateError):
+                pass
+
+            except WebSocketDisconnect:
+                return
 
     await websocket.close()
 
