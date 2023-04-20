@@ -103,6 +103,8 @@ let _or = true or false
 let _xor = true xor false
 let less_than = 3 < 10
 let gtr_than = 3 > 10
+let less_than_eq = 3 <= 10
+let gtr_than_eq = 3 >= 10
 let _is = 123 is 123
 """
     )
@@ -116,6 +118,8 @@ let _is = 123 is 123
         "_xor": True,
         "less_than": True,
         "gtr_than": False,
+        "less_than_eq": True,
+        "gtr_than_eq": False,
         "_is": 123 == 123,
     }
 

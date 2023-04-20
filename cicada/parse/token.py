@@ -39,7 +39,9 @@ class CloseParenToken(Token): pass
 class OpenBracketToken(Token): pass
 class CloseBracketToken(Token): pass
 class LessThanToken(Token): pass
+class LessThanOrEqualToken(Token): pass
 class GreaterThanToken(Token): pass
+class GreaterThanOrEqualToken(Token): pass
 class PowerToken(Token): pass
 class AsteriskToken(Token): pass
 class SlashToken(Token): pass

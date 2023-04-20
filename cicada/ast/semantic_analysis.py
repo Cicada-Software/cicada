@@ -72,8 +72,8 @@ OPERATOR_ALLOWED_TYPES: dict[BinaryOperator, list[type[Type]]] = {
     BinaryOperator.XOR: [NumericType, BooleanType],
     BinaryOperator.LESS_THAN: [NumericType],
     BinaryOperator.GREATER_THAN: [NumericType],
-    BinaryOperator.LESS_THAN_EQUAL: [NumericType],
-    BinaryOperator.GREATER_THAN_EQUAL: [NumericType],
+    BinaryOperator.LESS_THAN_OR_EQUAL: [NumericType],
+    BinaryOperator.GREATER_THAN_OR_EQUAL: [NumericType],
     BinaryOperator.IS: [Type],
 }
 
@@ -84,8 +84,8 @@ OPERATOR_ALLOWED_TYPES: dict[BinaryOperator, list[type[Type]]] = {
 OPERATOR_RESULT_TYPES: dict[BinaryOperator, type[Type]] = {
     BinaryOperator.LESS_THAN: BooleanType,
     BinaryOperator.GREATER_THAN: BooleanType,
-    BinaryOperator.LESS_THAN_EQUAL: BooleanType,
-    BinaryOperator.GREATER_THAN_EQUAL: BooleanType,
+    BinaryOperator.LESS_THAN_OR_EQUAL: BooleanType,
+    BinaryOperator.GREATER_THAN_OR_EQUAL: BooleanType,
     BinaryOperator.IS: BooleanType,
 }
 

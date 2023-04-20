@@ -28,7 +28,9 @@ TOKEN_SEPARATORS = {
     "[": OpenBracketToken,
     "]": CloseBracketToken,
     "<": LessThanToken,
+    "<=": LessThanOrEqualToken,
     ">": GreaterThanToken,
+    ">=": GreaterThanOrEqualToken,
     "^": PowerToken,
     "*": AsteriskToken,
     "/": SlashToken,
@@ -180,6 +182,25 @@ def group_whitespace(state: ChunkGrouper) -> None:
             break
 
 
+def group_multichar_operator(state: ChunkGrouper) -> None:
+    current = state.current_chunk
+
+    next_chunk = next(state, None)
+
+    if next_chunk and next_chunk.char == "=":
+        state.emit()
+        state.append_chunk(current)
+        state.append_chunk(next_chunk)
+        state.emit()
+
+    elif next_chunk:
+        state.rewind()
+        state.emit(current)
+
+    else:
+        state.emit(current)
+
+
 def group_chunks(chunks: Sequence[Chunk]) -> list[Token]:
     state = ChunkGrouper(chunks)
 
@@ -188,6 +209,9 @@ def group_chunks(chunks: Sequence[Chunk]) -> list[Token]:
     for chunk in state:
         if chunk.char == "\r":
             group_crlf(state)
+
+        elif chunk.char in ("<", ">"):
+            group_multichar_operator(state)
 
         elif chunk.char in separators:
             state.emit(chunk)

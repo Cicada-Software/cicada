@@ -12,8 +12,10 @@ from typing import Final, Generic, TypeVar
 from cicada.parse.token import (
     AndToken,
     AsteriskToken,
+    GreaterThanOrEqualToken,
     GreaterThanToken,
     IsToken,
+    LessThanOrEqualToken,
     LessThanToken,
     MinusToken,
     ModToken,
@@ -448,8 +450,8 @@ class BinaryOperator(Enum):
     XOR = 4.2
     LESS_THAN = 5.0
     GREATER_THAN = 5.1
-    LESS_THAN_EQUAL = 5.2
-    GREATER_THAN_EQUAL = 5.3
+    LESS_THAN_OR_EQUAL = 5.2
+    GREATER_THAN_OR_EQUAL = 5.3
     IS = 6.0
     IS_NOT = 6.1
 
@@ -475,8 +477,9 @@ TOKEN_TO_BINARY_OPER: Final[dict[type[Token], BinaryOperator]] = {
     OrToken: BinaryOperator.OR,
     XorToken: BinaryOperator.XOR,
     LessThanToken: BinaryOperator.LESS_THAN,
+    LessThanOrEqualToken: BinaryOperator.LESS_THAN_OR_EQUAL,
     GreaterThanToken: BinaryOperator.GREATER_THAN,
-    # TODO: greater/less then or equal tokens
+    GreaterThanOrEqualToken: BinaryOperator.GREATER_THAN_OR_EQUAL,
     IsToken: BinaryOperator.IS,
     # IsNotToken: BinaryOperator.IS_NOT,
 }

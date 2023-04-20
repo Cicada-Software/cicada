@@ -178,6 +178,12 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             if node.oper == BinaryOperator.GREATER_THAN:
                 return BooleanValue(lhs.value > rhs.value)
 
+            if node.oper == BinaryOperator.LESS_THAN_OR_EQUAL:
+                return BooleanValue(lhs.value <= rhs.value)
+
+            if node.oper == BinaryOperator.GREATER_THAN_OR_EQUAL:
+                return BooleanValue(lhs.value >= rhs.value)
+
         elif isinstance(lhs, BooleanValue) and isinstance(rhs, BooleanValue):
             if node.oper == BinaryOperator.AND:
                 return BooleanValue(lhs.value and rhs.value)
