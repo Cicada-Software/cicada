@@ -12,6 +12,7 @@ from fastapi import (
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from websockets.exceptions import ConnectionClosed
 
 from cicada.api.application.exceptions import CicadaException
 from cicada.api.application.session.stop_session import StopSession
@@ -102,7 +103,7 @@ async def websocket_endpoint(
         async for data in stream.stream(uuid, run):
             await websocket.send_json(data)
 
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, ConnectionClosed):
         return
 
     except RuntimeError:
@@ -123,7 +124,7 @@ async def websocket_endpoint(
             except (CancelledError, InvalidStateError):
                 pass
 
-            except WebSocketDisconnect:
+            except (WebSocketDisconnect, ConnectionClosed):
                 return
 
     await websocket.close()
