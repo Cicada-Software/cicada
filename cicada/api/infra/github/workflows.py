@@ -101,7 +101,7 @@ async def wrap_in_github_check_run(
         username,
         repo,
         check_run_id,
-        status="completed",  # type: ignore
+        status="completed",
         conclusion=STATUS_TO_CHECK_RUN_STATUS[session.status],
         completed_at=UtcDatetime.now(),
     )

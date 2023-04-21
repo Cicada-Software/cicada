@@ -13,5 +13,5 @@ except AttributeError:
 sha = payload.get("sha")
 
 if ref and sha:
-    subprocess.run(["git", "checkout", ref])
-    subprocess.run(["git", "reset", "--hard", sha])
+    subprocess.run(["git", "checkout", ref])  # noqa: S603, S607
+    subprocess.run(["git", "reset", "--hard", sha])  # noqa: S603, S607

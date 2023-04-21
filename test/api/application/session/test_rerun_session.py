@@ -52,7 +52,7 @@ async def test_reran_session_is_created_and_ran() -> None:
 
     handle = asyncio.create_task(cmd.handle(session))
 
-    session_repo.create.called_once
+    session_repo.create.called_once()
 
     # stop execution during workflow runner execution, check that the session
     # hasn't finished, that it was passed the correct args, etc.

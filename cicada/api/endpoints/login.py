@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import FileResponse
@@ -31,7 +31,7 @@ async def login(  # type: ignore
 async def change_password(
     user: CurrentUser,
     di: Di,
-    password: str = Form(""),
+    password: Annotated[str, Form()] = "",
 ) -> None:
     cmd = ChangePassword(di.user_repo())
 

@@ -42,7 +42,9 @@ class EvalVisitor(ConstexprEvalVisitor):
             # TODO: test this
             args = [shlex.quote(arg) for arg in args]
 
-            process = subprocess.run(["/bin/sh", "-c", " ".join(args)])
+            process = subprocess.run(
+                ["/bin/sh", "-c", " ".join(args)]  # noqa: S603
+            )
 
             if process.returncode != 0:
                 sys.exit(process.returncode)

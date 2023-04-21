@@ -1,7 +1,6 @@
 from dataclasses import dataclass
-from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
 from cicada.api.application.env.add_env_vars_to_repo import (
@@ -42,8 +41,8 @@ def set_repo_env_vars(env_vars: EnvVars, user: CurrentUser, di: Di) -> None:
 def get_repo_env_vars(
     user: CurrentUser,
     di: Di,
-    provider: Annotated[str, Query()],
-    url: Annotated[str, Query()],
+    provider: str,
+    url: str,
 ) -> JSONResponse:
     # TODO: turn into query command
 
