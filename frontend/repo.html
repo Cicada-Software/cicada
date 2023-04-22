@@ -35,6 +35,7 @@
 
     <span>
       <button id="add">+ Add</button><button id="save" disabled>Save All</button>
+      <span id="success-msg" style="display: none">Saved</span>
     <span>
   </div>
 
@@ -125,10 +126,10 @@ button:disabled {
   color: var(--black);
 }
 
-#post-change-password {
-  display: none;
-  color: var(--lightgray);
+#success-msg {
+  color: var(--medium-gray);
   font-style: italic;
+  padding-left: 1em;
 }
 </style>
 
@@ -245,7 +246,8 @@ document.getElementById("save").addEventListener("click", (event) => {
   })
     .then(resp => {
       if (resp.ok) {
-        // add save message
+        document.getElementById("success-msg").style.display = "inline";
+        document.getElementById("save").disabled = true;
       } else {
         // add err message
       }
@@ -271,6 +273,7 @@ function onEnvVarListUpdate() {
 
 function dirtySaveButton() {
   document.getElementById("save").disabled = false;
+  document.getElementById("success-msg").style.display = "none";
 }
 </script>
 
