@@ -107,6 +107,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 """,
                 [str(uuid)],
             )
+
         else:
             cursor.execute(
                 """
@@ -122,8 +123,6 @@ class SessionRepo(ISessionRepo, DbConnection):
             )
 
         if row := cursor.fetchone():
-            assert trigger
-
             session = Session(
                 id=uuid,
                 status=SessionStatus(row[0]),
@@ -141,32 +140,130 @@ class SessionRepo(ISessionRepo, DbConnection):
         return None
 
     def get_recent_sessions(self, user: User) -> list[Session]:
-        return self._get_recent_sessions(
-            is_admin=user.is_admin, username=user.username
-        )
+        if user.is_admin:
+            return self.get_recent_sessions_as_admin()
+
+        rows = self.conn.execute(
+            """
+            SELECT
+                session_uuid,
+                session_status,
+                session_started_at,
+                session_finished_at,
+                MAX(session_run),
+                trigger_data
+            FROM v_user_sessions
+            WHERE user_uuid=?
+            GROUP BY session_uuid
+            ORDER BY session_started_at DESC;
+            """,
+            [str(user.id)],
+        ).fetchall()
+
+        return [self._convert(x) for x in rows]
 
     def get_recent_sessions_for_repo(
         self, user: User, repository_url: str
     ) -> list[Session]:
-        return self._get_recent_sessions(
-            is_admin=user.is_admin,
-            username=user.username,
-            repository_url=repository_url,
-        )
+        if user.is_admin:
+            rows = self.conn.execute(
+                """
+                SELECT
+                    s.uuid,
+                    s.status,
+                    s.started_at,
+                    s.finished_at,
+                    MAX(s.run_number),
+                    t.data
+                FROM sessions s
+                JOIN triggers t ON t.id = s.trigger_id
+                WHERE t.data->>'repository_url'=?
+                GROUP BY s.uuid
+                ORDER BY s.started_at DESC;
+                """,
+                [repository_url],
+            ).fetchall()
+
+        else:
+            rows = self.conn.execute(
+                """
+                SELECT
+                    session_uuid,
+                    session_status,
+                    session_started_at,
+                    session_finished_at,
+                    MAX(session_run),
+                    trigger_data
+                FROM v_user_sessions
+                WHERE user_uuid=? AND repo_url=?
+                GROUP BY session_uuid
+                ORDER BY session_started_at DESC;
+                """,
+                [str(user.id), repository_url],
+            ).fetchall()
+
+        return [self._convert(x) for x in rows]
 
     def get_runs_for_session(
         self,
         user: User,
         uuid: UUID,
     ) -> list[Session]:
-        return self._get_recent_sessions(
-            is_admin=user.is_admin,
-            username=user.username,
-            session_id=uuid,
-        )
+        if user.is_admin:
+            rows = self.conn.execute(
+                """
+                SELECT
+                    s.uuid,
+                    s.status,
+                    s.started_at,
+                    s.finished_at,
+                    s.run_number,
+                    t.data
+                FROM sessions s
+                JOIN triggers t ON t.id = s.trigger_id
+                WHERE s.uuid=?
+                ORDER BY s.started_at DESC;
+                """,
+                [str(uuid)],
+            ).fetchall()
+
+        else:
+            rows = self.conn.execute(
+                """
+                SELECT
+                    session_uuid,
+                    session_status,
+                    session_started_at,
+                    session_finished_at,
+                    session_run,
+                    trigger_data
+                FROM v_user_sessions
+                WHERE user_uuid=? AND session_uuid=?
+                ORDER BY session_started_at DESC;
+                """,
+                [str(user.id), str(uuid)],
+            ).fetchall()
+
+        return [self._convert(x) for x in rows]
 
     def get_recent_sessions_as_admin(self) -> list[Session]:
-        return self._get_recent_sessions(is_admin=True)
+        rows = self.conn.execute(
+            """
+            SELECT
+                s.uuid,
+                s.status,
+                s.started_at,
+                s.finished_at,
+                MAX(s.run_number),
+                t.data
+            FROM sessions s
+            JOIN triggers t ON t.id = s.trigger_id
+            GROUP BY uuid
+            ORDER BY started_at DESC;
+            """
+        ).fetchall()
+
+        return [self._convert(x) for x in rows]
 
     def can_user_see_session(self, user: User, session: Session) -> bool:
         if user.is_admin:
@@ -175,106 +272,15 @@ class SessionRepo(ISessionRepo, DbConnection):
         can_see = self.conn.execute(
             """
             SELECT EXISTS (
-                SELECT u.id
-                FROM _user_repos ur
-                JOIN repositories r ON r.id = ur.repo_id
-                JOIN users u ON u.id = ur.user_id
-                JOIN triggers t ON t.data->>'repository_url' = r.url
-                JOIN sessions s ON s.trigger_id = t.id
-                WHERE s.uuid=? AND u.username=? AND u.platform=?
+                SELECT user_id
+                FROM v_user_sessions
+                WHERE session_uuid=? AND user_uuid=?
             );
             """,
-            [str(session.id), user.username, user.provider],
+            [str(session.id), str(user.id)],
         ).fetchone()[0]
 
         return bool(can_see)
-
-    def _get_recent_sessions(
-        self,
-        is_admin: bool = False,
-        username: str = "",
-        repository_url: str = "",
-        session_id: UUID | None = None,
-    ) -> list[Session]:
-        # TODO: move user authorization into application service
-        # TODO: add a limit, try not to fetch all sessions at once
-
-        if is_admin and not any((repository_url, session_id)):
-            rows = self.conn.execute(
-                """
-                SELECT
-                    s.uuid,
-                    s.status,
-                    s.started_at,
-                    s.finished_at,
-                    max(s.run_number),
-                    t.data
-                FROM sessions s
-                JOIN triggers t ON t.id = s.trigger_id
-                GROUP BY uuid
-                ORDER BY started_at DESC;
-                """
-            ).fetchall()
-
-        else:
-            if session_id:
-                run_number = "s.run_number"
-                group_by = ""
-            else:
-                run_number = "max(s.run_number)"
-                group_by = "GROUP BY s.uuid"
-
-            rows = self.conn.execute(
-                f"""
-                SELECT
-                    s.uuid,
-                    s.status,
-                    s.started_at,
-                    s.finished_at,
-                    {run_number},
-                    t.data
-                FROM _user_repos ur
-                JOIN repositories r ON r.id = ur.repo_id
-                JOIN users u ON u.id = ur.user_id
-                JOIN triggers t ON t.data->>'repository_url' = r.url
-                JOIN sessions s ON s.trigger_id = t.id
-                WHERE (
-                    (? OR u.username = ?)
-                    AND (
-                        ?
-                        OR (r.url = ?)
-                        OR (s.uuid = ?)
-                    )
-                )
-                {group_by}
-                ORDER BY s.started_at DESC;
-                """,
-                [
-                    is_admin,
-                    username,
-                    not any((repository_url, session_id)),
-                    repository_url,
-                    str(session_id or ""),
-                ],
-            ).fetchall()
-
-        sessions: list[Session] = []
-
-        for row in rows:
-            sessions.append(
-                Session(
-                    id=UUID(row[0]),
-                    status=SessionStatus(row[1]),
-                    started_at=UtcDatetime.fromisoformat(row[2]),
-                    finished_at=(
-                        UtcDatetime.fromisoformat(row[3]) if row[3] else None
-                    ),
-                    run=row[4],
-                    trigger=json_to_trigger(row[5]),
-                )
-            )
-
-        return sessions
 
     def _get_trigger(self, uuid: UUID) -> Trigger | None:
         cursor = self.conn.execute(
@@ -291,3 +297,16 @@ class SessionRepo(ISessionRepo, DbConnection):
             return json_to_trigger(row[1])
 
         return None
+
+    @staticmethod
+    def _convert(row) -> Session:  # type: ignore
+        return Session(
+            id=UUID(row[0]),
+            status=SessionStatus(row[1]),
+            started_at=UtcDatetime.fromisoformat(row[2]),
+            finished_at=(
+                UtcDatetime.fromisoformat(row[3]) if row[3] else None
+            ),
+            run=row[4],
+            trigger=json_to_trigger(row[5]),
+        )
