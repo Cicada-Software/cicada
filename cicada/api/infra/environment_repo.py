@@ -18,7 +18,7 @@ class EnvironmentRepo(IEnvironmentRepo, DbConnection):
         if not rows:
             return None
 
-        return EnvironmentVariable(key=rows[0][0], value=rows[0][1])
+        return EnvironmentVariable(key=rows[0]["key"], value=rows[0]["value"])
 
     def get_env_vars_for_repo(
         self, id: RepositoryId

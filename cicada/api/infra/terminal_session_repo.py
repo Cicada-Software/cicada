@@ -46,7 +46,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         )
 
         if rows := cursor.fetchone():
-            lines = rows[0].split("\n")
+            lines = rows["lines"].split("\n")
 
             terminal = TerminalSession()
             terminal.lines = lines
@@ -74,7 +74,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
 
     # TODO: make this function less hacky
     def _get_run_count_for_session(self, session_id: UUID) -> int:
-        sessions = self.conn.execute(
+        rows = self.conn.execute(
             """
             SELECT session_id
             FROM terminal_sessions
@@ -83,4 +83,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
             [str(session_id)],
         ).fetchall()
 
-        return max((int(x[0].split("#")[-1]) for x in sessions), default=0)
+        return max(
+            (int(row["session_id"].split("#")[-1]) for row in rows),
+            default=0,
+        )

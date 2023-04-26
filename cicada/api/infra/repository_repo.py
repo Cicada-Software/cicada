@@ -1,3 +1,4 @@
+import sqlite3
 from uuid import UUID
 
 from cicada.api.domain.repository import Repository, RepositoryId
@@ -106,5 +107,9 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
         self.conn.commit()
 
     @staticmethod
-    def _convert(row: tuple[int, str, str]) -> Repository:
-        return Repository(id=row[0], url=row[1], provider=row[2])
+    def _convert(row: sqlite3.Row) -> Repository:
+        return Repository(
+            id=row["id"],
+            url=row["url"],
+            provider=row["provider"],
+        )

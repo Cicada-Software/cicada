@@ -20,13 +20,17 @@ class UserRepo(IUserRepo, DbConnection):
 
         if row:
             return User(
-                id=UUID(row[0]),
-                username=row[1],
-                password_hash=PasswordHash(row[2]) if row[2] else None,
-                is_admin=row[3],
-                provider=row[4],
+                id=UUID(row["uuid"]),
+                username=row["username"],
+                password_hash=(
+                    PasswordHash(row["hash"]) if row["hash"] else None
+                ),
+                is_admin=row["is_admin"],
+                provider=row["platform"],
                 last_login=(
-                    UtcDatetime.fromisoformat(row[5]) if row[5] else None
+                    UtcDatetime.fromisoformat(row["last_login"])
+                    if row["last_login"]
+                    else None
                 ),
             )
 

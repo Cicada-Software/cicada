@@ -25,11 +25,7 @@ class WaitlistRepo(IWaitlistRepo, DbConnection):
             .fetchall()
         )
 
-        lines = []
-
-        for row in rows:
-            at, email = row
-
-            lines.append((UtcDatetime.fromisoformat(at), email))
-
-        return lines
+        return [
+            (UtcDatetime.fromisoformat(row["submitted_at"]), row["email"])
+            for row in rows
+        ]

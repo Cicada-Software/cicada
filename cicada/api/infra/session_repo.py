@@ -125,13 +125,15 @@ class SessionRepo(ISessionRepo, DbConnection):
         if row := cursor.fetchone():
             session = Session(
                 id=uuid,
-                status=SessionStatus(row[0]),
-                started_at=UtcDatetime.fromisoformat(row[1]),
+                status=SessionStatus(row["status"]),
+                started_at=UtcDatetime.fromisoformat(row["started_at"]),
                 finished_at=(
-                    UtcDatetime.fromisoformat(row[2]) if row[2] else None
+                    UtcDatetime.fromisoformat(row["finished_at"])
+                    if row["finished_at"]
+                    else None
                 ),
                 trigger=trigger,
-                run=row[3],
+                run=row["run_number"],
             )
 
             if not user or self.can_user_see_session(user, session):
