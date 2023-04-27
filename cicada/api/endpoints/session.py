@@ -143,7 +143,7 @@ async def websocket_endpoint(
             await websocket.send_json(
                 {"error": "Websocket connection failed: Unauthorized"}
             )
-            return await websocket.close()
+            return await websocket.close(code=1001)
 
         # TODO: add timeout here
         # TODO: limit size of JSON payload
@@ -151,6 +151,7 @@ async def websocket_endpoint(
 
         try:
             session_ids = {UUID(x) for x in data}
+
         except (TypeError, ValueError):
             await websocket.send_json(
                 {"error": "Invalid JSON, expected array of UUIDs"}

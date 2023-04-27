@@ -77,28 +77,40 @@ async def websocket_endpoint(
         # TODO: add timeout here
         jwt = await websocket.receive_text()
 
-        user = get_user_from_jwt(di.user_repo(), jwt)
+        session_repo = di.session_repo()
 
-        if not user:
+        user = get_user_from_jwt(di.user_repo(), jwt)
+        session = session_repo.get_session_by_session_id(uuid)
+
+        if not (
+            user
+            and session
+            and session_repo.can_user_see_session(user, session)
+        ):
             await websocket.send_json(
-                {"error": "Websocket connection failed: Unauthorized"}
+                {"error": "You do not have access to this session"}
             )
-            await websocket.close()
+            await websocket.close(code=1001)
             return
 
         async def stop_session() -> None:
-            cmd = StopSession(di.session_repo(), di.session_terminators())
-            await cmd.handle(uuid)
+            cmd = StopSession(session_repo, di.session_terminators())
+
+            try:
+                await cmd.handle(uuid, user)
+
+            except CicadaException as exc:
+                await websocket.send_json({"error": str(exc)})
 
         stream = StreamSession(
             di.terminal_session_repo(),
-            di.session_repo(),
+            session_repo,
             stop_session,
         )
 
         async def command_sender() -> None:
-            while True:
-                stream.send_command(await websocket.receive_text())
+            async for command in websocket.iter_text():
+                stream.send_command(command)
 
         task = create_task(command_sender())
 
