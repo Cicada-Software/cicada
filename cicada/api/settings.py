@@ -201,3 +201,13 @@ class JWTSettings(DNSSettings):
 
         if not self.expiration_timeout:
             raise ValueError("JWT_TOKEN_EXPIRE_SECONDS must be defined")
+
+
+class NotificationSettings:
+    url: str
+    is_enabled: bool
+
+    def __init__(self) -> None:
+        self.url = os.getenv("NTFY_NOTIFICATION_URL", "")
+
+        self.is_enabled = bool(self.url)

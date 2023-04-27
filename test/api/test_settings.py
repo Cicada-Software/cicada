@@ -11,6 +11,7 @@ from cicada.api.settings import (
     GitProviderSettings,
     JWTSettings,
     MigrationSettings,
+    NotificationSettings,
 )
 
 
@@ -135,3 +136,23 @@ def test_executor_must_be_valid() -> None:
             else:
                 with pytest.raises(ValueError, match="must be one of"):
                     ExecutionSettings()
+
+
+def test_notification_settings() -> None:
+    should_be_enabled = {
+        "some url": True,
+        "": False,
+        None: False,
+    }
+
+    for url, enabled in should_be_enabled.items():
+        env_vars = DEFAULT_ENV_VARS.copy()
+
+        if url is not None:
+            env_vars["NTFY_NOTIFICATION_URL"] = url
+
+        with patch.dict(os.environ, env_vars, clear=True):
+            settings = NotificationSettings()
+
+            assert settings.url == (url or "")
+            assert settings.is_enabled == enabled

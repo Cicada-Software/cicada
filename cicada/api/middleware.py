@@ -12,6 +12,7 @@ from cicada.api.application.exceptions import (
     NotFound,
     Unauthorized,
 )
+from cicada.api.settings import NotificationSettings
 
 
 class SlowRequestMiddleware:  # pragma: no cover
@@ -57,3 +58,46 @@ async def cicada_exception_handler(
         code = 500
 
     return JSONResponse({"detail": str(exc)}, status_code=code)
+
+
+class UnhandledExceptionHandler:  # pragma: no cover
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
+        self, scope: Scope, receive: Receive, send: Send
+    ) -> None:
+        try:
+            await self.app(scope, receive, send)
+
+        except Exception as exc:
+            import httpx
+
+            settings = NotificationSettings()
+
+            if settings.is_enabled:
+                async with httpx.AsyncClient() as client:
+                    # TODO: extract this so it can be used elsewhere
+
+                    msg = "Unhandled exception on Cicada production server"
+
+                    try:
+                        resp = await client.post(
+                            settings.url,
+                            headers={
+                                "Title": "Unhandled Exception Occurred",
+                                "Priority": "urgent",
+                            },
+                            content=msg,
+                        )
+
+                        ok = resp.status_code == 200
+
+                    except httpx.HTTPError:
+                        ok = False
+
+                if not ok:
+                    logger = logging.getLogger("cicada")
+                    logger.critical("Could not send exception notification")
+
+            raise exc

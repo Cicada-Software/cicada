@@ -25,6 +25,7 @@ from cicada.api.endpoints.login_util import CurrentUser, get_user_from_jwt
 from cicada.api.endpoints.session import router as session_router
 from cicada.api.middleware import (
     SlowRequestMiddleware,
+    UnhandledExceptionHandler,
     cicada_exception_handler,
 )
 from cicada.api.settings import GitProviderSettings
@@ -35,6 +36,7 @@ app.include_router(login_router)
 app.include_router(session_router)
 app.include_router(env_router)
 app.include_router(installation_router)
+app.add_middleware(UnhandledExceptionHandler)
 app.add_middleware(SlowRequestMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
 app.add_exception_handler(CicadaException, cicada_exception_handler)
