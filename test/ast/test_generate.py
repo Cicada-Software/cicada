@@ -806,3 +806,10 @@ if true:
     for test in tests:
         with pytest.raises(AstError, match="Cannot mix spaces and tabs"):
             generate_ast_tree(tokenize(test))
+
+
+def test_stray_dangling_tokens_give_useful_error_message() -> None:
+    code = "let x = 0.abc"
+
+    with pytest.raises(AstError, match="unexpected token"):
+        generate_ast_tree(tokenize(code))

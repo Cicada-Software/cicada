@@ -74,8 +74,11 @@ class AstError(ValueError):
         return cls(f"expected token after `{last.content}`", last)
 
     @classmethod
-    def unexpected_token(cls, token: Token, *, expected: str) -> AstError:
-        return cls(f"expected `{expected}`", token)
+    def unexpected_token(cls, token: Token, *, expected: str = "") -> AstError:
+        if expected:
+            return cls(f"expected `{expected}`", token)
+
+        return cls(f"unexpected token `{token.content}`", token)
 
     def __str__(self) -> str:
         parts = [
@@ -620,6 +623,9 @@ def generate_expr(state: ParserState) -> Expression:
 
     elif isinstance(token, OpenParenToken):
         expr = generate_paren_expr(state)
+
+    elif isinstance(token, DanglingToken):
+        raise AstError.unexpected_token(token)
 
     else:
         assert False

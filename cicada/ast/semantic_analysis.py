@@ -90,6 +90,13 @@ OPERATOR_RESULT_TYPES: dict[BinaryOperator, type[Type]] = {
 }
 
 
+STRING_COERCIBLE_TYPES: tuple[Type, ...] = (
+    StringType(),
+    BooleanType(),
+    NumericType(),
+)
+
+
 RESERVED_NAMES = {"event", "env"}
 
 
@@ -240,6 +247,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     def visit_func_expr(self, node: FunctionExpression) -> None:
         super().visit_func_expr(node)
+
+        for arg in node.args:
+            if arg.type not in STRING_COERCIBLE_TYPES:
+                raise AstError(
+                    f"cannot convert type `{arg.type}` to `{StringType()}`",
+                    arg.info,
+                )
 
         if node.name not in self.function_names:
             raise AstError(f"function `{node.name}` is not defined", node.info)

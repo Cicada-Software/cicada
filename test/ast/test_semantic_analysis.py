@@ -389,3 +389,17 @@ if true:
 """
 
     parse_and_analyze(code)
+
+
+def test_shell_function_args_are_stringifyable() -> None:
+    code = """\
+let x =
+    echo hi
+
+echo (x)
+"""
+
+    msg = "cannot convert type `record` to `string`"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
