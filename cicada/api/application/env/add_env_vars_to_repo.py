@@ -48,7 +48,7 @@ class AddEnvironmentVariablesToRepository:
         if not repo:
             raise NotFound(f"Repository {repo_url} not found")
 
-        if not self.repository_repo.can_user_see_repo(user, repo):
+        if not self.repository_repo.can_user_access_repo(user, repo):
             raise Unauthorized("User is not allowed to modify env vars")
 
         self.env_repo.set_env_vars_for_repo(repo.id, env_vars)

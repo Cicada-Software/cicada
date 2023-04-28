@@ -50,31 +50,30 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
 
         return Repository(repo_id, provider=provider, url=url)
 
-    def can_user_see_repo(
-        self, user: User, repo: Repository, permission: Permission = "owner"
+    def can_user_access_repo(
+        self,
+        user: User,
+        repo: Repository,
+        *,
+        permission: Permission = "owner",
     ) -> bool:
         # TODO: test this
 
         if user.is_admin:
             return True
 
-        # TODO: perms check will fail if user has more than 1 permission for a
-        # given repo. The perms field should probably be turned into a JSON
-        # array since doing string parsing here would be a mess.
-        exists = self.conn.execute(
+        rows = self.conn.execute(
             """
-            SELECT EXISTS (
-                SELECT u.id
-                FROM _user_repos ur
-                JOIN repositories r ON r.id = ur.repo_id
-                JOIN users u ON u.id = ur.user_id
-                WHERE (
-                    u.username=?
-                    AND u.platform=?
-                    AND r.provider=?
-                    AND r.url=?
-                    AND ur.perms=?
-                )
+            SELECT ur.perms
+            FROM _user_repos ur
+            JOIN repositories r ON r.id = ur.repo_id
+            JOIN users u ON u.id = ur.user_id
+            WHERE (
+                u.username=?
+                AND u.platform=?
+                AND r.provider=?
+                AND r.url=?
+                AND ur.perms=?
             );
             """,
             [
@@ -84,9 +83,19 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
                 repo.url,
                 permission,
             ],
-        ).fetchone()[0]
+        ).fetchone()
 
-        return bool(exists)
+        if not rows or not rows[0]:
+            return False
+
+        permission_levels = ["read", "write", "owner"]
+
+        required_level = permission_levels.index(permission)
+
+        return any(
+            permission_levels.index(p) >= required_level
+            for p in rows[0].split(",")
+        )
 
     def update_user_perms_for_repo(
         self, repo: Repository, user_id: UUID, permissions: list[Permission]

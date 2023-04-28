@@ -28,7 +28,13 @@ class IRepositoryRepo(ABC):
         ...
 
     @abstractmethod
-    def can_user_see_repo(self, user: User, repo: Repository) -> bool:
+    def can_user_access_repo(
+        self,
+        user: User,
+        repo: Repository,
+        *,
+        permission: Permission = "owner",
+    ) -> bool:
         ...
 
     @abstractmethod

@@ -35,7 +35,7 @@ def test_user_not_found_throws_error() -> None:
 
     user_repo.get_user_by_username.assert_called_once_with("bob")
     repository_repo.get_repository_by_url_and_provider.assert_not_called()
-    repository_repo.can_user_see_repo.assert_not_called()
+    repository_repo.can_user_access_repo.assert_not_called()
     env_repo.set_env_vars_for_repo.assert_not_called()
 
 
@@ -63,7 +63,7 @@ def test_repo_not_found_raises_error() -> None:
 
     user_repo.get_user_by_username.assert_called_once_with("bob")
     repository_repo.get_repository_by_url_and_provider.assert_called_once()
-    repository_repo.can_user_see_repo.assert_not_called()
+    repository_repo.can_user_access_repo.assert_not_called()
     env_repo.set_env_vars_for_repo.assert_not_called()
 
 
@@ -97,7 +97,7 @@ def test_adding_env_var_works() -> None:
     repository_repo.get_repository_by_url_and_provider.assert_called_once_with(
         repo.url, repo.provider
     )
-    repository_repo.can_user_see_repo.assert_called_once_with(user, repo)
+    repository_repo.can_user_access_repo.assert_called_once_with(user, repo)
     env_repo.set_env_vars_for_repo.assert_called_once_with(repo.id, [env_var])
 
 
@@ -112,7 +112,7 @@ def test_user_who_cannot_see_repo_is_denied() -> None:
     repo = Repository(id=1, url="http://example.com", provider="example")
     repository_repo.get_repository_by_url_and_provider.return_value = repo
 
-    repository_repo.can_user_see_repo.return_value = False
+    repository_repo.can_user_access_repo.return_value = False
 
     cmd = AddEnvironmentVariablesToRepository(
         user_repo=user_repo,
@@ -136,5 +136,5 @@ def test_user_who_cannot_see_repo_is_denied() -> None:
     repository_repo.get_repository_by_url_and_provider.assert_called_once_with(
         repo.url, repo.provider
     )
-    repository_repo.can_user_see_repo.assert_called_once_with(user, repo)
+    repository_repo.can_user_access_repo.assert_called_once_with(user, repo)
     env_repo.set_env_vars_for_repo.assert_not_called()

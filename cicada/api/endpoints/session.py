@@ -44,8 +44,10 @@ async def rerun_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
 
     session_repo = di.session_repo()
 
-    # TODO: test failure if user cannot see session
-    session = session_repo.get_session_by_session_id(session_id, user=user)
+    # TODO: ensure this fails if user doesnt have write access
+    session = session_repo.get_session_by_session_id(
+        session_id, user=user, permission="write"
+    )
 
     if not session:
         return
@@ -86,7 +88,11 @@ async def get_session_info(
 ) -> JSONResponse:
     # TODO: test failure if user cannot see session
 
-    if session := di.session_repo().get_session_by_session_id(uuid, run, user):
+    session = di.session_repo().get_session_by_session_id(
+        uuid, run, user, permission="read"
+    )
+
+    if session:
         return JSONResponse(asjson(session))
 
     raise HTTPException(status_code=404, detail="Session not found")
@@ -163,7 +169,7 @@ async def websocket_endpoint(
         while session_ids:
             for session_id in session_ids.copy():
                 session = session_repo.get_session_by_session_id(
-                    session_id, user=user
+                    session_id, user=user, permission="read"
                 )
 
                 if not session:

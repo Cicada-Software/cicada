@@ -85,7 +85,9 @@ async def websocket_endpoint(
         if not (
             user
             and session
-            and session_repo.can_user_see_session(user, session)
+            and session_repo.can_user_access_session(
+                user, session, permission="read"
+            )
         ):
             await websocket.send_json(
                 {"error": "You do not have access to this session"}

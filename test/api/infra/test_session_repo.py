@@ -1,11 +1,16 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from uuid import uuid4
 
 from cicada.api.common.datetime import UtcDatetime
+from cicada.api.domain.repository import Repository
 from cicada.api.domain.session import Session
 from cicada.api.domain.triggers import CommitTrigger, GitSha
 from cicada.api.domain.user import User
+from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
+from cicada.api.infra.user_repo import UserRepo
+from cicada.api.repo.repository_repo import Permission
 from test.api.common import SqliteTestWrapper
 
 
@@ -25,6 +30,8 @@ def create_dummy_session() -> Session:
 
 class TestSessionRepo(SqliteTestWrapper):
     session_repo: SessionRepo
+    repository_repo: RepositoryRepo
+    user_repo: UserRepo
 
     @classmethod
     def setup_class(cls) -> None:
@@ -35,6 +42,8 @@ class TestSessionRepo(SqliteTestWrapper):
         super().reset()
 
         cls.session_repo = SessionRepo(cls.connection)
+        cls.repository_repo = RepositoryRepo(cls.connection)
+        cls.user_repo = UserRepo(cls.connection)
 
     def test_create_session(self) -> None:
         session = create_dummy_session()
@@ -113,3 +122,95 @@ class TestSessionRepo(SqliteTestWrapper):
         assert (
             self.session_repo.get_session_by_session_id(session_id, 2) == run_2
         )
+
+    def test_user_can_only_see_sessions_if_perms_are_valid(self) -> None:
+        @dataclass
+        class PermissionTest:
+            required_perm: Permission
+            perms: list[Permission]
+            is_allowed: bool
+
+        tests = [
+            PermissionTest(
+                required_perm="read",
+                perms=["read"],
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="write",
+                perms=["write"],
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="owner",
+                perms=["owner"],
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="read",
+                perms=["write"],
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="read",
+                perms=["read", "write"],
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="write",
+                perms=["read"],
+                is_allowed=False,
+            ),
+            PermissionTest(
+                required_perm="owner",
+                perms=["write"],
+                is_allowed=False,
+            ),
+            PermissionTest(
+                required_perm="read",
+                perms=[],
+                is_allowed=False,
+            ),
+        ]
+
+        for test in tests:
+            self.reset()
+
+            user = self.create_dummy_user(username="bob")
+            session = create_dummy_session()
+
+            self.session_repo.create(session)
+
+            self.create_dummy_repo_for_user(
+                user, test.perms, url=session.trigger.repository_url
+            )
+
+            is_allowed = self.session_repo.can_user_access_session(
+                user, session, permission=test.required_perm
+            )
+
+            assert test.is_allowed == is_allowed
+
+    def create_dummy_repo_for_user(
+        self,
+        user: User,
+        perms: list[Permission],
+        url: str = "example.com",
+        provider: str = "github",
+    ) -> Repository:
+        repo = self.repository_repo.update_or_create_repository(
+            url=url, provider=provider
+        )
+
+        self.repository_repo.update_user_perms_for_repo(repo, user.id, perms)
+
+        return repo
+
+    def create_dummy_user(self, *, username: str = "admin") -> User:
+        user = User(uuid4(), username)
+
+        user_id = self.user_repo.create_or_update_user(user)
+
+        assert user_id == user.id
+
+        return user

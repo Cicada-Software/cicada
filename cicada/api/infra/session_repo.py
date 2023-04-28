@@ -7,6 +7,7 @@ from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.domain.triggers import Trigger, json_to_trigger
 from cicada.api.domain.user import User
 from cicada.api.infra.db_connection import DbConnection
+from cicada.api.repo.repository_repo import Permission
 from cicada.api.repo.session_repo import ISessionRepo
 
 
@@ -84,7 +85,12 @@ class SessionRepo(ISessionRepo, DbConnection):
         uuid: UUID,
         run: int = -1,
         user: User | None = None,
+        *,
+        permission: Permission | None = None,
     ) -> Session | None:
+        if bool(user) ^ bool(permission):
+            raise ValueError('"user" and "permission" must be used together')
+
         trigger = self._get_trigger(uuid)
 
         if not trigger:
@@ -136,7 +142,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 run=row["run_number"],
             )
 
-            if not user or self.can_user_see_session(user, session):
+            if not user or self.can_user_access_session(
+                user, session, permission="read"
+            ):
                 return session
 
         return None
@@ -267,22 +275,36 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         return [self._convert(x) for x in rows]
 
-    def can_user_see_session(self, user: User, session: Session) -> bool:
+    def can_user_access_session(
+        self,
+        user: User,
+        session: Session,
+        *,
+        permission: Permission,
+    ) -> bool:
         if user.is_admin:
             return True
 
-        can_see = self.conn.execute(
+        rows = self.conn.execute(
             """
-            SELECT EXISTS (
-                SELECT user_id
-                FROM v_user_sessions
-                WHERE session_uuid=? AND user_uuid=?
-            );
+            SELECT repo_perms
+            FROM v_user_sessions
+            WHERE session_uuid=? AND user_uuid=?
             """,
             [str(session.id), str(user.id)],
-        ).fetchone()[0]
+        ).fetchone()
 
-        return bool(can_see)
+        if not rows or not rows[0]:
+            return False
+
+        permission_levels = ["read", "write", "owner"]
+
+        required_level = permission_levels.index(permission)
+
+        return any(
+            permission_levels.index(p) >= required_level
+            for p in rows[0].split(",")
+        )
 
     def _get_trigger(self, uuid: UUID) -> Trigger | None:
         cursor = self.conn.execute(

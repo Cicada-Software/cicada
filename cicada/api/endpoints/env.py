@@ -55,7 +55,7 @@ def get_repo_env_vars(
     if not repo:
         raise HTTPException(status_code=404)
 
-    if not repository_repo.can_user_see_repo(user, repo):
+    if not repository_repo.can_user_access_repo(user, repo):
         # TODO: test
         raise HTTPException(status_code=401)
 

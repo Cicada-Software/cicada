@@ -31,7 +31,9 @@ class StopSession:
     async def handle(self, session_id: UUID, user: User | None = None) -> None:
         # TODO: test failure via user not having perms
         session = self.session_repo.get_session_by_session_id(
-            session_id, user=user
+            session_id,
+            user=user,
+            permission="write",
         )
 
         if not session:
