@@ -1,8 +1,7 @@
 from asyncio import Queue, create_task, sleep
 from collections.abc import AsyncGenerator, Callable, Coroutine
-from uuid import UUID
 
-from cicada.api.domain.session import SessionStatus
+from cicada.api.domain.session import SessionId, SessionStatus
 from cicada.api.repo.session_repo import ISessionRepo
 from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
 
@@ -27,7 +26,7 @@ class StreamSession:
         self.command_queue = Queue[str]()
 
     async def stream(
-        self, session_id: UUID, run: int
+        self, session_id: SessionId, run: int
     ) -> AsyncGenerator[dict[str, str | list[str]], str]:
         terminal = self.terminal_session_repo.get_by_session_id(
             session_id, run

@@ -1,13 +1,17 @@
-from uuid import UUID
-
-from cicada.api.domain.installation import Installation, InstallationScope
-from cicada.api.domain.user import User
+from cicada.api.domain.installation import (
+    Installation,
+    InstallationId,
+    InstallationScope,
+)
+from cicada.api.domain.user import User, UserId
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.installation_repo import IInstallationRepo
 
 
 class InstallationRepo(IInstallationRepo, DbConnection):
-    def create_installation(self, installation: Installation) -> UUID:
+    def create_installation(
+        self, installation: Installation
+    ) -> InstallationId:
         installation_id = self.conn.execute(
             """
             INSERT INTO installations (
@@ -42,7 +46,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
 
         self.conn.commit()
 
-        return UUID(installation_id)
+        return InstallationId(installation_id)
 
     def get_installations_for_user(self, user: User) -> list[Installation]:
         rows = self.conn.execute(
@@ -68,13 +72,13 @@ class InstallationRepo(IInstallationRepo, DbConnection):
         for row in rows:
             installations.append(
                 Installation(
-                    id=UUID(row[0]),
+                    id=InstallationId(row[0]),
                     name=row[1],
                     provider=row[2],
                     scope=InstallationScope(row[3]),
                     provider_id=row[4],
                     provider_url=row[5],
-                    admin_id=UUID(row[6]),
+                    admin_id=UserId(row[6]),
                 )
             )
 

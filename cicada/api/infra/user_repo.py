@@ -1,8 +1,6 @@
-from uuid import UUID
-
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.password_hash import PasswordHash
-from cicada.api.domain.user import User
+from cicada.api.domain.user import User, UserId
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.user_repo import IUserRepo
 
@@ -20,7 +18,7 @@ class UserRepo(IUserRepo, DbConnection):
 
         if row:
             return User(
-                id=UUID(row["uuid"]),
+                id=UserId(row["uuid"]),
                 username=row["username"],
                 password_hash=(
                     PasswordHash(row["hash"]) if row["hash"] else None
@@ -36,7 +34,7 @@ class UserRepo(IUserRepo, DbConnection):
 
         return None
 
-    def create_or_update_user(self, user: User) -> UUID:
+    def create_or_update_user(self, user: User) -> UserId:
         pw_hash = str(user.password_hash) if user.password_hash else ""
 
         user_id = self.conn.execute(
@@ -65,7 +63,7 @@ class UserRepo(IUserRepo, DbConnection):
 
         self.conn.commit()
 
-        return UUID(user_id)
+        return UserId(user_id)
 
     def update_last_login(self, user: User) -> None:
         self.conn.execute(

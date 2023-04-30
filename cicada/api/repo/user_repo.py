@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from uuid import UUID
 
-from cicada.api.domain.user import User
+from cicada.api.domain.user import User, UserId
 
 
 class IUserRepo(ABC):
@@ -10,7 +9,7 @@ class IUserRepo(ABC):
         pass
 
     @abstractmethod
-    def create_or_update_user(self, user: User) -> UUID:
+    def create_or_update_user(self, user: User) -> UserId:
         pass
 
     @abstractmethod

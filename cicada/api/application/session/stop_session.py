@@ -1,8 +1,7 @@
 from collections.abc import Callable, Coroutine
-from uuid import UUID
 
 from cicada.api.application.exceptions import InvalidRequest, NotFound
-from cicada.api.domain.session import Session, SessionStatus
+from cicada.api.domain.session import Session, SessionId, SessionStatus
 from cicada.api.domain.user import User
 from cicada.api.repo.session_repo import ISessionRepo
 
@@ -28,7 +27,9 @@ class StopSession:
         self.session_repo = session_repo
         self.provider_session_terminators = provider_session_terminators
 
-    async def handle(self, session_id: UUID, user: User | None = None) -> None:
+    async def handle(
+        self, session_id: SessionId, user: User | None = None
+    ) -> None:
         # TODO: test failure via user not having perms
         session = self.session_repo.get_session_by_session_id(
             session_id,

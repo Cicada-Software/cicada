@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Literal
 from uuid import UUID
 
+from cicada.api.domain.user import UserId
+
 
 class InstallationScope(Enum):
     USER = "USER"
@@ -10,6 +12,10 @@ class InstallationScope(Enum):
 
     def __str__(self) -> str:
         return self.value
+
+
+# TODO: use typing.NewType
+InstallationId = UUID
 
 
 @dataclass
@@ -24,10 +30,10 @@ class Installation:
     the provider's website.
     """
 
-    id: UUID
+    id: InstallationId
     name: str
     provider: Literal["github", "gitlab"]
     scope: InstallationScope
-    admin_id: UUID
+    admin_id: UserId
     provider_id: str | None = None
     provider_url: str | None = None

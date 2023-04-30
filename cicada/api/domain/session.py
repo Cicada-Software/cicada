@@ -14,9 +14,13 @@ class SessionStatus(Enum):
     STOPPED = "STOPPED"
 
 
+# TODO: use typing.NewType
+SessionId = UUID
+
+
 @dataclass
 class Session:
-    id: UUID
+    id: SessionId
     trigger: Trigger
     status: SessionStatus = SessionStatus.PENDING
     started_at: UtcDatetime = field(default_factory=UtcDatetime.now)

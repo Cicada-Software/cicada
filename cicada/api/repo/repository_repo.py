@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Literal
-from uuid import UUID
 
 from cicada.api.domain.repository import Repository, RepositoryId
-from cicada.api.domain.user import User
+from cicada.api.domain.user import User, UserId
 
 # TODO: replace with enum
 Permission = Literal["owner", "read", "write"]
@@ -39,6 +38,6 @@ class IRepositoryRepo(ABC):
 
     @abstractmethod
     def update_user_perms_for_repo(
-        self, repo: Repository, user: UUID, permissions: list[Permission]
+        self, repo: Repository, user: UserId, permissions: list[Permission]
     ) -> None:
         ...

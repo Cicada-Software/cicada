@@ -1,9 +1,8 @@
 import json
-from uuid import UUID
 
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.json import asjson
-from cicada.api.domain.session import Session, SessionStatus
+from cicada.api.domain.session import Session, SessionId, SessionStatus
 from cicada.api.domain.triggers import Trigger, json_to_trigger
 from cicada.api.domain.user import User
 from cicada.api.infra.db_connection import DbConnection
@@ -82,7 +81,7 @@ class SessionRepo(ISessionRepo, DbConnection):
     # TODO: test user param
     def get_session_by_session_id(
         self,
-        uuid: UUID,
+        uuid: SessionId,
         run: int = -1,
         user: User | None = None,
         *,
@@ -217,7 +216,7 @@ class SessionRepo(ISessionRepo, DbConnection):
     def get_runs_for_session(
         self,
         user: User,
-        uuid: UUID,
+        uuid: SessionId,
     ) -> list[Session]:
         if user.is_admin:
             rows = self.conn.execute(
@@ -306,7 +305,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             for p in rows[0].split(",")
         )
 
-    def _get_trigger(self, uuid: UUID) -> Trigger | None:
+    def _get_trigger(self, uuid: SessionId) -> Trigger | None:
         cursor = self.conn.execute(
             """
             SELECT t.trigger, t.data
@@ -325,7 +324,7 @@ class SessionRepo(ISessionRepo, DbConnection):
     @staticmethod
     def _convert(row) -> Session:  # type: ignore
         return Session(
-            id=UUID(row[0]),
+            id=SessionId(row[0]),
             status=SessionStatus(row[1]),
             started_at=UtcDatetime.fromisoformat(row[2]),
             finished_at=(

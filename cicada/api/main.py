@@ -1,6 +1,5 @@
 from asyncio import CancelledError, InvalidStateError, Task, create_task
 from typing import Annotated
-from uuid import UUID
 
 from fastapi import (
     FastAPI,
@@ -17,6 +16,8 @@ from websockets.exceptions import ConnectionClosed
 from cicada.api.application.exceptions import CicadaException
 from cicada.api.application.session.stop_session import StopSession
 from cicada.api.application.session.stream_session import StreamSession
+from cicada.api.domain.installation import InstallationId
+from cicada.api.domain.session import SessionId
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.env import router as env_router
 from cicada.api.endpoints.installation import router as installation_router
@@ -64,7 +65,7 @@ if "gitlab" in ENABLED_PROVIDERS:
 # TODO: move to session router
 @app.websocket("/ws/session/{uuid}")
 async def websocket_endpoint(
-    uuid: UUID,
+    uuid: SessionId,
     websocket: WebSocket,
     di: Di,
     run: int = -1,
@@ -152,7 +153,7 @@ async def runs_index() -> FileResponse:
 
 
 @app.get("/run/{uuid}")
-async def run_index(uuid: UUID) -> FileResponse:
+async def run_index(uuid: SessionId) -> FileResponse:
     return FileResponse("./frontend/run.html")
 
 
@@ -172,7 +173,7 @@ async def settings() -> FileResponse:
 
 
 @app.get("/installation/{uuid}")
-async def installation(uuid: UUID) -> FileResponse:
+async def installation(uuid: InstallationId) -> FileResponse:
     return FileResponse("./frontend/installation.html")
 
 

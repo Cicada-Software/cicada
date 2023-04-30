@@ -1,6 +1,5 @@
 import asyncio
 from asyncio import Task, create_task
-from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
@@ -8,7 +7,7 @@ from fastapi.responses import JSONResponse
 from cicada.api.application.session.rerun_session import RerunSession
 from cicada.api.application.session.stop_session import StopSession
 from cicada.api.common.json import asjson
-from cicada.api.domain.session import SessionStatus
+from cicada.api.domain.session import SessionId, SessionStatus
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser, get_user_from_jwt
 from cicada.api.infra.github.common import (
@@ -28,7 +27,9 @@ router = APIRouter()
 
 
 @router.post("/api/session/{session_id}/stop")
-async def stop_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
+async def stop_session(
+    session_id: SessionId, di: Di, user: CurrentUser
+) -> None:
     cmd = StopSession(di.session_repo(), di.session_terminators())
 
     await cmd.handle(session_id, user)
@@ -38,7 +39,9 @@ TASK_QUEUE: set[Task[None]] = set()
 
 
 @router.post("/api/session/{session_id}/rerun")
-async def rerun_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
+async def rerun_session(
+    session_id: SessionId, di: Di, user: CurrentUser
+) -> None:
     # TODO: move to application
     # TODO: test this
 
@@ -80,7 +83,7 @@ async def rerun_session(session_id: UUID, di: Di, user: CurrentUser) -> None:
 
 @router.get("/api/session/{uuid}/session_info")
 async def get_session_info(
-    uuid: UUID,
+    uuid: SessionId,
     di: Di,
     user: CurrentUser,
     # TODO: test query
@@ -103,7 +106,7 @@ async def get_recent_sessions(
     di: Di,
     user: CurrentUser,
     repo: str = "",
-    session: UUID | None = None,
+    session: SessionId | None = None,
 ) -> JSONResponse:
     session_repo = di.session_repo()
 
@@ -156,7 +159,7 @@ async def websocket_endpoint(
         data = await websocket.receive_json()
 
         try:
-            session_ids = {UUID(x) for x in data}
+            session_ids = {SessionId(x) for x in data}
 
         except (TypeError, ValueError):
             await websocket.send_json(

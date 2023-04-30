@@ -1,8 +1,7 @@
 import sqlite3
-from uuid import UUID
 
 from cicada.api.domain.repository import Repository, RepositoryId
-from cicada.api.domain.user import User
+from cicada.api.domain.user import User, UserId
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.repository_repo import IRepositoryRepo, Permission
 
@@ -98,7 +97,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
         )
 
     def update_user_perms_for_repo(
-        self, repo: Repository, user_id: UUID, permissions: list[Permission]
+        self, repo: Repository, user_id: UserId, permissions: list[Permission]
     ) -> None:
         self.conn.execute(
             """

@@ -1,9 +1,9 @@
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from cicada.api.di import DiContainer
 from cicada.api.domain.installation import Installation, InstallationScope
-from cicada.api.domain.user import User
+from cicada.api.domain.user import User, UserId
 from cicada.api.repo.user_repo import IUserRepo
 
 
@@ -24,7 +24,7 @@ def create_or_update_github_user(  # type: ignore
 
 def update_github_repo_perms(  # type: ignore
     di: DiContainer,
-    user_id: UUID,
+    user_id: UserId,
     event: dict[str, Any],
     event_type: str,
 ) -> None:
@@ -89,7 +89,7 @@ def update_github_repo_perms(  # type: ignore
 
 
 def create_or_update_github_installation(  # type: ignore
-    di: DiContainer, user_id: UUID, event: dict[str, Any]
+    di: DiContainer, user_id: UserId, event: dict[str, Any]
 ) -> None:
     match event:
         case {

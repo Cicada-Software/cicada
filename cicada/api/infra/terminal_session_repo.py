@@ -1,15 +1,16 @@
-from uuid import UUID
-
+from cicada.api.domain.session import SessionId
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
 
 # TODO: move to class (as singleton)
-LIVE_TERMINAL_SESSIONS = dict[tuple[UUID, int], TerminalSession]()
+LIVE_TERMINAL_SESSIONS = dict[tuple[SessionId, int], TerminalSession]()
 
 
 class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
-    def add_line(self, session_id: UUID, line: str, run: int = -1) -> None:
+    def add_line(
+        self, session_id: SessionId, line: str, run: int = -1
+    ) -> None:
         if run == -1:
             run = self._get_run_count_for_session(session_id)
 
@@ -28,7 +29,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         self.conn.commit()
 
     def get_by_session_id(
-        self, session_id: UUID, run: int = -1
+        self, session_id: SessionId, run: int = -1
     ) -> TerminalSession | None:
         if run == -1:
             run = self._get_run_count_for_session(session_id)
@@ -56,7 +57,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
 
         return None
 
-    def create(self, session_id: UUID, run: int = -1) -> TerminalSession:
+    def create(self, session_id: SessionId, run: int = -1) -> TerminalSession:
         terminal = TerminalSession()
 
         if run == -1:
@@ -73,7 +74,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         return terminal
 
     # TODO: make this function less hacky
-    def _get_run_count_for_session(self, session_id: UUID) -> int:
+    def _get_run_count_for_session(self, session_id: SessionId) -> int:
         rows = self.conn.execute(
             """
             SELECT session_id

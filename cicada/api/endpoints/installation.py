@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import UUID
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from cicada.api.application.exceptions import NotFound
 from cicada.api.common.json import asjson
-from cicada.api.domain.installation import Installation
+from cicada.api.domain.installation import Installation, InstallationId
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser
 
@@ -36,7 +35,7 @@ def get_installations_for_current_user(
 def get_installation_by_id(
     user: CurrentUser,
     di: Di,
-    uuid: UUID,
+    uuid: InstallationId,
 ) -> JSONResponse:
     installations = di.installation_repo().get_installations_for_user(user)
 
