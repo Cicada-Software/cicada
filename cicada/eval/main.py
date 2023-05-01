@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from cicada.api.domain.triggers import Trigger
 from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
@@ -53,16 +54,19 @@ class EvalVisitor(ConstexprEvalVisitor):
         return RecordValue({}, RecordType())
 
 
-def run_pipeline(contents: str, filename: str | None = None) -> None:
+def run_pipeline(
+    contents: str,
+    filename: str | None = None,
+    trigger: Trigger | None = None,
+) -> None:
     try:
-        trigger = trigger_from_env()
+        trigger = trigger or trigger_from_env()
 
         tree = parse_and_analyze(contents, trigger)
 
         tree.accept(EvalVisitor(trigger))
 
     except IgnoreWorkflow:
-        # TODO: test this
         pass
 
     except AstError as ex:  # pragma: no cover

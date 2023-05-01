@@ -10,13 +10,9 @@ def parse_and_analyze(
     trigger: Trigger | None = None,
     *,
     validate: bool = True,
-    env: dict[str, str] | None = None,
 ) -> FileNode:
     tokens = tokenize(code)
     tree = generate_ast_tree(tokens)
-
-    if trigger and env:
-        trigger.env = env
 
     if validate:
         tree.accept(SemanticAnalysisVisitor(trigger))

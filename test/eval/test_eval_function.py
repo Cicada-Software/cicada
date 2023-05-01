@@ -1,12 +1,6 @@
-from dataclasses import dataclass
 from unittest.mock import MagicMock, call, patch
 
 from cicada.eval.main import run_pipeline
-
-
-@dataclass
-class ProcessMock:
-    returncode: int
 
 
 def test_calling_shell_function_invokes_sh_binary() -> None:

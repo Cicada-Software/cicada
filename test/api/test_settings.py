@@ -5,6 +5,7 @@ import pytest
 
 from cicada.api.settings import (
     DBSettings,
+    DNSSettings,
     ExecutionSettings,
     GitHubSettings,
     GitlabSettings,
@@ -156,3 +157,27 @@ def test_notification_settings() -> None:
 
             assert settings.url == (url or "")
             assert settings.is_enabled == enabled
+
+
+def test_dns_settings_cannot_be_empty() -> None:
+    for env_var in ("CICADA_DOMAIN", "CICADA_HOST"):
+        copy = {**DEFAULT_ENV_VARS, env_var: ""}
+
+        with (
+            pytest.raises(ValueError, match=f"{env_var} must be defined"),
+            patch.dict(os.environ, copy, clear=True),
+        ):
+            DNSSettings()
+
+
+def test_dns_settings_port_must_be_int() -> None:
+    tests = ("asdf", "3.14")
+
+    for port in tests:
+        copy = {**DEFAULT_ENV_VARS, "CICADA_PORT": port}
+
+        with (
+            pytest.raises(ValueError, match="CICADA_PORT must be an integer"),
+            patch.dict(os.environ, copy, clear=True),
+        ):
+            DNSSettings()

@@ -319,14 +319,27 @@ def test_generate_function_expression_group_contiguous_chars() -> None:
 
 
 def test_generate_func_expr_with_parens() -> None:
-    tree = generate_ast_tree(tokenize("f (x)"))
+    # Fix newline being needed here
+    tree = generate_ast_tree(tokenize("f (x) lhs(x) (x)rhs\n"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
                     "f",
-                    [ParenthesisExpression(IdentifierExpression())],
+                    [
+                        ParenthesisExpression(IdentifierExpression()),
+                        BinaryExpression(
+                            StringExpression("lhs"),
+                            BinaryOperator.ADD,
+                            ParenthesisExpression(IdentifierExpression()),
+                        ),
+                        BinaryExpression(
+                            ParenthesisExpression(IdentifierExpression()),
+                            BinaryOperator.ADD,
+                            StringExpression("rhs"),
+                        ),
+                    ],
                 )
             ]
         ):
@@ -812,4 +825,15 @@ def test_stray_dangling_tokens_give_useful_error_message() -> None:
     code = "let x = 0.abc"
 
     with pytest.raises(AstError, match="unexpected token"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_error_on_overindented_code() -> None:
+    code = """\
+if true:
+  echo hello
+      echo world
+"""
+
+    with pytest.raises(AstError, match="Unexpected indentation"):
         generate_ast_tree(tokenize(code))

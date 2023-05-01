@@ -65,7 +65,7 @@ line-length = 79
 color = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=75"
+addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=93"
 asyncio_mode = "auto"
 testpaths = ["test"]
 

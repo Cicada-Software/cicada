@@ -304,7 +304,6 @@ def generate_block(
 
                 if whitespace:
                     if state.is_over_indented(token):
-                        # TODO: test this
                         raise AstError("Unexpected indentation", token)
 
                     if state.is_under_indented(token):

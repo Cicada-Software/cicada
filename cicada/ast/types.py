@@ -23,7 +23,7 @@ class UnknownType(Type):
     """
 
     def __str__(self) -> str:
-        return "<unknown>"
+        return "<unknown>"  # pragma: no cover
 
 
 class UnitType(Type):
@@ -32,7 +32,7 @@ class UnitType(Type):
     """
 
     def __str__(self) -> str:
-        return "()"
+        return "()"  # pragma: no cover
 
 
 class UnreachableType(Type):
@@ -41,7 +41,7 @@ class UnreachableType(Type):
     """
 
     def __str__(self) -> str:
-        return "<unreachable>"
+        return "<unreachable>"  # pragma: no cover
 
 
 class NumericType(Type):
