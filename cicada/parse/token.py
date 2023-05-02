@@ -1,9 +1,9 @@
 # fmt: off
 
-from __future__ import annotations
-
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
+
+from typing_extensions import Self
 
 
 @dataclass(frozen=True)
@@ -21,11 +21,11 @@ class Token:
     column_end: int
 
     @classmethod
-    def from_chunk(cls, chunk: Chunk) -> Token:
+    def from_chunk(cls, chunk: Chunk) -> Self:
         return cls(chunk.char, chunk.line, chunk.column, chunk.column)
 
     @classmethod
-    def meld(cls, tokens: Sequence[Token]) -> Token:
+    def meld(cls, tokens: Sequence[Self]) -> Self:
         content = "".join(token.content for token in tokens)
 
         return cls(**dict(asdict(tokens[0]), content=content))

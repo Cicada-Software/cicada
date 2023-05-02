@@ -9,6 +9,8 @@ from enum import Enum, auto
 from textwrap import indent
 from typing import Final, Generic, TypeVar
 
+from typing_extensions import Self
+
 from cicada.parse.token import (
     AndToken,
     AsteriskToken,
@@ -47,7 +49,7 @@ class LineInfo:
     column_end: int
 
     @classmethod
-    def from_token(cls, token: Token) -> LineInfo:
+    def from_token(cls, token: Token) -> Self:
         return cls(
             token.line, token.column_start, token.line, token.column_end
         )
@@ -141,7 +143,7 @@ class BlockExpression(Expression):
     @classmethod
     def from_exprs(
         cls, exprs: Sequence[Expression], whitespace: Token
-    ) -> BlockExpression:
+    ) -> Self:
         # TODO: throw AstError
         assert exprs
 
@@ -262,7 +264,7 @@ class IdentifierExpression(Expression):
         return f"{type(self).__name__}({self.name!r}) # {self.info}"
 
     @classmethod
-    def from_token(cls, token: Token) -> IdentifierExpression:
+    def from_token(cls, token: Token) -> Self:
         return cls(
             info=LineInfo.from_token(token),
             type=UnknownType(),
@@ -306,7 +308,7 @@ class StringExpression(Expression, StringValue):
     __match_args__ = ("value",)
 
     @classmethod
-    def from_token(cls, token: Token) -> StringExpression:
+    def from_token(cls, token: Token) -> Self:
         contents = token.content
 
         if not token.content.startswith(("'", '"')):
@@ -336,7 +338,7 @@ class BooleanExpression(Expression, BooleanValue):
     __match_args__ = ("value",)
 
     @classmethod
-    def from_token(cls, token: Token) -> BooleanExpression:
+    def from_token(cls, token: Token) -> Self:
         return cls(
             info=LineInfo.from_token(token),
             value=token.content == "true",
@@ -357,9 +359,7 @@ class ParenthesisExpression(Expression):
     __match_args__ = ("expr",)
 
     @classmethod
-    def from_expr(
-        cls, expr: Expression, paren: Token
-    ) -> ParenthesisExpression:
+    def from_expr(cls, expr: Expression, paren: Token) -> Self:
         return cls(
             info=LineInfo.from_token(paren),
             expr=expr,
@@ -383,7 +383,7 @@ class NumericExpression(Expression, NumericValue):
     __match_args__ = ("value",)
 
     @classmethod
-    def from_token(cls, token: Token) -> NumericExpression:
+    def from_token(cls, token: Token) -> Self:
         try:
             value = Decimal(int(token.content, 0))
         except ValueError:
@@ -417,7 +417,7 @@ class UnaryExpression(Expression):
     @classmethod
     def from_expr(
         cls, oper: UnaryOperator, expr: Expression, token: Token
-    ) -> UnaryExpression:
+    ) -> Self:
         return cls(
             info=LineInfo.from_token(token),
             rhs=expr,
@@ -461,9 +461,9 @@ class BinaryOperator(Enum):
     IS_NOT = 6.1
 
     @classmethod
-    def from_token(cls, token: Token) -> BinaryOperator:
+    def from_token(cls, token: Token) -> Self:
         if op := TOKEN_TO_BINARY_OPER.get(type(token)):
-            return op
+            return cls(op.value)
 
         raise NotImplementedError()
 
@@ -506,7 +506,7 @@ class BinaryExpression(Expression):
         oper: BinaryOperator,
         rhs: Expression,
         token: Token | LineInfo,
-    ) -> BinaryExpression:
+    ) -> Self:
         return cls(
             info=(
                 LineInfo.from_token(token)

@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 from datetime import datetime, timezone, tzinfo
+
+from typing_extensions import Self
 
 
 class Datetime(datetime):
     @classmethod
-    def fromisoformat(cls, date: str) -> Datetime:
+    def fromisoformat(cls, date: str) -> Self:
         if date.endswith("UTC"):
             dt = cls.strptime(date, "%Y-%m-%d %H:%M:%S %Z")
             dt.__class__ = cls
@@ -20,7 +20,7 @@ class Datetime(datetime):
     __repr__ = __str__
 
     @classmethod
-    def now(cls, tz: tzinfo | None = None) -> Datetime:
+    def now(cls, tz: tzinfo | None = None) -> Self:
         assert tz
 
         return super().now(tz)
@@ -28,19 +28,19 @@ class Datetime(datetime):
 
 class UtcDatetime(Datetime):
     @classmethod
-    def fromisoformat(cls, date: str) -> UtcDatetime:
+    def fromisoformat(cls, date: str) -> Self:
         dt = super().fromisoformat(date)
         dt.__class__ = cls
 
         assert dt.tzinfo == timezone.utc
 
-        return dt  # type: ignore
+        return dt
 
     @classmethod
-    def now(cls, tz: tzinfo | None = timezone.utc) -> UtcDatetime:
+    def now(cls, tz: tzinfo | None = timezone.utc) -> Self:
         assert tz == timezone.utc
 
         dt = super().now(tz)
         dt.__class__ = cls
 
-        return dt  # type: ignore
+        return dt

@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from passlib.context import CryptContext
+from typing_extensions import Self
 
 
 class PasswordHash:
@@ -10,7 +9,7 @@ class PasswordHash:
         self.hash = hash
 
     @classmethod
-    def from_password(cls, password: str) -> PasswordHash:
+    def from_password(cls, password: str) -> Self:
         # TODO: add basic password length/strength security checks
 
         return cls(CryptContext(schemes=["bcrypt"]).hash(password))

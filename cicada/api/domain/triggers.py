@@ -1,9 +1,9 @@
-from __future__ import annotations
-
 import json
 import re
 from dataclasses import dataclass, field
 from typing import ClassVar, Literal
+
+from typing_extensions import Self
 
 from cicada.api.common.datetime import Datetime
 
@@ -39,7 +39,7 @@ class Trigger:
     env: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, **kw: str) -> Trigger:
+    def from_dict(cls, **kw: str) -> Self:
         raise NotImplementedError()
 
 
@@ -62,7 +62,7 @@ class CommitTrigger(Trigger):
             self.branch = "/".join(self.ref.split("/")[2:])
 
     @classmethod
-    def from_dict(cls, **kw: str) -> CommitTrigger:
+    def from_dict(cls, **kw: str) -> Self:
         assert kw.pop("type") == cls.type
 
         return cls(
@@ -89,7 +89,7 @@ class IssueOpenTrigger(IssueTrigger):
     type = "issue.open"
 
     @classmethod
-    def from_dict(cls, **kw: str) -> IssueOpenTrigger:
+    def from_dict(cls, **kw: str) -> Self:
         assert kw.pop("type") == cls.type
 
         return cls(
@@ -106,7 +106,7 @@ class IssueCloseTrigger(IssueTrigger):
     closed_at: Datetime
 
     @classmethod
-    def from_dict(cls, **kw: str) -> IssueCloseTrigger:
+    def from_dict(cls, **kw: str) -> Self:
         assert kw.pop("type") == cls.type
 
         return cls(

@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 import re
 from collections.abc import Generator, Sequence
 from dataclasses import asdict
+
+from typing_extensions import Self
 
 from .token import *  # noqa: F403
 
@@ -88,7 +88,7 @@ class ChunkGrouper:
         self._chunks = chunks
         self._chunk_index = 0
 
-    def __iter__(self) -> ChunkGrouper:
+    def __iter__(self) -> Self:
         return self
 
     def __next__(self) -> Chunk:

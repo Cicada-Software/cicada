@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
 from itertools import groupby
 from typing import cast
+
+from typing_extensions import Self
 
 from cicada.ast.types import UnknownType
 from cicada.parse.token import (
@@ -84,11 +84,11 @@ class AstError(ValueError):
         super().__init__(str(self))
 
     @classmethod
-    def expected_token(cls, *, last: Token) -> AstError:
+    def expected_token(cls, *, last: Token) -> Self:
         return cls(f"expected token after `{last.content}`", last)
 
     @classmethod
-    def unexpected_token(cls, token: Token, *, expected: str = "") -> AstError:
+    def unexpected_token(cls, token: Token, *, expected: str = "") -> Self:
         if expected:
             return cls(f"expected `{expected}`", token)
 
@@ -125,7 +125,7 @@ class ParserState:
         self._current_indent_level = 0
         self._indent_style = IndentStyle.UNKNOWN
 
-    def __iter__(self) -> ParserState:
+    def __iter__(self) -> Self:
         return self
 
     def __next__(self) -> Token:
