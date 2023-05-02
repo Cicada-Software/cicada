@@ -27,13 +27,13 @@ def test_generate_empty_token_stream_returns_empty_file() -> None:
 
 
 def test_generate_function_expression() -> None:
-    tree = generate_ast_tree(tokenize("f x y z"))
+    tree = generate_ast_tree(tokenize("shell x y z"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [
                         StringExpression("x"),
                         StringExpression("y"),
@@ -50,19 +50,19 @@ def test_generate_function_expression() -> None:
 
 
 def test_generate_function_expression_splits_on_newlines() -> None:
-    tree = generate_ast_tree(tokenize("f x\nf y"))
+    tree = generate_ast_tree(tokenize("shell x\nshell y"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [StringExpression("x")],
                     info=LineInfo(line=1, column_start=1),
                     type=UnknownType(),
                 ),
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [StringExpression("y")],
                     info=LineInfo(line=2, column_start=1),
                     type=UnknownType(),
@@ -105,6 +105,27 @@ def test_generate_let_expression() -> None:
                 LetExpression(
                     "x",
                     NumericExpression(1),
+                    is_mutable=False,
+                    info=LineInfo(line=1, column_start=1),
+                    type=NumericType(),
+                )
+            ]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_generate_mutable_let_expression() -> None:
+    tree = generate_ast_tree(tokenize("let mut x = 1"))
+
+    match tree:
+        case FileNode(
+            [
+                LetExpression(
+                    "x",
+                    NumericExpression(1),
+                    is_mutable=True,
                     info=LineInfo(line=1, column_start=1),
                     type=NumericType(),
                 )
@@ -297,13 +318,13 @@ def test_parse_nested_member_expr() -> None:
 
 
 def test_generate_function_expression_group_contiguous_chars() -> None:
-    tree = generate_ast_tree(tokenize("f x --help"))
+    tree = generate_ast_tree(tokenize("shell x --help"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [
                         StringExpression("x"),
                         StringExpression("--help"),
@@ -320,13 +341,13 @@ def test_generate_function_expression_group_contiguous_chars() -> None:
 
 def test_generate_func_expr_with_parens() -> None:
     # Fix newline being needed here
-    tree = generate_ast_tree(tokenize("f (x) lhs(x) (x)rhs\n"))
+    tree = generate_ast_tree(tokenize("shell (x) lhs(x) (x)rhs\n"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [
                         ParenthesisExpression(IdentifierExpression()),
                         BinaryExpression(
@@ -349,13 +370,13 @@ def test_generate_func_expr_with_parens() -> None:
 
 
 def test_generate_func_expr_with_parens2() -> None:
-    tree = generate_ast_tree(tokenize("f arg1 (arg2) arg3"))
+    tree = generate_ast_tree(tokenize("shell arg1 (arg2) arg3"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [
                         StringExpression("arg1"),
                         ParenthesisExpression(IdentifierExpression("arg2")),
@@ -496,18 +517,11 @@ def test_disallow_multiple_exprs_on_same_line() -> None:
         generate_ast_tree(tokenize("let x = 1 2"))
 
 
-def test_generate_nice_error_message_for_invalid_equal_token() -> None:
-    msg = "Unexpected operator `=`, did you mean `is` instead?"
-
-    with pytest.raises(AstError, match=msg):
-        generate_ast_tree(tokenize("let x = 123 = 456"))
-
-
 def test_no_arg_func_calls_skipping_newline() -> None:
     code = """\
-f x
-f
-f y
+shell x
+shell
+shell y
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -515,9 +529,9 @@ f y
     match tree:
         case FileNode(
             [
-                FunctionExpression("f", [StringExpression("x")]),
-                FunctionExpression("f", []),
-                FunctionExpression("f", [StringExpression("y")]),
+                FunctionExpression("shell", [StringExpression("x")]),
+                FunctionExpression("shell", []),
+                FunctionExpression("shell", [StringExpression("y")]),
             ]
         ):
             return
@@ -606,17 +620,17 @@ def test_nested_let_exprs() -> None:
 
 
 def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
-    tree = generate_ast_tree(tokenize("f (x)\nf (y)"))
+    tree = generate_ast_tree(tokenize("shell (x)\nshell (y)"))
 
     match tree:
         case FileNode(
             [
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [ParenthesisExpression(IdentifierExpression("x"))],
                 ),
                 FunctionExpression(
-                    "f",
+                    "shell",
                     [ParenthesisExpression(IdentifierExpression("y"))],
                 ),
             ]
@@ -634,7 +648,7 @@ def test_allow_if_expr_in_let_expr() -> None:
 let x = if true:
     1
 
-f
+shell
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -649,7 +663,7 @@ f
                         body=BlockExpression([NumericExpression(1)]),
                     ),
                 ),
-                FunctionExpression("f", []),
+                FunctionExpression("shell", []),
             ]
         ):
             return
@@ -682,7 +696,7 @@ let x =
   if true:
       1
 
-f
+shell
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -701,7 +715,7 @@ f
                         ],
                     ),
                 ),
-                FunctionExpression("f", []),
+                FunctionExpression("shell", []),
             ]
         ):
             return
@@ -836,4 +850,25 @@ if true:
 """
 
     with pytest.raises(AstError, match="Unexpected indentation"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_let_identifier_cannot_be_named_mut() -> None:
+    code = "let mut = 123"
+
+    with pytest.raises(AstError, match="expected identifier"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_let_identifier_cannot_be_a_keyword() -> None:
+    code = "let if = 123"
+
+    with pytest.raises(AstError, match="cannot use keyword"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_let_name_must_be_identifier() -> None:
+    code = 'let "x" = 123'
+
+    with pytest.raises(AstError, match="expected identifier"):
         generate_ast_tree(tokenize(code))

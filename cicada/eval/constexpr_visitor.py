@@ -101,13 +101,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         return node.expr.accept(self)
 
     def visit_num_expr(self, node: NumericExpression) -> Value:
-        return node
+        return NumericValue(node.value)
 
     def visit_str_expr(self, node: StringExpression) -> Value:
-        return node
+        return StringValue(node.value)
 
     def visit_bool_expr(self, node: BooleanExpression) -> Value:
-        return node
+        return BooleanValue(node.value)
 
     def visit_unary_expr(self, node: UnaryExpression) -> Value:
         if node.oper == UnaryOperator.NOT:
@@ -138,6 +138,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             except TypeError as ex:  # pragma: no cover
                 raise NotImplementedError() from ex
+
+        if node.oper == BinaryOperator.ASSIGN:
+            assert isinstance(node.lhs, IdentifierExpression)
+
+            self.reassign_variable(node.lhs.name, rhs)
+
+            return rhs
 
         if isinstance(lhs, StringValue) and isinstance(rhs, StringValue):
             if node.oper == BinaryOperator.ADD:
@@ -238,3 +245,19 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         yield
 
         self.symbols = self.symbols.parents
+
+    def reassign_variable(self, name: str, value: Value) -> None:
+        """
+        Reassign an identifier in a previous scope without creating a new
+        scope. This is useful for reassigning values that are defined in scopes
+        above the current scope. If the name does not exist in the symbol table
+        whatsoever, an exception is thrown.
+        """
+
+        for symbols in self.symbols.maps:
+            if name in symbols:
+                symbols[name] = value
+
+                return
+
+        raise KeyError(f"Cannot reassign `{name}` because it doesn't exist")

@@ -12,6 +12,7 @@ from typing import Final, Generic, TypeVar
 from cicada.parse.token import (
     AndToken,
     AsteriskToken,
+    EqualToken,
     GreaterThanOrEqualToken,
     GreaterThanToken,
     IsToken,
@@ -226,10 +227,11 @@ class LetExpression(Expression):
     A single let expression (variable declaration).
     """
 
+    is_mutable: bool
     name: str
     expr: Expression
 
-    __match_args__ = ("name", "expr")
+    __match_args__ = ("name", "expr", "is_mutable")
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
         return visitor.visit_let_expr(self)
@@ -238,7 +240,9 @@ class LetExpression(Expression):
         args = f"name={self.name}\nexpr={self.expr}"
         args = indent(args, "  ")
 
-        return f"{type(self).__name__}(): # {self.info}\n{args}"
+        mut = "mutable" if self.is_mutable else ""
+
+        return f"{type(self).__name__}({mut}): # {self.info}\n{args}"
 
 
 @dataclass
@@ -439,6 +443,7 @@ class BinaryOperator(Enum):
     function.
     """
 
+    ASSIGN = 0.0
     EXPONENT = 1.0
     MULTIPLY = 2.1
     DIVIDE = 2.2
@@ -482,6 +487,7 @@ TOKEN_TO_BINARY_OPER: Final[dict[type[Token], BinaryOperator]] = {
     GreaterThanOrEqualToken: BinaryOperator.GREATER_THAN_OR_EQUAL,
     IsToken: BinaryOperator.IS,
     # IsNotToken: BinaryOperator.IS_NOT,
+    EqualToken: BinaryOperator.ASSIGN,
 }
 
 

@@ -60,6 +60,7 @@ class IgnoreWorkflow(RuntimeError):
     """
 
 
+# TODO: wrap around function to provide default
 OPERATOR_ALLOWED_TYPES: dict[BinaryOperator, list[type[Type]]] = {
     BinaryOperator.EXPONENT: [NumericType],
     BinaryOperator.MULTIPLY: [NumericType],
@@ -75,6 +76,7 @@ OPERATOR_ALLOWED_TYPES: dict[BinaryOperator, list[type[Type]]] = {
     BinaryOperator.LESS_THAN_OR_EQUAL: [NumericType],
     BinaryOperator.GREATER_THAN_OR_EQUAL: [NumericType],
     BinaryOperator.IS: [Type],
+    BinaryOperator.ASSIGN: [Type],
 }
 
 
@@ -103,7 +105,7 @@ RESERVED_NAMES = {"event", "env"}
 class SemanticAnalysisVisitor(TraversalVisitor):
     function_names: set[str]
     types: dict[str, Type]
-    symbols: ChainMap[str, Expression]
+    symbols: ChainMap[str, LetExpression]
     trigger: Trigger | None
 
     # This is set when a function has been called, used to detect non-constexpr
@@ -143,7 +145,12 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if node.name in RESERVED_NAMES:
             raise AstError(f"Name `{node.name}` is reserved", node.info)
 
-        self.symbols[node.name] = node.expr
+        self.symbols[node.name] = node
+
+        if self.is_constexpr(node.expr):
+            node.is_constexpr = True
+
+        node.type = node.expr.type
 
     def visit_member_expr(self, node: MemberExpression) -> None:
         super().visit_member_expr(node)
@@ -176,7 +183,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.type = self.env
 
         elif symbol := self.symbols.get(node.name):
-            node.type = symbol.type
+            node.type = symbol.expr.type
 
         else:
             raise AstError(f"variable `{node.name}` is not defined", node.info)
@@ -210,9 +217,29 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_binary_expr(self, node: BinaryExpression) -> None:
         super().visit_binary_expr(node)
 
+        if node.oper == BinaryOperator.ASSIGN:
+            if not isinstance(node.lhs, IdentifierExpression):
+                raise AstError(
+                    "you can only assign to variables", node.lhs.info
+                )
+
+            var = self.symbols[node.lhs.name]
+
+            if not var.is_mutable:
+                raise AstError(
+                    f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
+                    node.lhs.info,
+                )
+
         if node.lhs.type != node.rhs.type:
+            verb = (
+                "assigned to"
+                if node.oper == BinaryOperator.ASSIGN
+                else "used with"
+            )
+
             raise AstError(
-                f"expression of type `{node.rhs.type}` cannot be used with type `{node.lhs.type}`",  # noqa: E501
+                f"expression of type `{node.rhs.type}` cannot be {verb} type `{node.lhs.type}`",  # noqa: E501
                 node.rhs.info,
             )
 
@@ -338,7 +365,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def is_constexpr(self, node: Expression) -> bool:
         if isinstance(node, IdentifierExpression):
             if symbol := self.symbols.get(node.name):
-                return symbol.is_constexpr
+                return symbol.expr.is_constexpr
 
             if self.types.get(node.name):
                 return True

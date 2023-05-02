@@ -1,7 +1,5 @@
 from decimal import Decimal
 
-import pytest
-
 from cicada.ast.common import json_to_record
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import BooleanValue, NumericValue, StringValue
@@ -157,15 +155,14 @@ def test_use_env_var_exprs() -> None:
     assert symbol.value == "123"
 
 
-@pytest.mark.xfail(reason="assignment operator not implemented yet")
 def test_eval_if_condition_truthiness() -> None:
     code = """\
-let a = false
-let b = false
-let c = false
-let d = false
-let e = false
-let f = false
+let mut a = false
+let mut b = false
+let mut c = false
+let mut d = false
+let mut e = false
+let mut f = false
 
 if 1:
     a = true
@@ -195,6 +192,45 @@ if "":
         expect_true = symbol in ("a", "b", "c")
 
         assert expr.value == expect_true
+
+
+def test_let_expr_scoping_semantics() -> None:
+    code = """\
+let a = 1
+
+let mut b = 1
+if true:
+    b = 2
+
+let c = 1
+if true:
+    let mut c = 2
+    c = 3
+
+let mut d = 1
+if true:
+    d = 2
+d = 3
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    values = {
+        "a": 1,
+        "b": 2,
+        "c": 1,
+        "d": 3,
+    }
+
+    for symbol, value in values.items():
+        expr = visitor.symbols[symbol]
+
+        assert isinstance(expr, NumericValue)
+
+        assert expr.value == value
 
 
 def test_eval_falsey_if_expr() -> None:

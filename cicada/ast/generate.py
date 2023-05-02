@@ -21,6 +21,7 @@ from cicada.parse.token import (
     KeywordToken,
     LetToken,
     MinusToken,
+    MutToken,
     NewlineToken,
     NotToken,
     OnToken,
@@ -52,6 +53,19 @@ from .nodes import (
     StringExpression,
     UnaryExpression,
     UnaryOperator,
+)
+
+SHELL_ALIASES = frozenset(
+    [
+        "cd",
+        "cp",
+        "echo",
+        "git",
+        "ls",
+        "make",
+        "mkdir",
+        "rm",
+    ]
 )
 
 
@@ -328,13 +342,10 @@ def generate_node(state: ParserState) -> Node:
     if isinstance(token, OnToken):
         return generate_on_stmt(state)
 
-    if isinstance(token, IdentifierToken) and not isinstance(
-        token, LetToken | IfToken
-    ):
-        if "." in token.content:
-            # TODO: use ident/member expr as callee for function expr
-            return generate_member_expr(token)
-
+    if isinstance(token, IdentifierToken) and token.content in {
+        *SHELL_ALIASES,
+        "shell",
+    }:
         return generate_function_expr(state)
 
     expr = generate_expr(state)
@@ -433,18 +444,6 @@ def generate_interpolated_string(
     return stack
 
 
-SHELL_ALIASES = {
-    "cd",
-    "cp",
-    "echo",
-    "git",
-    "ls",
-    "make",
-    "mkdir",
-    "rm",
-}
-
-
 def generate_function_expr(state: ParserState) -> FunctionExpression:
     name = state.current_token
 
@@ -505,9 +504,27 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
 
 def generate_let_expr(state: ParserState) -> LetExpression:
     start = state.current_token
+    is_mutable = False
 
     try:
-        name = state.next_non_whitespace()
+        name_or_mut = state.next_non_whitespace()
+
+        if isinstance(name_or_mut, MutToken):
+            is_mutable = True
+            name = state.next_non_whitespace()
+
+        else:
+            name = name_or_mut
+
+        if isinstance(name, KeywordToken):
+            raise AstError(
+                f"cannot use keyword `{name.content}` as an identifier name",
+                name,
+            )
+
+        if not isinstance(name, IdentifierToken):
+            raise AstError("expected identifier", name)
+
         equal = state.next_non_whitespace()
 
         if not isinstance(equal, EqualToken):
@@ -532,6 +549,7 @@ def generate_let_expr(state: ParserState) -> LetExpression:
         raise AstError.expected_token(last=state.current_token) from ex
 
     return LetExpression(
+        is_mutable=is_mutable,
         name=name.content,
         info=LineInfo.from_token(start),
         expr=expr,
@@ -631,12 +649,6 @@ def generate_expr(state: ParserState) -> Expression:
 
     with state.peek() as peek:
         oper = state.next_non_whitespace_or_eof()
-
-        if isinstance(oper, EqualToken):
-            raise AstError(
-                "Unexpected operator `=`, did you mean `is` instead?",
-                oper,
-            )
 
         # TODO: allow for more oper tokens
         if isinstance(oper, tuple(TOKEN_TO_BINARY_OPER.keys())):

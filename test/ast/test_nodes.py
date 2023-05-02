@@ -59,6 +59,8 @@ let e = 1 + 2
 
 if true:
   let x = 123
+
+let mut f = 0
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -102,6 +104,9 @@ FileNode:
     body=BlockExpression: # 17:3..17:3
       0=LetExpression(): # 17:3..17:5
         name=x
-        expr=NumericExpression(123) # 17:11..17:13"""
+        expr=NumericExpression(123) # 17:11..17:13
+  LetExpression(mutable): # 19:1..19:3
+    name=f
+    expr=NumericExpression(0) # 19:13..19:13"""
 
     assert str(tree) == expected

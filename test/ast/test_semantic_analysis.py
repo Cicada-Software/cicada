@@ -51,11 +51,11 @@ def test_basic_function_call_is_valid() -> None:
     pytest.fail(f"tree does not match: {tree}")
 
 
-def test_unknown_function_causes_error() -> None:
-    msg = "function `unknown_func_call` is not defined"
+def test_unknown_variable_causes_error() -> None:
+    msg = "variable `unknown` is not defined"
 
     with pytest.raises(AstError, match=msg):
-        parse_and_analyze("unknown_func_call")
+        parse_and_analyze("unknown")
 
 
 def test_undefined_variable_causes_error() -> None:
@@ -137,10 +137,18 @@ let d = not b
 
     match tree.exprs:
         case [
-            LetExpression(name="a", expr=Expression(is_constexpr=True)),
-            LetExpression(name="b", expr=Expression(is_constexpr=True)),
-            LetExpression(name="c", expr=Expression(is_constexpr=True)),
-            LetExpression(name="d", expr=Expression(is_constexpr=True)),
+            LetExpression(
+                name="a", expr=Expression(is_constexpr=True), is_constexpr=True
+            ),
+            LetExpression(
+                name="b", expr=Expression(is_constexpr=True), is_constexpr=True
+            ),
+            LetExpression(
+                name="c", expr=Expression(is_constexpr=True), is_constexpr=True
+            ),
+            LetExpression(
+                name="d", expr=Expression(is_constexpr=True), is_constexpr=True
+            ),
         ]:
             return
 
@@ -176,6 +184,7 @@ let s1 = "abc" + "123"
                     rhs=NumericExpression(value=2),
                     type=BooleanType(),
                 ),
+                type=BooleanType(),
             ),
             LetExpression(
                 name="b2",
@@ -185,6 +194,7 @@ let s1 = "abc" + "123"
                     rhs=NumericExpression(value=2),
                     type=BooleanType(),
                 ),
+                type=BooleanType(),
             ),
             LetExpression(
                 name="b3",
@@ -194,6 +204,7 @@ let s1 = "abc" + "123"
                     rhs=BooleanExpression(value=False),
                     type=BooleanType(),
                 ),
+                type=BooleanType(),
             ),
             LetExpression(
                 name="n1",
@@ -203,6 +214,7 @@ let s1 = "abc" + "123"
                     rhs=NumericExpression(value=2),
                     type=NumericType(),
                 ),
+                type=NumericType(),
             ),
             LetExpression(
                 name="n2",
@@ -212,6 +224,7 @@ let s1 = "abc" + "123"
                     rhs=NumericExpression(value=2),
                     type=NumericType(),
                 ),
+                type=NumericType(),
             ),
             LetExpression(
                 name="s1",
@@ -221,6 +234,7 @@ let s1 = "abc" + "123"
                     rhs=StringExpression(value="123"),
                     type=StringType(),
                 ),
+                type=StringType(),
             ),
         ]:
             return
@@ -332,7 +346,7 @@ def test_environment_variable_semantics() -> None:
         case _:
             pytest.fail(f"Pattern did not match: {visitor.env}")
 
-    assert visitor.symbols["x"].type == StringType()
+    assert visitor.symbols["x"].expr.type == StringType()
 
 
 def test_ast_error_with_filename() -> None:
@@ -400,6 +414,42 @@ echo (x)
 """
 
     msg = "cannot convert type `record` to `string`"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
+
+
+def test_error_on_reassigning_immutable_variable() -> None:
+    code = """\
+let x = 123
+
+x = 456
+"""
+
+    # For whatever reason I cannot have a space after ".*"
+    msg = "cannot assign to immutable variable .*are you forgetting `mut`"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
+
+
+def test_cannot_assign_to_non_identifiers() -> None:
+    code = "123 = 456"
+
+    msg = "you can only assign to variables"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
+
+
+def test_error_message_when_reassigning_improper_type() -> None:
+    code = """\
+let mut x = 123
+
+x = "hello world"
+"""
+
+    msg = "`string` cannot be assigned to type `number`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code)
