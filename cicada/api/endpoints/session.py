@@ -1,11 +1,14 @@
 import asyncio
-from asyncio import Task, create_task
+from asyncio import CancelledError, InvalidStateError, Task, create_task
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from websockets.exceptions import ConnectionClosed
 
+from cicada.api.application.exceptions import CicadaException
 from cicada.api.application.session.rerun_session import RerunSession
 from cicada.api.application.session.stop_session import StopSession
+from cicada.api.application.session.stream_session import StreamSession
 from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionId, SessionStatus
 from cicada.api.endpoints.di import Di
@@ -125,7 +128,7 @@ async def get_recent_sessions(
 
 
 @router.websocket("/ws/session/watch_status")
-async def websocket_endpoint(
+async def watch_status(
     websocket: WebSocket, di: Di
 ) -> None:  # pragma: no cover
     """
@@ -187,5 +190,89 @@ async def websocket_endpoint(
 
         await websocket.close()
 
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, ConnectionClosed):
         pass
+
+
+@router.websocket("/ws/session/{uuid}")
+async def stream_session(
+    uuid: SessionId,
+    websocket: WebSocket,
+    di: Di,
+    run: int = -1,
+) -> None:  # pragma: no cover
+    task: Task[None] | None = None
+
+    try:
+        await websocket.accept()
+
+        # TODO: add timeout here
+        jwt = await websocket.receive_text()
+
+        session_repo = di.session_repo()
+
+        user = get_user_from_jwt(di.user_repo(), jwt)
+        session = session_repo.get_session_by_session_id(uuid)
+
+        if not (
+            user
+            and session
+            and session_repo.can_user_access_session(
+                user, session, permission="read"
+            )
+        ):
+            await websocket.send_json(
+                {"error": "You do not have access to this session"}
+            )
+            await websocket.close(code=1001)
+            return
+
+        async def stop_session() -> None:
+            cmd = StopSession(session_repo, di.session_terminators())
+
+            try:
+                await cmd.handle(uuid, user)
+
+            except CicadaException as exc:
+                await websocket.send_json({"error": str(exc)})
+
+        stream = StreamSession(
+            di.terminal_session_repo(),
+            session_repo,
+            stop_session,
+        )
+
+        async def command_sender() -> None:
+            async for command in websocket.iter_text():
+                stream.send_command(command)
+
+        task = create_task(command_sender())
+
+        async for data in stream.stream(uuid, run):
+            await websocket.send_json(data)
+
+    except (WebSocketDisconnect, ConnectionClosed):
+        return
+
+    except RuntimeError:
+        # A RuntimeError is thrown whenever trying to send data after the
+        # websocket is disconnected. There is no good way to detect this since
+        # uvicorn wraps the websocket connection, and the actual state of the
+        # websocket is not forwarded.
+
+        pass
+
+    finally:
+        if task:
+            task.cancel()
+
+            try:
+                task.result()
+
+            except (CancelledError, InvalidStateError):
+                pass
+
+            except (WebSocketDisconnect, ConnectionClosed):
+                return
+
+    await websocket.close()
