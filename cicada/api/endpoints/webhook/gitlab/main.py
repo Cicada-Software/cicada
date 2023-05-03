@@ -9,6 +9,7 @@ from cicada.api.application.session.make_session_from_trigger import (
 )
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
+from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.gitlab.auth import update_gitlab_repo_perms
 from cicada.api.infra.gitlab.workflows import (
     gather_issue_workflows,
@@ -17,7 +18,6 @@ from cicada.api.infra.gitlab.workflows import (
 )
 from cicada.api.settings import GitlabSettings, GitProviderSettings
 
-from ..common import is_repo_in_white_list
 from .converters import gitlab_event_to_commit, gitlab_event_to_issue
 
 router = APIRouter()
@@ -38,7 +38,7 @@ def verify_webhook_came_from_gitlab(request: Request) -> None:
         )
 
 
-def handle_gitlab_push_event(  # type: ignore
+def handle_gitlab_push_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
     cmd = MakeSessionFromTrigger(
@@ -58,7 +58,7 @@ def handle_gitlab_push_event(  # type: ignore
     task.add_done_callback(TASK_QUEUE.discard)
 
 
-def handle_gitlab_issue_event(  # type: ignore
+def handle_gitlab_issue_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
     cmd = MakeSessionFromTrigger(

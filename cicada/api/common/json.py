@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Any
 
 
-def asjson(obj: Any) -> Any:  # type: ignore
+def asjson(obj: Any) -> Any:  # type: ignore[misc]
     # TODO: this isnt JSON, rename function
     if isinstance(obj, dict):
         return {k: asjson(v) for k, v in obj.items()}
@@ -12,7 +12,7 @@ def asjson(obj: Any) -> Any:  # type: ignore
         return obj.value
 
     if is_dataclass(obj):
-        out: dict[str, Any] = {}  # type: ignore
+        out: dict[str, Any] = {}  # type: ignore[misc]
 
         for name in dir(obj):
             attr = getattr(obj, name)

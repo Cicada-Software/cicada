@@ -362,37 +362,36 @@ def test_ast_error_with_filename() -> None:
 def test_if_expr_condition_must_be_bool_like() -> None:
     msg = "Type `record` cannot be converted to bool"
 
-    with pytest.raises(AstError, match=msg):
-        # TODO: replace "event" with different type once more exprs types are
-        # added
-        code = """\
+    # TODO: replace "event" with different type once more exprs types are added
+    code = """\
 if event:
     echo nope
 """
 
+    with pytest.raises(AstError, match=msg):
         parse_and_analyze(code, trigger=build_trigger("xyz"))
 
 
 @pytest.mark.xfail()
 def test_if_expr_must_have_body() -> None:
-    with pytest.raises(AstError, match="If expression must have body"):
-        code = """\
+    code = """\
 if true:
     # comment
 """
 
+    with pytest.raises(AstError, match="If expression must have body"):
         parse_and_analyze(code)
 
 
 def test_if_expr_creates_its_own_scope() -> None:
-    with pytest.raises(AstError, match="is not defined"):
-        code = """\
+    code = """\
 if true:
     let x = 1
 
 echo (x)
 """
 
+    with pytest.raises(AstError, match="is not defined"):
         parse_and_analyze(code)
 
 

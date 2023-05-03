@@ -7,7 +7,7 @@ from cicada.api.domain.user import User, UserId
 from cicada.api.repo.user_repo import IUserRepo
 
 
-def create_or_update_github_user(  # type: ignore
+def create_or_update_github_user(  # type: ignore[misc]
     user_repo: IUserRepo, event: dict[str, Any]
 ) -> User | None:
     match event:
@@ -22,7 +22,7 @@ def create_or_update_github_user(  # type: ignore
     return None
 
 
-def update_github_repo_perms(  # type: ignore
+def update_github_repo_perms(  # type: ignore[misc]
     di: DiContainer,
     user_id: UserId,
     event: dict[str, Any],
@@ -84,11 +84,11 @@ def update_github_repo_perms(  # type: ignore
     )
 
     repository_repo.update_user_perms_for_repo(
-        repo, user_id, [perms]  # type: ignore
+        repo, user_id, [perms]  # type: ignore[list-item]
     )
 
 
-def create_or_update_github_installation(  # type: ignore
+def create_or_update_github_installation(  # type: ignore[misc]
     di: DiContainer, user_id: UserId, event: dict[str, Any]
 ) -> None:
     match event:

@@ -16,7 +16,7 @@ from cicada.api.settings import NotificationSettings
 
 
 class SlowRequestMiddleware:  # pragma: no cover
-    "Warns whenever a slow request is made."
+    """Warns whenever a slow request is made."""
 
     SLOW_REQUEST_THRESHOLD_SECONDS = 1.5
 
@@ -70,7 +70,7 @@ class UnhandledExceptionHandler:  # pragma: no cover
         try:
             await self.app(scope, receive, send)
 
-        except Exception as exc:
+        except Exception:
             import httpx
 
             settings = NotificationSettings()
@@ -100,4 +100,4 @@ class UnhandledExceptionHandler:  # pragma: no cover
                     logger = logging.getLogger("cicada")
                     logger.critical("Could not send exception notification")
 
-            raise exc
+            raise

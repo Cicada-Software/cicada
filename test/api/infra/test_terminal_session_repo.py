@@ -40,10 +40,10 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         assert recieved_terminal_session.is_done
         assert recieved_terminal_session.lines == ["hello", "world", ""]
 
-        # This might be an implementation detail, because if the terminal session
-        # is "done", the original one should be able to be returned with no issue.
-        # The fact that we recreate it from the DB (only because it does not exist
-        # in memory) smells fishy to me.
+        # This might be an implementation detail, because if the terminal
+        # session is "done", the original one should be able to be returned
+        # with no issue. The fact that we recreate it from the DB (only because
+        # it does not exist in memory) smells fishy to me.
         assert recieved_terminal_session is not terminal_session
 
     def test_get_terminal_session_that_doesnt_exist(self) -> None:

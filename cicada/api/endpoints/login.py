@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.post("/api/login", response_model=None)
-async def login(  # type: ignore
+async def login(  # type: ignore[misc]
     di: Di,
     form_data: PasswordForm,
 ) -> dict[str, Any]:
@@ -39,7 +39,7 @@ async def change_password(
 
 
 @router.post("/api/refresh_token")
-async def refresh_token(  # type: ignore
+async def refresh_token(  # type: ignore[misc]
     di: Di,
     token: JWTToken,
 ) -> dict[str, Any]:

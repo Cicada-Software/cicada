@@ -136,8 +136,7 @@ def group_string(state: ChunkGrouper) -> None:
             state.emit()
             return
 
-    else:
-        raise ValueError("string was not closed")
+    raise ValueError("string was not closed")
 
 
 def group_crlf(state: ChunkGrouper) -> None:
@@ -263,7 +262,7 @@ def tokenize(code: str) -> Generator[Token, None, None]:
             # Treat \r\n as a single character instead of 2.
             data = {**asdict(token), "column_end": token.column_start}
 
-            yield NewlineToken(**data)  # type: ignore
+            yield NewlineToken(**data)  # type: ignore[arg-type]
 
         elif token.content.isspace():
             yield WhiteSpaceToken(**asdict(token))

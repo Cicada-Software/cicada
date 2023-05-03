@@ -10,7 +10,7 @@ from cicada.api.domain.triggers import (
 )
 
 
-def github_event_to_commit(  # type: ignore
+def github_event_to_commit(  # type: ignore[misc]
     event: dict[str, Any]
 ) -> CommitTrigger:
     return CommitTrigger(
@@ -24,7 +24,7 @@ def github_event_to_commit(  # type: ignore
     )
 
 
-def github_event_to_issue(  # type: ignore
+def github_event_to_issue(  # type: ignore[misc]
     event: dict[str, Any]
 ) -> IssueTrigger:
     data = {

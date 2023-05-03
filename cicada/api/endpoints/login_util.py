@@ -14,7 +14,7 @@ from cicada.api.repo.user_repo import IUserRepo
 from cicada.api.settings import JWTSettings
 
 
-def create_jwt(  # type: ignore
+def create_jwt(  # type: ignore[misc]
     *,
     subject: str,
     issuer: str,
@@ -40,7 +40,7 @@ def create_jwt(  # type: ignore
     return jwt.encode(payload, settings.secret, algorithm="HS256")
 
 
-def get_user_and_payload_from_jwt(  # type: ignore
+def get_user_and_payload_from_jwt(  # type: ignore[misc]
     user_repo: IUserRepo, token: str
 ) -> tuple[User, dict[str, Any]] | None:
     settings = JWTSettings()
@@ -91,7 +91,7 @@ def get_current_user(di: Di, token: JWTToken) -> User:
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def create_access_token(  # type: ignore
+def create_access_token(  # type: ignore[misc]
     user: User, issuer: str = "cicada"
 ) -> dict[str, Any]:
     jwt = create_jwt(subject=user.username, issuer=issuer)

@@ -10,7 +10,7 @@ from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
 class ShouldRunWorkflow(Exception):
     should_run: bool
 
-    def __init__(self, should_run: bool) -> None:
+    def __init__(self, /, should_run: bool) -> None:
         self.should_run = should_run
 
 
@@ -34,5 +34,5 @@ class OnStatementEvalVisitor(ConstexprEvalVisitor):
 
         raise ShouldRunWorkflow(True)
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
+    def visit_func_expr(self, _: FunctionExpression) -> Value:
         raise ShouldRunWorkflow(False)

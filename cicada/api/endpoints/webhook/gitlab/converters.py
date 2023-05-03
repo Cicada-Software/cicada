@@ -10,10 +10,10 @@ from cicada.api.domain.triggers import (
 )
 
 
-def gitlab_event_to_commit(  # type: ignore
+def gitlab_event_to_commit(  # type: ignore[misc]
     event: dict[str, Any]
 ) -> CommitTrigger:
-    most_recent_commit: None | dict[str, Any] = None  # type: ignore
+    most_recent_commit: None | dict[str, Any] = None  # type: ignore[misc]
 
     for json_commit in event["commits"]:
         if json_commit["id"] == event["after"]:
@@ -35,7 +35,7 @@ def gitlab_event_to_commit(  # type: ignore
     )
 
 
-def gitlab_event_to_issue(  # type: ignore
+def gitlab_event_to_issue(  # type: ignore[misc]
     event: dict[str, Any]
 ) -> IssueTrigger:
     data = {

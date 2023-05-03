@@ -51,10 +51,10 @@ async def wrap_in_gitlab_status_check(
     try:
         yield
 
-    except Exception as ex:
+    except Exception:
         commit.statuses.create({**payload, "state": "failed"})
 
-        raise ex
+        raise
 
     state = "success" if session.status == SessionStatus.SUCCESS else "failed"
 
@@ -93,10 +93,10 @@ async def run_workflow(
 
             session.finish(exit_code_to_status_code(exit_code))
 
-    except Exception as ex:
+    except Exception:
         session.finish(SessionStatus.FAILURE)
 
-        raise ex
+        raise
 
 
 async def gather_issue_workflows(trigger: Trigger) -> list[Path]:

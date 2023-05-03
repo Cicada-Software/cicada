@@ -12,6 +12,7 @@ from cicada.api.application.session.make_session_from_trigger import (
 )
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
+from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.github.auth import (
     create_or_update_github_installation,
     create_or_update_github_user,
@@ -24,7 +25,6 @@ from cicada.api.infra.github.workflows import (
 )
 from cicada.api.settings import GitHubSettings, GitProviderSettings
 
-from ..common import is_repo_in_white_list
 from .converters import github_event_to_commit, github_event_to_issue
 
 router = APIRouter()
@@ -35,7 +35,7 @@ TASK_QUEUE: set[Task[None]] = set()
 logger = logging.getLogger("cicada")
 
 
-def handle_github_push_event(  # type: ignore
+def handle_github_push_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
     cmd = MakeSessionFromTrigger(
@@ -55,7 +55,7 @@ def handle_github_push_event(  # type: ignore
     task.add_done_callback(TASK_QUEUE.discard)
 
 
-def handle_github_issue_event(  # type: ignore
+def handle_github_issue_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
     cmd = MakeSessionFromTrigger(

@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import ast
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, auto
 from textwrap import indent
-from typing import Final, Generic, TypeVar
+from typing import TYPE_CHECKING, Final, Generic, TypeVar
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from typing_extensions import Self
+
 
 from cicada.parse.token import (
     AndToken,

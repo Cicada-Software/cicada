@@ -14,10 +14,11 @@ class LocalUserLogin:
         self.user_repo = user_repo
 
     def handle(self, username: str, password: str) -> User:
-        if user := self.user_repo.get_user_by_username(username):
-            if user.password_hash and user.password_hash.verify(password):
-                self.user_repo.update_last_login(user)
+        user = self.user_repo.get_user_by_username(username)
 
-                return user
+        if user and user.password_hash and user.password_hash.verify(password):
+            self.user_repo.update_last_login(user)
+
+            return user
 
         raise Unauthorized("Incorrect username or password")

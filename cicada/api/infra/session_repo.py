@@ -1,4 +1,5 @@
 import json
+import sqlite3
 
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.json import asjson
@@ -322,7 +323,7 @@ class SessionRepo(ISessionRepo, DbConnection):
         return None
 
     @staticmethod
-    def _convert(row) -> Session:  # type: ignore
+    def _convert(row: sqlite3.Row) -> Session:
         return Session(
             id=SessionId(row[0]),
             status=SessionStatus(row[1]),

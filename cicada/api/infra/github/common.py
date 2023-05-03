@@ -118,8 +118,8 @@ async def gather_workflows_via_trigger(trigger: Trigger) -> list[Path]:
                 "completed_at": UtcDatetime.now(),
                 "output": {
                     "title": "Cicada CI File Validator",
-                    "summary": "One or more `.ci` files contained a syntax error",
-                    "annotations": annotations,  # type: ignore
+                    "summary": "One or more `.ci` files contained a syntax error",  # noqa: E501
+                    "annotations": annotations,  # type: ignore[call-overload]
                 },
             },
         )

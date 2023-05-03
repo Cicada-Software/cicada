@@ -118,7 +118,7 @@ let _is = 123 is 123
         "gtr_than": False,
         "less_than_eq": True,
         "gtr_than_eq": False,
-        "_is": 123 == 123,
+        "_is": True,
     }
 
     for name, value in expected.items():

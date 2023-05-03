@@ -50,13 +50,13 @@ async def run_program(args: list[str], terminal: TerminalSession) -> int:
         # TODO: return SessionStatus instead of exit code?
         return -1 if terminal.should_stop.is_set() else process.returncode or 0
 
-    except Exception as ex:
+    except Exception:
         terminal.finish()
 
         if process:
             process.kill()
 
-        raise ex
+        raise
 
 
 EXIT_CODE_MAPPINGS = {
@@ -70,10 +70,10 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 
 
 @dataclass
-class ExecutionContext:  # type: ignore
+class ExecutionContext:  # type: ignore[misc]
     url: str
     trigger_type: TriggerType
-    trigger: dict[str, Any]  # type: ignore
+    trigger: dict[str, Any]  # type: ignore[misc]
     terminal: TerminalSession
     env: dict[str, str]
 

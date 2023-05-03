@@ -72,7 +72,7 @@ class DNSSettings:
             raise ValueError("CICADA_HOST must be defined")
 
         try:
-            self.port = int(os.getenv("CICADA_PORT", 8000))
+            self.port = int(os.getenv("CICADA_PORT", "8000"))
 
         except ValueError as ex:
             raise ValueError("CICADA_PORT must be an integer") from ex
@@ -141,7 +141,7 @@ class GitHubSettings(GitProviderSettings):
         super().__init__()
 
         try:
-            self.app_id = int(os.getenv("GITHUB_APP_ID", 0))
+            self.app_id = int(os.getenv("GITHUB_APP_ID", "0"))
 
         except ValueError as ex:
             raise ValueError("GITHUB_APP_ID must be an integer") from ex
@@ -191,7 +191,7 @@ class JWTSettings(DNSSettings):
 
         try:
             self.expiration_timeout = int(
-                os.getenv("JWT_TOKEN_EXPIRE_SECONDS", 0)
+                os.getenv("JWT_TOKEN_EXPIRE_SECONDS", "0")
             )
 
         except ValueError as ex:

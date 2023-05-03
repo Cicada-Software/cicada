@@ -12,11 +12,13 @@ from cicada.api.endpoints.login_util import CurrentUser
 router = APIRouter()
 
 
-def InstallationDto(installation: Installation) -> dict[str, Any]:  # type: ignore
+def InstallationDto(  # type: ignore[misc]  # noqa: N802
+    installation: Installation,
+) -> dict[str, Any]:
     data = asjson(installation)
     del data["admin_id"]
 
-    return data  # type: ignore
+    return data  # type: ignore[no-any-return]
 
 
 @router.get("/api/installations")

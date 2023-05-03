@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Any
 
 from cicada.api.common.json import asjson
 from cicada.api.domain.triggers import Trigger
@@ -14,7 +13,7 @@ def trigger_to_record(trigger: Trigger) -> Value:
 
 
 # TODO: turn this into a Trigger to Record function
-def json_to_record(j: Any) -> Value:  # type: ignore
+def json_to_record(j: object) -> Value:
     if isinstance(j, dict):
         types = RecordType()
         items: dict[str, Value] = {}

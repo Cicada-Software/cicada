@@ -57,8 +57,8 @@ async def runs_index() -> FileResponse:
     return FileResponse("./frontend/runs.html")
 
 
-@app.get("/run/{uuid}")
-async def run_index(uuid: SessionId) -> FileResponse:
+@app.get("/run/{_}")
+async def run_index(_: SessionId) -> FileResponse:
     return FileResponse("./frontend/run.html")
 
 
@@ -77,8 +77,8 @@ async def settings() -> FileResponse:
     return FileResponse("./frontend/settings.html")
 
 
-@app.get("/installation/{uuid}")
-async def installation(uuid: InstallationId) -> FileResponse:
+@app.get("/installation/{_}")
+async def installation(_: InstallationId) -> FileResponse:
     return FileResponse("./frontend/installation.html")
 
 

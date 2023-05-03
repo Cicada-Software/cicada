@@ -54,10 +54,10 @@ async def repo_get_ci_files(
 
             return folder_get_runnable_ci_files(Path(dir), trigger)
 
-    except Exception:  # noqa: BLE001
+    except Exception:
         logger = logging.getLogger("cicada")
 
-        logger.error(
+        logger.exception(
             f'Issue gathering workflows or deleting temp dir "{tmp_dir}"'
         )
 

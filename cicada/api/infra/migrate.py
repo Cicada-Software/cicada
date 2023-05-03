@@ -261,7 +261,7 @@ def migrate_v15(db: sqlite3.Connection) -> None:
     for row in rows:
         id: int = row[0]
         trigger: str = row[1]
-        data: dict[str, Any] = json.loads(row[2])  # type: ignore
+        data: dict[str, Any] = json.loads(row[2])  # type: ignore[misc]
 
         if trigger == "git.push":
             repository_url = data.pop("repository")
@@ -285,7 +285,7 @@ def migrate_v16(db: sqlite3.Connection) -> None:
     for row in rows:
         id: int = row[0]
         trigger: str = row[1]
-        data: dict[str, Any] = json.loads(row[2])  # type: ignore
+        data: dict[str, Any] = json.loads(row[2])  # type: ignore[misc]
 
         data["type"] = trigger
 
@@ -361,7 +361,7 @@ def migrate_v18(db: sqlite3.Connection) -> None:
 
     for row in rows:
         id: int = row[0]
-        data: dict[str, Any] = json.loads(row[2])  # type: ignore
+        data: dict[str, Any] = json.loads(row[2])  # type: ignore[misc]
 
         datetime_fields = ("committed_on", "opened_at", "closed_at")
 

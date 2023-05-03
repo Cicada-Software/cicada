@@ -64,10 +64,10 @@ async def test_stop_session_mid_stream() -> None:
         stop_session=session_stopper,
     )
 
-    async def read_stream():
+    async def read_stream():  # type: ignore[no-untyped-def]
         return [data async for data in stream.stream(session_id, run=1)]
 
-    task = create_task(read_stream())  # type: ignore
+    task = create_task(read_stream())  # type: ignore[no-untyped-call]
 
     stream.send_command("STOP")
     data = await task

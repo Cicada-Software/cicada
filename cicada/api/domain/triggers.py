@@ -48,9 +48,9 @@ class CommitTrigger(Trigger):
     type = "git.push"
     author: str
     message: str
+    # TODO: add authored_date
     committed_on: Datetime
     sha: GitSha
-    # authored_on: Datetime
     ref: str
     branch: str = ""
 
@@ -68,7 +68,7 @@ class CommitTrigger(Trigger):
         return cls(
             sha=GitSha(kw.pop("sha")),
             committed_on=Datetime.fromisoformat(kw.pop("committed_on")),
-            **kw,  # type: ignore
+            **kw,  # type: ignore[arg-type]
         )
 
 
@@ -96,7 +96,7 @@ class IssueOpenTrigger(IssueTrigger):
             sha=GitSha(kw.pop("sha")) if "sha" in kw else None,
             is_locked=bool(kw.pop("is_locked")),
             opened_at=Datetime.fromisoformat(kw.pop("opened_at")),
-            **kw,  # type: ignore
+            **kw,  # type: ignore[arg-type]
         )
 
 
@@ -114,12 +114,13 @@ class IssueCloseTrigger(IssueTrigger):
             is_locked=bool(kw.pop("is_locked")),
             opened_at=Datetime.fromisoformat(kw.pop("opened_at")),
             closed_at=Datetime.fromisoformat(kw.pop("closed_at")),
-            **kw,  # type: ignore
+            **kw,  # type: ignore[arg-type]
         )
 
 
 def json_to_trigger(j: str) -> Trigger:
     payload = json.loads(j)
+    ty = payload.get("type")
 
     for value in globals().values():
         if (
@@ -127,8 +128,8 @@ def json_to_trigger(j: str) -> Trigger:
             and isinstance(value, type)
             and issubclass(value, Trigger)
             and hasattr(value, "type")
-            and payload.get("type") == value.type
+            and ty == value.type
         ):
             return value.from_dict(**payload)
 
-    assert False
+    raise TypeError(f"Trigger type `{ty}` not found")

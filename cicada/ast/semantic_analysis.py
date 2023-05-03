@@ -1,7 +1,7 @@
 from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, cast
+from typing import cast
 
 from cicada.api.common.json import asjson
 from cicada.api.domain.triggers import Trigger
@@ -35,7 +35,7 @@ from cicada.ast.types import (
 )
 
 
-def json_to_record_type(j: Any) -> Type:  # type: ignore
+def json_to_record_type(j: object) -> Type:
     if isinstance(j, dict):
         types = RecordType()
 
@@ -211,6 +211,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     "cannot use `-` operator with non-numeric value", node.info
                 )
 
+        else:
+            assert False
+
         if self.is_constexpr(node.rhs):
             node.is_constexpr = True
 
@@ -338,7 +341,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             if node.condition.type not in BOOL_LIKE_TYPES:
                 raise AstError(
-                    f"Type `{node.condition.type}` cannot be converted to bool",
+                    f"Type `{node.condition.type}` cannot be converted to bool",  # noqa: E501
                     node.condition.info,
                 )
 

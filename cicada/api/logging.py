@@ -18,7 +18,7 @@ class CustomFormatter(logging.Formatter):
     fmt: str
     project_root: Path
 
-    def __init__(self, **kwargs: Any) -> None:  # type: ignore
+    def __init__(self, **kwargs: Any) -> None:  # type: ignore[misc]
         super().__init__(**kwargs)
 
         self.project_root = Path(__file__).parent.parent.parent

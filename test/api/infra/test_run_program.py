@@ -41,10 +41,10 @@ async def test_non_existent_program_closes_terminal_session() -> None:
     assert terminal_session.is_done
 
 
-async def test_exception_in_terminal_session_handler_cleans_up_session() -> None:
+async def test_exception_in_terminal_session_handler_cleans_up_session() -> None:  # noqa: E501
     terminal_session = TerminalSession()
 
-    def callback(line: str) -> None:
+    def callback(_: str) -> None:
         raise ValueError("This is handled")
 
     terminal_session.callback = callback

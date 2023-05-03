@@ -29,12 +29,12 @@ class TestWaitlistRepo(SqliteTestWrapper):
 
         msg = "Email cannot be longer than 256 characters"
 
-        with pytest.raises(ValueError, match=msg):
-            email = list("x" * 257)
-            email[1] = "@"
-            email[-2] = "."
-            email = "".join(email)
+        email = list("x" * 257)
+        email[1] = "@"
+        email[-2] = "."
+        email = "".join(email)
 
+        with pytest.raises(ValueError, match=msg):
             self.repo.insert_email(email)
 
     def test_valid_email_is_entered(self) -> None:

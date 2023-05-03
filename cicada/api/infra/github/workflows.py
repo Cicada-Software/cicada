@@ -85,7 +85,7 @@ async def wrap_in_github_check_run(
     try:
         yield
 
-    except Exception as ex:
+    except Exception:
         await github.rest.checks.async_update(
             username,
             repo,
@@ -95,7 +95,7 @@ async def wrap_in_github_check_run(
             completed_at=UtcDatetime.now(),
         )
 
-        raise ex
+        raise
 
     await github.rest.checks.async_update(
         username,
@@ -143,7 +143,7 @@ async def run_workflow(
 
             session.finish(exit_code_to_status_code(exit_code))
 
-    except Exception as ex:
+    except Exception:
         session.finish(SessionStatus.FAILURE)
 
-        raise ex
+        raise
