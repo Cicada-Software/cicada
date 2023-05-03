@@ -28,6 +28,7 @@ RUN apt update \
 	&& make install
 
 RUN apt install git git-lfs neofetch -y
+RUN pip install typing_extensions
 
 WORKDIR /app
 
