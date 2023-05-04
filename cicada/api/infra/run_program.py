@@ -75,7 +75,6 @@ class ExecutionContext:  # type: ignore[misc]
     trigger_type: TriggerType
     trigger: dict[str, Any]  # type: ignore[misc]
     terminal: TerminalSession
-    env: dict[str, str]
 
     async def run(self) -> int:
         raise NotImplementedError()

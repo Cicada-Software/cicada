@@ -48,9 +48,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         ):
             mocks["repo_get_env"].return_value = {}
 
-            async def f(
-                session: Session, _: TerminalSession, __: dict[str, str]
-            ) -> None:
+            async def f(session: Session, _: TerminalSession) -> None:
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
@@ -93,9 +91,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         ):
             mocks["repo_get_env"].return_value = {}
 
-            async def f(
-                session: Session, _: TerminalSession, __: dict[str, str]
-            ) -> None:
+            async def f(session: Session, _: TerminalSession) -> None:
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f

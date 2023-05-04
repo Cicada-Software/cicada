@@ -51,7 +51,7 @@ async def test_run_workflow() -> None:
         wrap_in_github_check_run.return_value = nullcontext()
         get_execution_type.return_value.return_value.run.return_value = 0
 
-        await run_workflow(session, TerminalSession(), {})
+        await run_workflow(session, TerminalSession())
 
         assert session.status == SessionStatus.SUCCESS
         assert session.finished_at
@@ -86,7 +86,7 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
         get_execution_type.return_value.return_value.run.side_effect = f
 
         with pytest.raises(RuntimeError):
-            await run_workflow(session, TerminalSession(), {})
+            await run_workflow(session, TerminalSession())
 
         assert session.status == SessionStatus.FAILURE
         assert session.finished_at

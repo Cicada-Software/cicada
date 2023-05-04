@@ -41,17 +41,13 @@ class RerunSession:
         self.repository_repo = repository_repo
 
     async def handle(self, session: Session) -> None:
-        # TODO: assert previous session(s) arent pending
-
-        env = {}
-
-        # TODO: make these required
+        # TODO: make these repos required
         if self.env_repo and self.repository_repo:
-            env = get_env_vars_for_repo(
+            session.trigger.env = get_env_vars_for_repo(
                 self.env_repo, self.repository_repo, session.trigger
             )
 
-        session.trigger.env = env
+        # TODO: assert previous session(s) arent pending
 
         if not await self.gather_workflows(session.trigger):
             return
@@ -72,7 +68,7 @@ class RerunSession:
 
         self.session_repo.create(session)
 
-        await self.workflow_runner(session, terminal, env)
+        await self.workflow_runner(session, terminal)
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 

@@ -107,11 +107,7 @@ async def wrap_in_github_check_run(
     )
 
 
-async def run_workflow(
-    session: Session,
-    terminal: TerminalSession,
-    env: dict[str, str],
-) -> None:
+async def run_workflow(session: Session, terminal: TerminalSession) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
 
     access_token = await get_repo_access_token(username, repo)
@@ -127,7 +123,6 @@ async def run_workflow(
     try:
         async with wrapper:
             trigger = asjson(session.trigger)
-            trigger["env"] = env
 
             executor_type = ExecutionSettings().executor
 
@@ -136,7 +131,6 @@ async def run_workflow(
                 trigger_type=session.trigger.type,
                 trigger=trigger,
                 terminal=terminal,
-                env=env,
             )
 
             exit_code = await ctx.run()

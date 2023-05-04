@@ -59,13 +59,9 @@ class MakeSessionFromTrigger:
     async def handle(self, trigger: Trigger) -> None:
         # TODO: test this
         if self.env_repo and self.repository_repo:
-            env = get_env_vars_for_repo(
+            trigger.env = get_env_vars_for_repo(
                 self.env_repo, self.repository_repo, trigger
             )
-        else:
-            env = {}
-
-        trigger.env = env
 
         files = await self.gather_workflows(trigger)
 
@@ -86,8 +82,7 @@ class MakeSessionFromTrigger:
         session = Session(id=session_id, trigger=trigger)
         self.session_repo.create(session)
 
-        # TODO: make trigger+env combining logic consistent
-        await self.workflow_runner(session, terminal, env)
+        await self.workflow_runner(session, terminal)
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 

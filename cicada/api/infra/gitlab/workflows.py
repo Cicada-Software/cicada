@@ -61,9 +61,7 @@ async def wrap_in_gitlab_status_check(
     commit.statuses.create({**payload, "state": state})
 
 
-async def run_workflow(
-    session: Session, terminal: TerminalSession, env: dict[str, str]
-) -> None:
+async def run_workflow(session: Session, terminal: TerminalSession) -> None:
     settings = GitlabSettings()
 
     wrapper: AbstractAsyncContextManager[None]
@@ -86,7 +84,6 @@ async def run_workflow(
                 trigger_type=session.trigger.type,
                 trigger=asjson(session.trigger),
                 terminal=terminal,
-                env=env,
             )
 
             exit_code = await ctx.run()

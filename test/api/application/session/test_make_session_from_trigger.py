@@ -40,9 +40,7 @@ class AsyncTap:
 async def test_session_is_created() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(
-        session: Session, _: TerminalSession, __: dict[str, str]
-    ) -> None:
+    async def dummy_check_runner(session: Session, _: TerminalSession) -> None:
         await tap.wait_for_close()
 
         session.finish(SessionStatus.SUCCESS)

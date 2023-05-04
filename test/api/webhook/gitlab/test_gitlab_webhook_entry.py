@@ -45,9 +45,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.mock_gitlab_infra_details() as mocks,
         ):
 
-            async def f(
-                session: Session, _: TerminalSession, __: dict[str, str]
-            ) -> None:
+            async def f(session: Session, _: TerminalSession) -> None:
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
@@ -90,9 +88,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.mock_gitlab_infra_details() as mocks,
         ):
 
-            async def f(
-                session: Session, _: TerminalSession, __: dict[str, str]
-            ) -> None:
+            async def f(session: Session, _: TerminalSession) -> None:
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
