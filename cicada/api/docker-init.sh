@@ -7,7 +7,6 @@ tempdir="$(mktemp -d)"
 
 cd "$tempdir"
 
-git lfs install > /dev/null 2>&1
 git clone -q "$CLONE_URL"
 
 # Hack to cd into the repo we just cloned. If this doesn't work, we can just use
