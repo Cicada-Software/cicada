@@ -17,7 +17,7 @@ FROM python:3.10.11-alpine3.17
 
 RUN apk update \
 	&& apk upgrade \
-	&& apk add git git-lfs neofetch \
+	&& apk add git git-lfs alpine-sdk neofetch \
 	&& git lfs install \
 	&& pip install typing_extensions
 
