@@ -872,3 +872,10 @@ def test_let_name_must_be_identifier() -> None:
 
     with pytest.raises(AstError, match="expected identifier"):
         generate_ast_tree(tokenize(code))
+
+
+def test_show_error_when_expression_is_expected() -> None:
+    code = "if ="
+
+    with pytest.raises(AstError, match="expected an expression, got `=`"):
+        generate_ast_tree(tokenize(code))

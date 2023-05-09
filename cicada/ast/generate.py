@@ -645,7 +645,7 @@ def generate_expr(state: ParserState) -> Expression:
         raise AstError.unexpected_token(token)
 
     else:
-        assert False
+        raise AstError(f"expected an expression, got `{token.content}`", token)
 
     with state.peek() as peek:
         oper = state.next_non_whitespace_or_eof()
