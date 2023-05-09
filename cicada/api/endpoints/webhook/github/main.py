@@ -14,6 +14,7 @@ from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.github.auth import (
+    add_repository_to_installation,
     create_or_update_github_installation,
     create_or_update_github_user,
     update_github_repo_perms,
@@ -106,9 +107,9 @@ async def handle_github_event(request: Request, di: Di) -> None:
     white_list = GitProviderSettings().repo_white_list
 
     match event:
-        case {"repository": {"full_name": str(repo)}}:
-            if not is_repo_in_white_list(repo, white_list):
-                logger.warning(f'GitHub repo "{repo}" not in whitelist')
+        case {"repository": {"full_name": str(repo_name)}}:
+            if not is_repo_in_white_list(repo_name, white_list):
+                logger.warning(f'GitHub repo "{repo_name}" not in whitelist')
                 return
 
         case _:
@@ -117,7 +118,11 @@ async def handle_github_event(request: Request, di: Di) -> None:
     user = create_or_update_github_user(di.user_repo(), event)
 
     if user:
-        update_github_repo_perms(di, user.id, event, event_type)
+        repo = update_github_repo_perms(di, user.id, event, event_type)
+
+        # TODO: update this without the need to have a repo/user
+        if repo:
+            add_repository_to_installation(di.installation_repo(), repo, event)
 
     if event_type in ("installation", "installation_repositories"):
         if user:

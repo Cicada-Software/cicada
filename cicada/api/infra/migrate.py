@@ -603,6 +603,44 @@ def migrate_v32(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=33)
+def migrate_v33(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE _installation_repos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            installation_id INTEGER NOT NULL,
+            repo_id INTEGER NOT NULL
+        );
+
+        CREATE UNIQUE INDEX ux_installation_repos_ids
+        ON _installation_repos(installation_id, repo_id);
+
+        CREATE VIEW v_session_runtime_metrics AS
+        SELECT
+            i.id AS installation_id,
+            i.uuid AS installation_uuid,
+            s.id AS session_id,
+            s.uuid AS session_uuid,
+            s.status AS session_status,
+            s.started_at AS session_started_at,
+            s.finished_at AS session_finished_at,
+            s.run_number AS session_run,
+            r.id AS repo_id,
+            iif(
+                s.finished_at IS NULL,
+                -1,
+                unixepoch(s.finished_at) - unixepoch(s.started_at)
+            ) AS seconds
+        FROM sessions s
+        JOIN triggers t ON t.id = s.trigger_id
+        JOIN repositories r ON r.url = t.data->>'repository_url'
+        JOIN _installation_repos ir ON ir.repo_id = r.id
+        JOIN installations i ON i.id = ir.installation_id
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

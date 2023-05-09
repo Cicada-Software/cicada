@@ -3,7 +3,9 @@ from uuid import uuid4
 
 from cicada.api.di import DiContainer
 from cicada.api.domain.installation import Installation, InstallationScope
+from cicada.api.domain.repository import Repository
 from cicada.api.domain.user import User, UserId
+from cicada.api.repo.installation_repo import IInstallationRepo
 from cicada.api.repo.user_repo import IUserRepo
 
 
@@ -27,7 +29,7 @@ def update_github_repo_perms(  # type: ignore[misc]
     user_id: UserId,
     event: dict[str, Any],
     event_type: str,
-) -> None:
+) -> Repository | None:
     """
     Determine a user's permissions for a given repository based soley on the
     data in the webhook. GitHub's API doesn't provide a succinct way to query
@@ -72,10 +74,10 @@ def update_github_repo_perms(  # type: ignore[misc]
             elif event_type == "issues":
                 perms = "read"
             else:
-                return
+                return None
 
         case _:
-            return
+            return None
 
     repository_repo = di.repository_repo()
 
@@ -87,10 +89,12 @@ def update_github_repo_perms(  # type: ignore[misc]
         repo, user_id, [perms]  # type: ignore[list-item]
     )
 
+    return repository_repo.get_repository_by_repo_id(repo.id)
+
 
 def create_or_update_github_installation(  # type: ignore[misc]
     di: DiContainer, user_id: UserId, event: dict[str, Any]
-) -> None:
+) -> Installation | None:
     match event:
         case {
             "action": "added" | "created",
@@ -117,7 +121,27 @@ def create_or_update_github_installation(  # type: ignore[misc]
 
             repo = di.installation_repo()
 
-            repo.create_installation(installation)
+            repo.create_or_update_installation(installation)
 
-        case _:
-            return
+            return installation
+
+    return None
+
+
+# TODO: test this
+def add_repository_to_installation(  # type: ignore[misc]
+    installation_repo: IInstallationRepo,
+    repository: Repository,
+    event: dict[str, Any],
+) -> None:
+    match event:
+        case {"installation": {"id": int(installation_id)}}:
+            installation = installation_repo.get_installation_by_provider_id(
+                id=str(installation_id),
+                provider="github",
+            )
+
+            if installation and repository:
+                installation_repo.add_repository_to_installation(
+                    repository, installation
+                )
