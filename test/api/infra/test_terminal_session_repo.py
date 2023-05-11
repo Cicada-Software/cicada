@@ -28,8 +28,10 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
 
         terminal_session = self.repo.create(session_id)
 
-        self.repo.add_line(session_id, "hello\n")
-        self.repo.add_line(session_id, "world\n")
+        self.repo.add_line(session_id, "line 1\r\n")
+        self.repo.add_line(session_id, "line 2\r\n")
+        self.repo.add_line(session_id, "line 3\n")
+        self.repo.add_line(session_id, "line 4\n")
 
         # TODO: this is an ugly hack, makes things harder to test
         LIVE_TERMINAL_SESSIONS.clear()
@@ -38,7 +40,12 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
 
         assert recieved_terminal_session
         assert recieved_terminal_session.is_done
-        assert recieved_terminal_session.lines == ["hello", "world", ""]
+        assert recieved_terminal_session.lines == [
+            "line 1\r\n",
+            "line 2\r\n",
+            "line 3\n",
+            "line 4\n",
+        ]
 
         # This might be an implementation detail, because if the terminal
         # session is "done", the original one should be able to be returned

@@ -47,7 +47,12 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         )
 
         if rows := cursor.fetchone():
-            lines = rows["lines"].split("\n")
+            stdout = rows["lines"]
+
+            lines = [f"{line}\n" for line in rows["lines"].split("\n")]
+
+            if stdout.endswith("\n"):
+                lines.pop(-1)
 
             terminal = TerminalSession()
             terminal.lines = lines
