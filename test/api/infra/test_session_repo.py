@@ -12,20 +12,20 @@ from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.repo.repository_repo import Permission
 from test.api.common import SqliteTestWrapper
+from test.common import build
 
 
+# TODO: remove this function, build trigger in callee instead
 def create_dummy_session() -> Session:
-    commit = CommitTrigger(
+    commit = build(
+        CommitTrigger,
         sha=GitSha("deadbeef"),
         ref="refs/heads/master",
-        author="",
-        message="",
-        committed_on=UtcDatetime.now(),
         repository_url="https://github.com/user/repo",
         provider="github",
     )
 
-    return Session(id=uuid4(), trigger=commit)
+    return build(Session, trigger=commit)
 
 
 class TestSessionRepo(SqliteTestWrapper):

@@ -1,12 +1,13 @@
 from dataclasses import replace
-from types import SimpleNamespace
 from uuid import uuid4
 
 from cicada.api.domain.installation import Installation, InstallationScope
+from cicada.api.domain.repository import Repository
 from cicada.api.domain.user import User
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.user_repo import UserRepo
 from test.api.common import SqliteTestWrapper
+from test.common import build
 
 
 class TestInstallationRepo(SqliteTestWrapper):
@@ -112,23 +113,15 @@ class TestInstallationRepo(SqliteTestWrapper):
         user = User(id=uuid4(), username="bob", provider="github")
         self.user_repo.create_or_update_user(user)
 
-        # TODO: use builder, the specific values here dont matter
-        installation = Installation(
-            id=uuid4(),
-            name="org_name",
-            scope=InstallationScope.ORGANIZATION,
-            admin_id=user.id,
-            provider="github",
-            provider_id="1337",
-            provider_url="https://example.com",
-        )
-
+        installation = build(Installation, admin_id=user.id)
         self.installation_repo.create_or_update_installation(installation)
+
+        repo_id = 1
 
         # run twice to ensure the index error doesnt occur
         for _ in range(2):
             self.installation_repo.add_repository_to_installation(
-                repo=SimpleNamespace(id=1),  # type: ignore
+                repo=build(Repository, id=repo_id),
                 installation=installation,
             )
 
@@ -140,4 +133,4 @@ class TestInstallationRepo(SqliteTestWrapper):
 
             assert len(ids) == 1
 
-            assert ids[0]["repo_id"] == 1
+            assert ids[0]["repo_id"] == repo_id
