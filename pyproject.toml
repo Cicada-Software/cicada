@@ -103,6 +103,7 @@ extend-ignore = [
 "cicada/api/*" = ["B008"]
 "cicada/*" = ["PT", "INP001"]
 "test/ast/test_generate.py" = ["W293"]
+"cicada/eval/container.py" = ["S603", "S607", "S108"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,11 +1,11 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, nullcontext
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.github.workflows import run_workflow
@@ -51,7 +51,7 @@ async def test_run_workflow() -> None:
         wrap_in_github_check_run.return_value = nullcontext()
         get_execution_type.return_value.return_value.run.return_value = 0
 
-        await run_workflow(session, TerminalSession())
+        await run_workflow(session, TerminalSession(), Path())
 
         assert session.status == SessionStatus.SUCCESS
         assert session.finished_at
@@ -66,7 +66,7 @@ async def test_run_workflow() -> None:
             == "https://access_token:access_token@github.com/user/repo"
         )
         assert kwargs["trigger_type"] == "git.push"
-        assert kwargs["trigger"] == asjson(session.trigger)
+        assert kwargs["trigger"] == session.trigger
 
 
 async def test_session_fails_if_exception_occurs_in_workflow() -> None:
@@ -86,7 +86,7 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
         get_execution_type.return_value.return_value.run.side_effect = f
 
         with pytest.raises(RuntimeError):
-            await run_workflow(session, TerminalSession())
+            await run_workflow(session, TerminalSession(), Path())
 
         assert session.status == SessionStatus.FAILURE
         assert session.finished_at

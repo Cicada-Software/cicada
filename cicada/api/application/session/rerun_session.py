@@ -1,3 +1,6 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
 from cicada.api.domain.services.repository import get_env_vars_for_repo
 from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.repo.environment_repo import IEnvironmentRepo
@@ -41,7 +44,11 @@ class RerunSession:
         self.repository_repo = repository_repo
 
     async def handle(self, session: Session) -> None:
-        # TODO: make these repos required
+        with TemporaryDirectory() as cloned_repo:
+            await self._handle(Path(cloned_repo), session)
+
+    async def _handle(self, cloned_repo: Path, session: Session) -> None:
+        # TODO: make these required
         if self.env_repo and self.repository_repo:
             session.trigger.env = get_env_vars_for_repo(
                 self.env_repo, self.repository_repo, session.trigger
@@ -49,7 +56,7 @@ class RerunSession:
 
         # TODO: assert previous session(s) arent pending
 
-        if not await self.gather_workflows(session.trigger):
+        if not await self.gather_workflows(session.trigger, cloned_repo):
             return
 
         session = Session(
@@ -68,7 +75,7 @@ class RerunSession:
 
         self.session_repo.create(session)
 
-        await self.workflow_runner(session, terminal)
+        await self.workflow_runner(session, terminal, cloned_repo)
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 

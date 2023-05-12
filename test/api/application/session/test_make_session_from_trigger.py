@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from cicada.api.application.session.make_session_from_trigger import (
@@ -40,7 +41,9 @@ class AsyncTap:
 async def test_session_is_created() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(session: Session, _: TerminalSession) -> None:
+    async def dummy_check_runner(
+        session: Session, _: TerminalSession, __: Path
+    ) -> None:
         await tap.wait_for_close()
 
         session.finish(SessionStatus.SUCCESS)

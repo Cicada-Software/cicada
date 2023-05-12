@@ -22,7 +22,7 @@ def test_env_var_set_will_be_used() -> None:
     ):
         DbConnection()
 
-    p.assert_called_once_with("filename")
+    assert p.call_args[0][0] == "filename"
 
 
 def test_explicitly_passed_filename_will_be_used_if_passed() -> None:

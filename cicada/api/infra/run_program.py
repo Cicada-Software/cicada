@@ -1,11 +1,18 @@
+import asyncio
 import json
 from asyncio import create_subprocess_exec, create_task, subprocess
 from dataclasses import dataclass
-from typing import Any
+from functools import partial
+from pathlib import Path
 
+from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.domain.triggers import TriggerType
+from cicada.api.domain.triggers import Trigger, TriggerType
+from cicada.ast.entry import parse_and_analyze
+from cicada.ast.generate import AstError
+from cicada.eval.container import CommandFailed, RemoteContainerEvalVisitor
+from cicada.eval.find_files import find_ci_files
 
 
 async def process_killer(
@@ -70,11 +77,12 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 
 
 @dataclass
-class ExecutionContext:  # type: ignore[misc]
+class ExecutionContext:
     url: str
     trigger_type: TriggerType
-    trigger: dict[str, Any]  # type: ignore[misc]
+    trigger: Trigger
     terminal: TerminalSession
+    cloned_repo: Path
 
     async def run(self) -> int:
         raise NotImplementedError()
@@ -82,7 +90,7 @@ class ExecutionContext:  # type: ignore[misc]
 
 class DockerExecutionContext(ExecutionContext):
     async def run(self) -> int:
-        trigger = json.dumps(self.trigger, separators=(",", ":"))
+        trigger = json.dumps(asjson(self.trigger), separators=(",", ":"))
 
         return await run_program(
             [
@@ -102,7 +110,7 @@ class DockerExecutionContext(ExecutionContext):
 
 class PodmanExecutionContext(ExecutionContext):
     async def run(self) -> int:
-        trigger = json.dumps(self.trigger, separators=(",", ":"))
+        trigger = json.dumps(asjson(self.trigger), separators=(",", ":"))
 
         return await run_program(
             [
@@ -120,9 +128,54 @@ class PodmanExecutionContext(ExecutionContext):
         )
 
 
+class RemotePodmanExecutionContext(ExecutionContext):
+    """
+    Inject commands into a running container as opposed to running a container
+    directly. The above solutions require that Cicada is installed in the
+    container along side the cloned repository, but means you are unable to
+    bring your own container. With the remote container though you can (in
+    theory) specify whatever container you want, and Cicada will inject the
+    commands into the container.
+    """
+
+    async def run(self) -> int:
+        for file in find_ci_files(self.cloned_repo):
+            return await asyncio.to_thread(partial(self.run_file, file))
+
+        assert False, "Expected at least one workflow"
+
+    def run_file(self, file: Path) -> int:
+        try:
+            tree = parse_and_analyze(file.read_text(), self.trigger)
+
+        except AstError as exc:
+            # Shouldn't happen, gather phase should pass without issues
+            print(exc)
+
+            return 1
+
+        visitor = RemoteContainerEvalVisitor(
+            self.cloned_repo,
+            self.trigger,
+            self.terminal,
+        )
+
+        try:
+            tree.accept(visitor)
+
+        except CommandFailed as exc:
+            return exc.return_code
+
+        finally:
+            visitor.cleanup()
+
+        return 0
+
+
 EXECUTOR_MAPPING = {
     "docker": DockerExecutionContext,
     "podman": PodmanExecutionContext,
+    "remote-podman": RemotePodmanExecutionContext,
 }
 
 

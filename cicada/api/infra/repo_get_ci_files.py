@@ -2,7 +2,6 @@ import logging
 import shlex
 from asyncio.subprocess import PIPE, STDOUT, create_subprocess_exec
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 from cicada.api.domain.triggers import Trigger
 from cicada.ast.entry import parse_and_analyze
@@ -17,49 +16,44 @@ from cicada.eval.on_statement_visitor import (
 
 # TODO: replace `ref` with `sha`
 async def repo_get_ci_files(
-    url: str, ref: str, trigger: Trigger
+    url: str,
+    ref: str,
+    trigger: Trigger,
+    cloned_repo: Path,
 ) -> list[Path | AstError]:  # pragma: no cover
-    tmp_dir: str | None = None
-
     try:
-        with TemporaryDirectory() as dir:
-            tmp_dir = dir
+        # TODO: use python git library instead
+        cmds = [
+            ["git", "init"],
+            ["git", "remote", "add", "origin", shlex.quote(url)],
+            ["git", "fetch", "--depth", "1", "origin", shlex.quote(ref)],
+            ["git", "checkout", "FETCH_HEAD"],
+        ]
 
-            # TODO: use python git library instead
-            cmds = [
-                ["git", "init"],
-                ["git", "remote", "add", "origin", shlex.quote(url)],
-                ["git", "fetch", "--depth", "1", "origin", shlex.quote(ref)],
-                ["git", "checkout", "FETCH_HEAD"],
-            ]
+        for args in cmds:
+            process = await create_subprocess_exec(
+                args[0],
+                *args[1:],
+                stdout=PIPE,
+                stderr=STDOUT,
+                cwd=cloned_repo,
+            )
 
-            for args in cmds:
-                process = await create_subprocess_exec(
-                    args[0],
-                    *args[1:],
-                    stdout=PIPE,
-                    stderr=STDOUT,
-                    cwd=dir,
-                )
+            await process.wait()
 
-                await process.wait()
+            print(args, "->", process.returncode)
 
-                print(args, "->", process.returncode)
+            if process.stdout and (data := await process.stdout.read()):
+                print(data.decode())
 
-                if process.stdout and (data := await process.stdout.read()):
-                    print(data.decode())
+            if process.returncode != 0:
+                return []
 
-                if process.returncode != 0:
-                    return []
-
-            return folder_get_runnable_ci_files(Path(dir), trigger)
+        return folder_get_runnable_ci_files(cloned_repo, trigger)
 
     except Exception:
         logger = logging.getLogger("cicada")
-
-        logger.exception(
-            f'Issue gathering workflows or deleting temp dir "{tmp_dir}"'
-        )
+        logger.exception("Issue gathering workflows")
 
     return []
 

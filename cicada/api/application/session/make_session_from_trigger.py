@@ -1,3 +1,5 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from cicada.api.domain.services.repository import get_env_vars_for_repo
@@ -57,13 +59,16 @@ class MakeSessionFromTrigger:
         self.repository_repo = repository_repo
 
     async def handle(self, trigger: Trigger) -> None:
-        # TODO: test this
+        with TemporaryDirectory() as cloned_repo:
+            await self._handle(Path(cloned_repo), trigger)
+
+    async def _handle(self, cloned_repo: Path, trigger: Trigger) -> None:
         if self.env_repo and self.repository_repo:
             trigger.env = get_env_vars_for_repo(
                 self.env_repo, self.repository_repo, trigger
             )
 
-        files = await self.gather_workflows(trigger)
+        files = await self.gather_workflows(trigger, cloned_repo)
 
         if not files:
             return
@@ -82,7 +87,7 @@ class MakeSessionFromTrigger:
         session = Session(id=session_id, trigger=trigger)
         self.session_repo.create(session)
 
-        await self.workflow_runner(session, terminal)
+        await self.workflow_runner(session, terminal, cloned_repo)
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 

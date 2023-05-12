@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -15,7 +16,9 @@ from test.api.application.session.test_make_session_from_trigger import (
 async def test_reran_session_is_created_and_ran() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(session: Session, _: TerminalSession) -> None:
+    async def dummy_check_runner(
+        session: Session, _: TerminalSession, __: Path
+    ) -> None:
         await tap.wait_for_close()
 
         session.finish(SessionStatus.SUCCESS)

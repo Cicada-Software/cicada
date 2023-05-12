@@ -10,7 +10,6 @@ from githubkit import GitHub
 
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.http import url_get_user_and_repo
-from cicada.api.common.json import asjson
 from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.domain.triggers import (
@@ -35,6 +34,7 @@ from .common import (
 
 async def gather_issue_workflows(
     trigger: Trigger,
+    cloned_repo: Path,
 ) -> list[Path]:  # pragma: no cover
     assert isinstance(trigger, IssueTrigger)
 
@@ -49,7 +49,7 @@ async def gather_issue_workflows(
 
     trigger.sha = GitSha(commit.sha)
 
-    return await gather_workflows_via_trigger(trigger)
+    return await gather_workflows_via_trigger(trigger, cloned_repo)
 
 
 STATUS_TO_CHECK_RUN_STATUS: dict[SessionStatus, str] = {
@@ -107,7 +107,11 @@ async def wrap_in_github_check_run(
     )
 
 
-async def run_workflow(session: Session, terminal: TerminalSession) -> None:
+async def run_workflow(
+    session: Session,
+    terminal: TerminalSession,
+    cloned_repo: Path,
+) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
 
     access_token = await get_repo_access_token(username, repo)
@@ -122,15 +126,14 @@ async def run_workflow(session: Session, terminal: TerminalSession) -> None:
 
     try:
         async with wrapper:
-            trigger = asjson(session.trigger)
-
             executor_type = ExecutionSettings().executor
 
             ctx = get_execution_type(executor_type)(
                 url=url,
                 trigger_type=session.trigger.type,
-                trigger=trigger,
+                trigger=session.trigger,
                 terminal=terminal,
+                cloned_repo=cloned_repo,
             )
 
             exit_code = await ctx.run()

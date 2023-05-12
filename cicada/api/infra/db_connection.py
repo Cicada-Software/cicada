@@ -8,7 +8,7 @@ sqlite3.register_adapter(Datetime, str)
 
 
 def get_default_db() -> sqlite3.Connection:
-    return sqlite3.connect(DBSettings().db_url)
+    return sqlite3.connect(DBSettings().db_url, check_same_thread=False)
 
 
 class DbConnection:

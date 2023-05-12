@@ -43,7 +43,8 @@ class DBSettings:
 class ExecutionSettings:
     executor: str
 
-    AVAILABLE_EXECUTORS: Final = {"docker", "podman"}
+    # TODO: make this dynamic
+    AVAILABLE_EXECUTORS: Final = {"docker", "podman", "remote-podman"}
 
     def __init__(self) -> None:
         self.executor = os.getenv("CICADA_EXECUTOR", "docker")

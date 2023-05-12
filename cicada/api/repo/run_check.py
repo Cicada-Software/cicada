@@ -8,8 +8,11 @@ from cicada.api.domain.triggers import Trigger
 # TODO: relocate this file
 
 IWorkflowRunner = Callable[
-    [Session, TerminalSession],
+    [Session, TerminalSession, Path],
     Coroutine[None, None, None],
 ]
 
-IWorkflowGatherer = Callable[[Trigger], Coroutine[None, None, list[Path]]]
+IWorkflowGatherer = Callable[
+    [Trigger, Path],
+    Coroutine[None, None, list[Path]],
+]

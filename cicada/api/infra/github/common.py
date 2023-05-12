@@ -84,7 +84,10 @@ def github_clone_url(user: str, repo: str, access_token: str) -> str:
     return f"https://{access_token}:{access_token}@github.com/{user}/{repo}"
 
 
-async def gather_workflows_via_trigger(trigger: Trigger) -> list[Path]:
+async def gather_workflows_via_trigger(
+    trigger: Trigger,
+    cloned_repo: Path,
+) -> list[Path]:
     assert trigger.sha
 
     started_at = UtcDatetime.now()
@@ -95,7 +98,12 @@ async def gather_workflows_via_trigger(trigger: Trigger) -> list[Path]:
 
     url = github_clone_url(username, repo_name, access_token)
 
-    files_or_errors = await repo_get_ci_files(url, str(trigger.sha), trigger)
+    files_or_errors = await repo_get_ci_files(
+        url,
+        str(trigger.sha),
+        trigger,
+        cloned_repo,
+    )
 
     errors = [x for x in files_or_errors if isinstance(x, AstError)]
 

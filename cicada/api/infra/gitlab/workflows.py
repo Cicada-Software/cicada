@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import gitlab
 
 from cicada.api.common.http import url_get_user_and_repo
-from cicada.api.common.json import asjson
 from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.domain.triggers import CommitTrigger, GitSha, Trigger
@@ -61,7 +60,11 @@ async def wrap_in_gitlab_status_check(
     commit.statuses.create({**payload, "state": state})
 
 
-async def run_workflow(session: Session, terminal: TerminalSession) -> None:
+async def run_workflow(
+    session: Session,
+    terminal: TerminalSession,
+    cloned_repo: Path,
+) -> None:
     settings = GitlabSettings()
 
     wrapper: AbstractAsyncContextManager[None]
@@ -82,8 +85,9 @@ async def run_workflow(session: Session, terminal: TerminalSession) -> None:
             ctx = get_execution_type(executor_type)(
                 url=url,
                 trigger_type=session.trigger.type,
-                trigger=asjson(session.trigger),
+                trigger=session.trigger,
                 terminal=terminal,
+                cloned_repo=cloned_repo,
             )
 
             exit_code = await ctx.run()
@@ -96,7 +100,10 @@ async def run_workflow(session: Session, terminal: TerminalSession) -> None:
         raise
 
 
-async def gather_issue_workflows(trigger: Trigger) -> list[Path]:
+async def gather_issue_workflows(
+    trigger: Trigger,
+    cloned_repo: Path,
+) -> list[Path]:
     settings = GitlabSettings()
     user, repo = url_get_user_and_repo(trigger.repository_url)
 
@@ -107,10 +114,10 @@ async def gather_issue_workflows(trigger: Trigger) -> list[Path]:
 
     trigger.sha = GitSha(str(commit.get_id()))
 
-    return await gather_workflows(trigger)
+    return await gather_workflows(trigger, cloned_repo)
 
 
-async def gather_workflows(trigger: Trigger) -> list[Path]:
+async def gather_workflows(trigger: Trigger, cloned_repo: Path) -> list[Path]:
     username, repo_name = url_get_user_and_repo(trigger.repository_url)
 
     settings = GitlabSettings()
@@ -119,6 +126,11 @@ async def gather_workflows(trigger: Trigger) -> list[Path]:
 
     assert trigger.sha
 
-    files_or_errors = await repo_get_ci_files(url, str(trigger.sha), trigger)
+    files_or_errors = await repo_get_ci_files(
+        url,
+        str(trigger.sha),
+        trigger,
+        cloned_repo,
+    )
 
     return [x for x in files_or_errors if isinstance(x, Path)]
