@@ -8,6 +8,7 @@ from cicada.api.infra.github.auth import (
     update_github_repo_perms,
 )
 from test.api.endpoints.common import TestDiContainer
+from test.common import build
 
 
 def test_github_user_repo_perms_caching() -> None:
@@ -185,7 +186,7 @@ def test_create_installation() -> None:
     di = TestDiContainer()
     di.reset()
 
-    user = User(id=uuid4(), username="bob", provider="github")
+    user = build(User, username="bob", provider="github")
 
     di.user_repo().create_or_update_user(user)
 

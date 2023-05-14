@@ -6,6 +6,7 @@ from typing import Any, Literal, TypeVar
 from uuid import UUID, uuid4
 
 from cicada.api.common.datetime import Datetime, UtcDatetime
+from cicada.api.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 def get_default_type(field_type: Any) -> Any:  # type: ignore
@@ -35,6 +36,15 @@ def get_default_type(field_type: Any) -> Any:  # type: ignore
 
     if issubclass(field_type, Enum):
         return list(field_type)[0]
+
+    if issubclass(field_type, Trigger):
+        return build(
+            CommitTrigger,
+            sha=GitSha("deadbeef"),
+            ref="refs/heads/master",
+            repository_url="https://github.com/user/repo",
+            provider="github",
+        )
 
     return field_type()
 

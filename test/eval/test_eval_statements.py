@@ -1,6 +1,5 @@
 import pytest
 
-from cicada.api.common.datetime import UtcDatetime
 from cicada.api.domain.triggers import (
     CommitTrigger,
     GitSha,
@@ -12,29 +11,24 @@ from cicada.ast.nodes import RecordValue, StringValue
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordField, RecordType, StringType
 from cicada.eval.main import EvalVisitor
+from test.common import build
 
 
 def make_dummy_commit_trigger() -> Trigger:
-    return CommitTrigger(
+    return build(
+        CommitTrigger,
         provider="github",
-        repository_url="",
         sha=GitSha("DEADBEEF"),
         ref="refs/heads/master",
         author="dosisod",
-        message="",
-        committed_on=UtcDatetime.now(),
     )
 
 
 def make_dummy_issue_open_trigger() -> Trigger:
-    return IssueOpenTrigger(
+    return build(
+        IssueOpenTrigger,
         provider="github",
-        repository_url="",
         id="1",
-        title="",
-        is_locked=False,
-        opened_at=UtcDatetime.now(),
-        body="",
         submitted_by="dosisod",
     )
 

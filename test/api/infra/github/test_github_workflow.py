@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from cicada.api.domain.session import SessionStatus
+from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.github.workflows import run_workflow
-from test.api.infra.test_session_repo import create_dummy_session
+from test.common import build
 
 
 @asynccontextmanager
@@ -40,7 +40,7 @@ async def mock_github_workflow_runner() -> AsyncGenerator[
 
 
 async def test_run_workflow() -> None:
-    session = create_dummy_session()
+    session = build(Session)
 
     async with mock_github_workflow_runner() as mocks:
         get_repo_access_token = mocks["get_repo_access_token"]
@@ -70,7 +70,7 @@ async def test_run_workflow() -> None:
 
 
 async def test_session_fails_if_exception_occurs_in_workflow() -> None:
-    session = create_dummy_session()
+    session = build(Session)
 
     async with mock_github_workflow_runner() as mocks:
         get_repo_access_token = mocks["get_repo_access_token"]

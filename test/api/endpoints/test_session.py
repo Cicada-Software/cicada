@@ -2,12 +2,12 @@ from copy import deepcopy
 from uuid import uuid4
 
 from cicada.api.common.json import asjson
-from cicada.api.domain.session import SessionStatus
+from cicada.api.domain.session import Session, SessionStatus
 from cicada.api.domain.user import User
 from cicada.api.endpoints.login_util import create_access_token
 from cicada.api.endpoints.session import router as session_router
 from test.api.endpoints.common import TestEndpointWrapper
-from test.api.infra.test_session_repo import create_dummy_session
+from test.common import build
 
 
 class TestSessionEndpoints(TestEndpointWrapper):
@@ -18,11 +18,11 @@ class TestSessionEndpoints(TestEndpointWrapper):
         cls.app.include_router(session_router)
 
     def test_stop_session(self) -> None:
-        session = create_dummy_session()
+        session = build(Session)
         self.di.session_repo().create(session)
 
         with self.inject_dummy_env_vars():
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_access_token(user)["access_token"]
 
@@ -42,11 +42,11 @@ class TestSessionEndpoints(TestEndpointWrapper):
     def test_get_recent_sessions(self) -> None:
         self.di.reset()
 
-        session = create_dummy_session()
+        session = build(Session)
         self.di.session_repo().create(session)
 
         with self.inject_dummy_env_vars():
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_access_token(user)["access_token"]
 
@@ -65,7 +65,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
     def test_get_session_info(self) -> None:
         self.di.reset()
 
-        session = create_dummy_session()
+        session = build(Session)
 
         run_2 = deepcopy(session)
         run_2.run = 2
@@ -74,7 +74,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
         self.di.session_repo().create(run_2)
 
         with self.inject_dummy_env_vars():
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_access_token(user)["access_token"]
 
@@ -100,7 +100,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
         self.di.reset()
 
         with self.inject_dummy_env_vars():
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_access_token(user)["access_token"]
 

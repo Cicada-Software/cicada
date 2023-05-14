@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.domain.user import User
@@ -10,6 +9,7 @@ from cicada.api.endpoints.login_util import (
 )
 from cicada.api.main import app
 from test.api.endpoints.common import TestEndpointWrapper
+from test.common import build
 
 
 class TestJwtLogic(TestEndpointWrapper):
@@ -21,7 +21,7 @@ class TestJwtLogic(TestEndpointWrapper):
 
     def test_jwt_creation_logic(self) -> None:
         with self.inject_dummy_env_vars() as vars:
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_jwt(
                 subject=user.username, issuer="me", data={"hello": "world"}
@@ -62,10 +62,9 @@ class TestJwtLogic(TestEndpointWrapper):
         with self.inject_dummy_env_vars() as vars:
             jwt = create_jwt(subject="github_user", issuer="github")
 
-            github_user = User(
-                id=uuid4(),
+            github_user = build(
+                User,
                 username="github_user",
-                is_admin=False,
                 provider="github",
             )
 
@@ -106,7 +105,7 @@ class TestJwtLogic(TestEndpointWrapper):
     def test_deny_access_to_endpoint_if_jwt_is_invalid(self) -> None:
         with self.inject_dummy_env_vars():
             # TODO: move this user/jwt token creation into wrapper
-            user = User(uuid4(), "non_existent_user", is_admin=False)
+            user = build(User, username="non_existent_user")
 
             jwt = create_access_token(user)["access_token"]
 
@@ -120,7 +119,7 @@ class TestJwtLogic(TestEndpointWrapper):
 
     def test_allow_access_to_endpoint_if_jwt_is_valid(self) -> None:
         with self.inject_dummy_env_vars():
-            user = User(uuid4(), "admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True)
 
             jwt = create_access_token(user)["access_token"]
 

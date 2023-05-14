@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
 
 from cicada.api.application.exceptions import Unauthorized
 from cicada.api.application.user.change_password import ChangePassword
 from cicada.api.domain.user import User
+from test.common import build
 
 
 def test_user_user_password_is_updated_when_changing_password() -> None:
@@ -13,12 +13,7 @@ def test_user_user_password_is_updated_when_changing_password() -> None:
 
     cmd = ChangePassword(user_repo)
 
-    user = User(
-        uuid4(),
-        username="bob",
-        is_admin=False,
-        provider="cicada",
-    )
+    user = build(User, username="bob", provider="cicada")
 
     new_password = "password123"  # noqa: S105
 
@@ -33,15 +28,9 @@ def test_user_user_password_is_updated_when_changing_password() -> None:
 
 def test_non_local_user_cannot_change_password() -> None:
     user_repo = MagicMock()
-
     cmd = ChangePassword(user_repo)
 
-    user = User(
-        uuid4(),
-        username="bob",
-        is_admin=False,
-        provider="github",
-    )
+    user = build(User, username="bob", provider="github")
 
     msg = "Only local users can change their password"
 

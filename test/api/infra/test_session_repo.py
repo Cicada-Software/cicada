@@ -5,7 +5,7 @@ from uuid import uuid4
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.domain.repository import Repository
 from cicada.api.domain.session import Session
-from cicada.api.domain.triggers import CommitTrigger, GitSha
+from cicada.api.domain.triggers import CommitTrigger
 from cicada.api.domain.user import User
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
@@ -13,19 +13,6 @@ from cicada.api.infra.user_repo import UserRepo
 from cicada.api.repo.repository_repo import Permission
 from test.api.common import SqliteTestWrapper
 from test.common import build
-
-
-# TODO: remove this function, build trigger in callee instead
-def create_dummy_session() -> Session:
-    commit = build(
-        CommitTrigger,
-        sha=GitSha("deadbeef"),
-        ref="refs/heads/master",
-        repository_url="https://github.com/user/repo",
-        provider="github",
-    )
-
-    return build(Session, trigger=commit)
 
 
 class TestSessionRepo(SqliteTestWrapper):
@@ -46,7 +33,7 @@ class TestSessionRepo(SqliteTestWrapper):
         cls.user_repo = UserRepo(cls.connection)
 
     def test_create_session(self) -> None:
-        session = create_dummy_session()
+        session = build(Session)
 
         self.session_repo.create(session)
 
@@ -68,7 +55,8 @@ class TestSessionRepo(SqliteTestWrapper):
         assert not self.session_repo.get_session_by_session_id(uuid4())
 
     def test_update_session(self) -> None:
-        session = create_dummy_session()
+        session = build(Session)
+
         assert not session.finished_at
 
         self.session_repo.create(session)
@@ -87,10 +75,10 @@ class TestSessionRepo(SqliteTestWrapper):
     def test_get_recent_sessions(self) -> None:
         self.reset()
 
-        session = create_dummy_session()
+        session = build(Session)
         self.session_repo.create(session)
 
-        admin = User(uuid4(), "admin", is_admin=True)
+        admin = build(User, username="admin", is_admin=True)
 
         recents = self.session_repo.get_recent_sessions(admin)
 
@@ -99,7 +87,7 @@ class TestSessionRepo(SqliteTestWrapper):
     def test_get_recent_sessions_as_admin(self) -> None:
         self.reset()
 
-        session = create_dummy_session()
+        session = build(Session)
         self.session_repo.create(session)
 
         recents = self.session_repo.get_recent_sessions_as_admin()
@@ -107,7 +95,7 @@ class TestSessionRepo(SqliteTestWrapper):
         assert recents == [session]
 
     def test_get_session_by_id_and_run_number(self) -> None:
-        run_1 = create_dummy_session()
+        run_1 = build(Session)
         run_2 = deepcopy(run_1)
         run_2.run = 2
 
@@ -177,7 +165,7 @@ class TestSessionRepo(SqliteTestWrapper):
             self.reset()
 
             user = self.create_dummy_user(username="bob")
-            session = create_dummy_session()
+            session = build(Session)
 
             self.session_repo.create(session)
 
@@ -207,7 +195,7 @@ class TestSessionRepo(SqliteTestWrapper):
         return repo
 
     def create_dummy_user(self, *, username: str = "admin") -> User:
-        user = User(uuid4(), username)
+        user = build(User, username=username)
 
         user_id = self.user_repo.create_or_update_user(user)
 

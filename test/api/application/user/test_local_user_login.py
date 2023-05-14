@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -7,6 +6,7 @@ from cicada.api.application.exceptions import Unauthorized
 from cicada.api.application.user.local_user_login import LocalUserLogin
 from cicada.api.common.password_hash import PasswordHash
 from cicada.api.domain.user import User
+from test.common import build
 
 
 def test_login_as_unknown_user_fails() -> None:
@@ -23,7 +23,7 @@ def test_login_as_unknown_user_fails() -> None:
 def test_non_local_user_login_fails() -> None:
     user_repo = MagicMock()
 
-    sso_user = User(id=uuid4(), username="bob")
+    sso_user = build(User, username="bob")
 
     user_repo.get_user_by_username.return_value = sso_user
 
@@ -36,8 +36,8 @@ def test_non_local_user_login_fails() -> None:
 def test_incorrect_password_fails() -> None:
     user_repo = MagicMock()
 
-    user = User(
-        id=uuid4(),
+    user = build(
+        User,
         username="bob",
         password_hash=PasswordHash.from_password("123456"),
     )
@@ -55,8 +55,8 @@ def test_login_with_correct_password_works() -> None:
 
     password = "password123"  # noqa: S105
 
-    user = User(
-        id=uuid4(),
+    user = build(
+        User,
         username="bob",
         password_hash=PasswordHash.from_password(password),
     )

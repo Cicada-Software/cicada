@@ -25,13 +25,13 @@ class TestInstallationRepo(SqliteTestWrapper):
         cls.installation_repo = InstallationRepo(cls.connection)
         cls.user_repo = UserRepo(cls.connection)
 
-    def test_create_installation(self) -> None:
-        user = User(id=uuid4(), username="bob", provider="github")
+    def test_create_installation_and_get(self) -> None:
+        user = build(User, username="bob", provider="github")
 
         self.user_repo.create_or_update_user(user)
 
-        installation = Installation(
-            id=uuid4(),
+        installation = build(
+            Installation,
             name="org_name",
             provider="github",
             scope=InstallationScope.ORGANIZATION,
@@ -55,12 +55,12 @@ class TestInstallationRepo(SqliteTestWrapper):
     def test_recreating_same_installation_retains_old_uuid(self) -> None:
         self.reset()
 
-        user = User(id=uuid4(), username="bob", provider="github")
+        user = build(User, username="bob", provider="github")
 
         self.user_repo.create_or_update_user(user)
 
-        old_installation = Installation(
-            id=uuid4(),
+        old_installation = build(
+            Installation,
             name="org_name",
             provider="github",
             scope=InstallationScope.ORGANIZATION,
@@ -83,12 +83,12 @@ class TestInstallationRepo(SqliteTestWrapper):
         self.reset()
 
         # TODO: make it so a user isnt required for creating an installation
-        user = User(id=uuid4(), username="bob", provider="github")
+        user = build(User, username="bob", provider="github")
 
         self.user_repo.create_or_update_user(user)
 
-        installation = Installation(
-            id=uuid4(),
+        installation = build(
+            Installation,
             name="org_name",
             scope=InstallationScope.ORGANIZATION,
             admin_id=user.id,
@@ -110,7 +110,7 @@ class TestInstallationRepo(SqliteTestWrapper):
     def test_add_repository_to_installation(self) -> None:
         self.reset()
 
-        user = User(id=uuid4(), username="bob", provider="github")
+        user = build(User, username="bob", provider="github")
         self.user_repo.create_or_update_user(user)
 
         installation = build(Installation, admin_id=user.id)

@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from cicada.api.application.exceptions import NotFound, Unauthorized
 from cicada.api.domain.repository import Repository
 from cicada.api.domain.user import User
 from cicada.api.repo.environment_repo import EnvironmentVariable
+from test.common import build
 
 
 def test_user_not_found_throws_error() -> None:
@@ -44,7 +44,7 @@ def test_repo_not_found_raises_error() -> None:
     repository_repo = MagicMock()
     env_repo = MagicMock()
 
-    user_repo.get_user_by_username.return_value = User(uuid4(), "bob", None)
+    user_repo.get_user_by_username.return_value = build(User, username="bob")
     repository_repo.get_repository_by_url_and_provider.return_value = None
 
     cmd = AddEnvironmentVariablesToRepository(
@@ -72,7 +72,7 @@ def test_adding_env_var_works() -> None:
     repository_repo = MagicMock()
     env_repo = MagicMock()
 
-    user = User(uuid4(), "bob", None)
+    user = build(User, username="bob")
     user_repo.get_user_by_username.return_value = user
 
     repo = Repository(id=1, url="http://example.com", provider="example")
@@ -106,7 +106,7 @@ def test_user_who_cannot_see_repo_is_denied() -> None:
     repository_repo = MagicMock()
     env_repo = MagicMock()
 
-    user = User(uuid4(), "bob", None)
+    user = build(User, username="bob")
     user_repo.get_user_by_username.return_value = user
 
     repo = Repository(id=1, url="http://example.com", provider="example")
