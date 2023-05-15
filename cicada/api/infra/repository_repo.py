@@ -109,7 +109,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
             )
             ON CONFLICT DO UPDATE SET perms=excluded.perms;
             """,
-            [repo.id, str(user_id), ",".join(permissions)],
+            [repo.id, user_id, ",".join(permissions)],
         )
 
         self.conn.commit()

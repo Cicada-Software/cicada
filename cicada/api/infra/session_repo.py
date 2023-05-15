@@ -47,7 +47,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             VALUES (?, ?, ?, ?, ?, ?);
             """,
             [
-                str(session.id),
+                session.id,
                 session.status.name,
                 session.started_at,
                 session.trigger.type,
@@ -71,7 +71,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             [
                 session.status.name,
                 session.finished_at,
-                str(session.id),
+                session.id,
                 session.run,
             ],
         )
@@ -111,7 +111,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 ORDER BY run_number DESC
                 LIMIT 1;
                 """,
-                [str(uuid)],
+                [uuid],
             )
 
         else:
@@ -125,7 +125,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 FROM sessions
                 WHERE uuid=? AND run_number=?;
                 """,
-                [str(uuid), run],
+                [uuid, run],
             )
 
         if row := cursor.fetchone():
@@ -167,7 +167,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             GROUP BY session_uuid
             ORDER BY session_started_at DESC;
             """,
-            [str(user.id)],
+            [user.id],
         ).fetchall()
 
         return [self._convert(x) for x in rows]
@@ -209,7 +209,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 GROUP BY session_uuid
                 ORDER BY session_started_at DESC;
                 """,
-                [str(user.id), repository_url],
+                [user.id, repository_url],
             ).fetchall()
 
         return [self._convert(x) for x in rows]
@@ -234,7 +234,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 WHERE s.uuid=?
                 ORDER BY s.started_at DESC;
                 """,
-                [str(uuid)],
+                [uuid],
             ).fetchall()
 
         else:
@@ -251,7 +251,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 WHERE user_uuid=? AND session_uuid=?
                 ORDER BY session_started_at DESC;
                 """,
-                [str(user.id), str(uuid)],
+                [user.id, uuid],
             ).fetchall()
 
         return [self._convert(x) for x in rows]
@@ -291,7 +291,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             FROM v_user_sessions
             WHERE session_uuid=? AND user_uuid=?
             """,
-            [str(session.id), str(user.id)],
+            [session.id, user.id],
         ).fetchone()
 
         if not rows or not rows[0]:
@@ -314,7 +314,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             JOIN triggers t ON t.id = s.trigger_id
             WHERE s.uuid = ?;
             """,
-            [str(uuid)],
+            [uuid],
         )
 
         if row := cursor.fetchone():

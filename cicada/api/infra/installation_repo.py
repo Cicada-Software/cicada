@@ -23,7 +23,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
             RETURNING uuid;
             """,
             [
-                str(installation.id),
+                installation.id,
                 installation.name,
                 installation.provider,
                 str(installation.scope),
@@ -42,7 +42,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
             )
             ON CONFLICT DO NOTHING;
             """,
-            [str(installation_id), str(installation.admin_id), "admin"],
+            [installation_id, installation.admin_id, "admin"],
         )
 
         self.conn.commit()
@@ -65,7 +65,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
             JOIN users u on u.id = iu.user_id
             WHERE u.uuid = ?;
             """,
-            [str(user.id)],
+            [user.id],
         ).fetchall()
 
         installations: list[Installation] = []
@@ -131,7 +131,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
             )
             ON CONFLICT DO NOTHING;
             """,
-            [str(installation.id), repo.id],
+            [installation.id, repo.id],
         )
 
         self.conn.commit()

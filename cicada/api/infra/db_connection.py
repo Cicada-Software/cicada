@@ -1,10 +1,12 @@
 import sqlite3
+from uuid import UUID
 
 from cicada.api.common.datetime import Datetime, UtcDatetime
 from cicada.api.settings import DBSettings
 
 sqlite3.register_adapter(UtcDatetime, str)
 sqlite3.register_adapter(Datetime, str)
+sqlite3.register_adapter(UUID, str)
 
 
 def get_default_db() -> sqlite3.Connection:

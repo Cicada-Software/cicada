@@ -53,7 +53,7 @@ class UserRepo(IUserRepo, DbConnection):
             RETURNING uuid;
             """,
             [
-                str(user.id),
+                user.id,
                 user.username,
                 pw_hash,
                 user.is_admin,
@@ -68,7 +68,7 @@ class UserRepo(IUserRepo, DbConnection):
     def update_last_login(self, user: User) -> None:
         self.conn.execute(
             "UPDATE users SET last_login=? WHERE uuid=?",
-            [str(UtcDatetime.now()), str(user.id)],
+            [UtcDatetime.now(), user.id],
         )
 
         self.conn.commit()

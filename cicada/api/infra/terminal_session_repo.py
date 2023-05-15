@@ -86,7 +86,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
             FROM terminal_sessions
             WHERE session_id LIKE ?||'%';
             """,
-            [str(session_id)],
+            [session_id],
         ).fetchall()
 
         return max(
