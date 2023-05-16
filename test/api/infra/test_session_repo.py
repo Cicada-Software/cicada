@@ -117,6 +117,7 @@ class TestSessionRepo(SqliteTestWrapper):
             required_perm: Permission
             perms: list[Permission]
             is_allowed: bool
+            is_public_repo: bool = False
 
         tests = [
             PermissionTest(
@@ -159,6 +160,18 @@ class TestSessionRepo(SqliteTestWrapper):
                 perms=[],
                 is_allowed=False,
             ),
+            PermissionTest(
+                required_perm="read",
+                perms=[],
+                is_public_repo=True,
+                is_allowed=True,
+            ),
+            PermissionTest(
+                required_perm="write",
+                perms=[],
+                is_public_repo=True,
+                is_allowed=False,
+            ),
         ]
 
         for test in tests:
@@ -170,7 +183,10 @@ class TestSessionRepo(SqliteTestWrapper):
             self.session_repo.create(session)
 
             self.create_dummy_repo_for_user(
-                user, test.perms, url=session.trigger.repository_url
+                user,
+                test.perms,
+                url=session.trigger.repository_url,
+                is_public=test.is_public_repo,
             )
 
             is_allowed = self.session_repo.can_user_access_session(
@@ -183,11 +199,15 @@ class TestSessionRepo(SqliteTestWrapper):
         self,
         user: User,
         perms: list[Permission],
+        *,
         url: str = "example.com",
         provider: str = "github",
+        is_public: bool = False,
     ) -> Repository:
         repo = self.repository_repo.update_or_create_repository(
-            url=url, provider=provider
+            url=url,
+            provider=provider,
+            is_public=is_public,
         )
 
         self.repository_repo.update_user_perms_for_repo(repo, user.id, perms)

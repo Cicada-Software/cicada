@@ -35,8 +35,11 @@ def update_gitlab_repo_perms(  # type: ignore[misc]
     user_repo = di.user_repo()
     repository_repo = di.repository_repo()
 
+    # TODO: check if repo is public/private
     repo = repository_repo.update_or_create_repository(
-        url=repo_url, provider="gitlab"
+        url=repo_url,
+        provider="gitlab",
+        is_public=False,
     )
 
     user_id = user_repo.create_or_update_user(

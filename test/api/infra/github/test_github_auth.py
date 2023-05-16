@@ -25,6 +25,7 @@ def test_github_user_repo_perms_caching() -> None:
         "repository": {
             "owner": {"login": "new_user"},
             "html_url": repo_url,
+            "private": True,
         },
     }
 
@@ -33,6 +34,7 @@ def test_github_user_repo_perms_caching() -> None:
 
     update_github_repo_perms(di, user.id, event, "any event")
 
+    # Check user/repo binding was automatically created
     assert di.connection
     rows = di.connection.execute(
         "SELECT user_id, repo_id, perms FROM _user_repos"
@@ -46,6 +48,7 @@ def test_github_user_repo_perms_caching() -> None:
     assert isinstance(repo_id, int)
     assert perms == "owner"
 
+    # Check user was automatically created
     users = di.connection.execute(
         """
         SELECT uuid, username, platform FROM users WHERE id=?
@@ -59,13 +62,15 @@ def test_github_user_repo_perms_caching() -> None:
     assert users[0][1] == "new_user"
     assert users[0][2] == "github"
 
-    repos = di.connection.execute(
-        "SELECT url FROM repositories WHERE id=?", [repo_id]
-    ).fetchall()
+    # Check repository was automatically created
+    repo = di.repository_repo().get_repository_by_repo_id(repo_id)
 
-    assert len(repos) == 1
+    assert repo
 
-    assert repos[0][0] == repo_url
+    assert repo.id
+    assert repo.url == repo_url
+    assert repo.provider == "github"
+    assert not repo.is_public
 
 
 def test_no_new_entries_for_the_same_repository() -> None:
@@ -82,6 +87,7 @@ def test_no_new_entries_for_the_same_repository() -> None:
         "repository": {
             "owner": {"login": "new_user"},
             "html_url": repo_url,
+            "private": True,
         },
     }
 
@@ -152,6 +158,7 @@ def test_auto_deduce_perms_from_event_type() -> None:
         "repository": {
             "owner": {"login": "owner"},
             "html_url": "some url",
+            "private": True,
         },
     }
 

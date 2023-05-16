@@ -143,7 +143,9 @@ class SessionRepo(ISessionRepo, DbConnection):
             )
 
             if not user or self.can_user_access_session(
-                user, session, permission="read"
+                user,
+                session,
+                permission=permission,  # type: ignore
             ):
                 return session
 
@@ -284,6 +286,19 @@ class SessionRepo(ISessionRepo, DbConnection):
     ) -> bool:
         if user.is_admin:
             return True
+
+        if permission == "read":
+            rows = self.conn.execute(
+                """
+                SELECT repo_is_public
+                FROM v_user_sessions
+                WHERE session_uuid=?
+                """,
+                [session.id],
+            ).fetchone()
+
+            if rows and rows["repo_is_public"]:
+                return True
 
         rows = self.conn.execute(
             """

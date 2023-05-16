@@ -65,6 +65,7 @@ def update_github_repo_perms(  # type: ignore[misc]
             "repository": {
                 "html_url": repo_url,
                 "owner": {"login": repository_owner_username},
+                "private": is_private,
             },
         }:
             if sender_username == repository_owner_username:
@@ -82,7 +83,9 @@ def update_github_repo_perms(  # type: ignore[misc]
     repository_repo = di.repository_repo()
 
     repo = repository_repo.update_or_create_repository(
-        url=repo_url, provider="github"
+        url=repo_url,
+        provider="github",
+        is_public=not is_private,
     )
 
     repository_repo.update_user_perms_for_repo(

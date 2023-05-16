@@ -9,7 +9,11 @@ from cicada.api.repo.repository_repo import IRepositoryRepo, Permission
 class RepositoryRepo(IRepositoryRepo, DbConnection):
     def get_repository_by_repo_id(self, id: RepositoryId) -> Repository | None:
         row = self.conn.execute(
-            "SELECT id, url, provider FROM repositories WHERE id=?",
+            """
+            SELECT id, url, provider, is_public
+            FROM repositories
+            WHERE id=?
+            """,
             [id],
         ).fetchone()
 
@@ -20,7 +24,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
     ) -> Repository | None:
         row = self.conn.execute(
             """
-            SELECT id, url, provider
+            SELECT id, url, provider, is_public
             FROM repositories
             WHERE url=? AND provider=?
             """,
@@ -30,24 +34,30 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
         return self._convert(row) if row else None
 
     def update_or_create_repository(
-        self, *, url: str, provider: str
+        self, *, url: str, provider: str, is_public: bool
     ) -> Repository:
         repo_id = (
             self.conn.cursor()
             .execute(
                 """
-                INSERT INTO repositories (provider, url) VALUES (?, ?)
-                ON CONFLICT DO UPDATE SET url=url
+                INSERT INTO repositories (provider, url, is_public)
+                VALUES (?, ?, ?)
+                ON CONFLICT DO UPDATE SET url=url, is_public=is_public
                 RETURNING id;
                 """,
-                [provider, url],
+                [provider, url, int(is_public)],
             )
             .fetchone()[0]
         )
 
         self.conn.commit()
 
-        return Repository(repo_id, provider=provider, url=url)
+        return Repository(
+            repo_id,
+            provider=provider,
+            url=url,
+            is_public=is_public,
+        )
 
     def can_user_access_repo(
         self,
@@ -60,6 +70,15 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
 
         if user.is_admin:
             return True
+
+        if permission == "read":
+            repos = self.conn.execute(
+                "SELECT is_public FROM repositories WHERE id=?",
+                [repo.id],
+            ).fetchone()
+
+            if repos is not None and repos["is_public"]:
+                return True
 
         rows = self.conn.execute(
             """
@@ -120,4 +139,5 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
             id=row["id"],
             url=row["url"],
             provider=row["provider"],
+            is_public=bool(row["is_public"]),
         )

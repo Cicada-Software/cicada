@@ -22,7 +22,7 @@ class IRepositoryRepo(ABC):
 
     @abstractmethod
     def update_or_create_repository(
-        self, *, url: str, provider: str
+        self, *, url: str, provider: str, is_public: bool
     ) -> Repository:
         ...
 
