@@ -6,10 +6,14 @@ from subprocess import PIPE, STDOUT, CompletedProcess
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from cicada.ast.nodes import FunctionExpression, RecordValue, Value
+from cicada.ast.nodes import (
+    FunctionExpression,
+    RecordValue,
+    StringValue,
+    Value,
+)
 from cicada.ast.types import RecordType
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
-from cicada.eval.main import to_string
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -58,7 +62,11 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             args: list[str] = []
 
             for arg in node.args:
-                args.append(to_string(arg.accept(self)))
+                value = arg.accept(self)
+
+                assert isinstance(value, StringValue)
+
+                args.append(value.value)
 
             args = [shlex.quote(arg) for arg in args]
 

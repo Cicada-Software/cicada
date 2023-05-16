@@ -18,6 +18,7 @@ from cicada.ast.nodes import (
     MemberExpression,
     OnStatement,
     ParenthesisExpression,
+    ToStringExpression,
     TraversalVisitor,
     UnaryExpression,
     UnaryOperator,
@@ -278,13 +279,6 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_func_expr(self, node: FunctionExpression) -> None:
         super().visit_func_expr(node)
 
-        for arg in node.args:
-            if arg.type not in STRING_COERCIBLE_TYPES:
-                raise AstError(
-                    f"cannot convert type `{arg.type}` to `{StringType()}`",
-                    arg.info,
-                )
-
         if node.name not in self.function_names:
             raise AstError(f"function `{node.name}` is not defined", node.info)
 
@@ -356,6 +350,17 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         node.is_constexpr = all(self.is_constexpr(x) for x in node.exprs)
         node.type = node.exprs[-1].type
+
+    def visit_to_string_expr(self, node: ToStringExpression) -> None:
+        super().visit_to_string_expr(node)
+
+        if node.expr.type not in STRING_COERCIBLE_TYPES:
+            raise AstError(
+                f"cannot convert type `{node.expr.type}` to `{StringType()}`",
+                node.expr.info,
+            )
+
+        node.type = StringType()
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

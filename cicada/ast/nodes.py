@@ -556,6 +556,34 @@ class IfExpression(Expression):
 
 
 @dataclass
+class ToStringExpression(Expression):
+    """
+    This is a placeholder that is used internally to indicate that a value
+    should be converted to a string. Since Cicada currently does not support
+    user defined functions, this node is used as a stand in until then.
+    """
+
+    __match_args__ = ("expr",)
+
+    expr: Expression
+
+    @classmethod
+    def from_expr(cls, expr: Expression) -> Self:
+        return cls(
+            info=expr.info,
+            expr=expr,
+            type=expr.type,
+            is_constexpr=False,
+        )
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_to_string_expr(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}: # {self.info}\n  expr={self.expr}"
+
+
+@dataclass
 class Statement(Node):
     """
     Abstract class representing a statement. Statements cannot be used as
@@ -629,6 +657,9 @@ class NodeVisitor(Generic[T]):
     def visit_block_expr(self, node: BlockExpression) -> T:
         raise NotImplementedError()
 
+    def visit_to_string_expr(self, node: ToStringExpression) -> T:
+        raise NotImplementedError()
+
 
 class TraversalVisitor(NodeVisitor[None]):
     def visit_file_node(self, node: FileNode) -> None:
@@ -682,3 +713,6 @@ class TraversalVisitor(NodeVisitor[None]):
     def visit_block_expr(self, node: BlockExpression) -> None:
         for expr in node.exprs:
             expr.accept(self)
+
+    def visit_to_string_expr(self, node: ToStringExpression) -> None:
+        node.expr.accept(self)

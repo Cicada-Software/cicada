@@ -16,7 +16,9 @@ from cicada.ast.nodes import (
     MemberExpression,
     NumericExpression,
     OnStatement,
+    ParenthesisExpression,
     StringExpression,
+    ToStringExpression,
 )
 from cicada.ast.semantic_analysis import (
     RESERVED_NAMES,
@@ -452,3 +454,32 @@ x = "hello world"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code)
+
+
+def test_non_string_types_allowed_in_interpolated_strings() -> None:
+    # TODO: fix newline being required here
+    code = "echo abc(123)xyz\n"
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case FunctionExpression(
+            name="shell",
+            args=[
+                StringExpression("echo"),
+                BinaryExpression(
+                    StringExpression("abc"),
+                    BinaryOperator.ADD,
+                    BinaryExpression(
+                        ToStringExpression(
+                            ParenthesisExpression(NumericExpression(123))
+                        ),
+                        BinaryOperator.ADD,
+                        StringExpression("xyz"),
+                    ),
+                ),
+            ],
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree.exprs[0]}")

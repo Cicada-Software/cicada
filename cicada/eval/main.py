@@ -8,9 +8,7 @@ from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import (
-    BooleanValue,
     FunctionExpression,
-    NumericValue,
     RecordValue,
     StringValue,
     Value,
@@ -21,24 +19,17 @@ from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
 from cicada.eval.find_files import find_ci_files
 
 
-def to_string(value: Value) -> str:
-    match value:
-        case StringValue() | NumericValue():
-            return str(value.value)
-
-        case BooleanValue():
-            return "true" if value.value else "false"
-
-    assert False, "impossible"
-
-
 class EvalVisitor(ConstexprEvalVisitor):
     def visit_func_expr(self, node: FunctionExpression) -> Value:
         if node.name == "shell":
             args: list[str] = []
 
             for arg in node.args:
-                args.append(to_string(arg.accept(self)))
+                value = arg.accept(self)
+
+                assert isinstance(value, StringValue)
+
+                args.append(value.value)
 
             # TODO: test this
             args = [shlex.quote(arg) for arg in args]

@@ -17,6 +17,7 @@ from cicada.ast.nodes import (
     OnStatement,
     ParenthesisExpression,
     StringExpression,
+    ToStringExpression,
 )
 from cicada.ast.types import NumericType, StringType, UnknownType
 from cicada.parse.tokenize import tokenize
@@ -349,14 +350,20 @@ def test_generate_func_expr_with_parens() -> None:
                 FunctionExpression(
                     "shell",
                     [
-                        ParenthesisExpression(IdentifierExpression()),
-                        BinaryExpression(
-                            StringExpression("lhs"),
-                            BinaryOperator.ADD,
+                        ToStringExpression(
                             ParenthesisExpression(IdentifierExpression()),
                         ),
                         BinaryExpression(
-                            ParenthesisExpression(IdentifierExpression()),
+                            StringExpression("lhs"),
+                            BinaryOperator.ADD,
+                            ToStringExpression(
+                                ParenthesisExpression(IdentifierExpression()),
+                            ),
+                        ),
+                        BinaryExpression(
+                            ToStringExpression(
+                                ParenthesisExpression(IdentifierExpression()),
+                            ),
                             BinaryOperator.ADD,
                             StringExpression("rhs"),
                         ),
@@ -379,7 +386,11 @@ def test_generate_func_expr_with_parens2() -> None:
                     "shell",
                     [
                         StringExpression("arg1"),
-                        ParenthesisExpression(IdentifierExpression("arg2")),
+                        ToStringExpression(
+                            ParenthesisExpression(
+                                IdentifierExpression("arg2"),
+                            ),
+                        ),
                         StringExpression("arg3"),
                     ],
                 )
@@ -627,11 +638,19 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
             [
                 FunctionExpression(
                     "shell",
-                    [ParenthesisExpression(IdentifierExpression("x"))],
+                    [
+                        ToStringExpression(
+                            ParenthesisExpression(IdentifierExpression("x")),
+                        )
+                    ],
                 ),
                 FunctionExpression(
                     "shell",
-                    [ParenthesisExpression(IdentifierExpression("y"))],
+                    [
+                        ToStringExpression(
+                            ParenthesisExpression(IdentifierExpression("y"))
+                        )
+                    ],
                 ),
             ]
         ):

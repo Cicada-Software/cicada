@@ -25,6 +25,7 @@ from cicada.ast.nodes import (
     RecordValue,
     StringExpression,
     StringValue,
+    ToStringExpression,
     UnaryExpression,
     UnaryOperator,
     UnitValue,
@@ -237,6 +238,21 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             last = expr.accept(self)
 
         return last
+
+    def visit_to_string_expr(self, node: ToStringExpression) -> Value:
+        value = node.expr.accept(self)
+
+        match value:
+            case StringValue():
+                return value
+
+            case NumericValue():
+                return StringValue(str(value.value))
+
+            case BooleanValue():
+                return StringValue("true" if value.value else "false")
+
+        return UnreachableValue()
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

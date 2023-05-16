@@ -51,6 +51,7 @@ from .nodes import (
     OnStatement,
     ParenthesisExpression,
     StringExpression,
+    ToStringExpression,
     UnaryExpression,
     UnaryOperator,
 )
@@ -424,7 +425,7 @@ def generate_interpolated_string(
     if leading_tokens:
         parts.append(StringExpression.from_token(Token.meld(leading_tokens)))
 
-    parts.append(generate_paren_expr(state))
+    parts.append(ToStringExpression.from_expr(generate_paren_expr(state)))
 
     if isinstance(state.current_token, DanglingToken | IdentifierToken):
         parts.append(StringExpression.from_token(state.current_token))
