@@ -13,7 +13,7 @@
 # There is lots of room for improvements here, namely:
 # * Don't use env vars to pass payload info (once payloads get too big)
 
-FROM python:3.10.11-alpine3.17
+FROM python:3.11.3-alpine3.18
 
 RUN apk update \
 	&& apk upgrade \

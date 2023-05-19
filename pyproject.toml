@@ -13,7 +13,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10"
+python = ">=3.11"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"
@@ -36,6 +36,7 @@ disallow_any_explicit = true
 disallow_any_unimported = true
 warn_unreachable = true
 allow_redefinition = true
+python_version = "3.11"
 
 [tool.coverage.run]
 omit = [
@@ -61,7 +62,7 @@ line-length = 79
 color = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=93"
+addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=93 --disable-warnings"
 asyncio_mode = "auto"
 testpaths = ["test"]
 
