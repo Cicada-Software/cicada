@@ -903,7 +903,13 @@ def test_show_error_when_expression_is_expected() -> None:
 
 
 def test_generate_run_on_stmt() -> None:
-    images = ("hello_world", "alpine:3.18", "alpine:3", "docker.io/alpine")
+    images = (
+        "hello_world",
+        "alpine:3.18",
+        "alpine:3",
+        "docker.io/alpine",
+        "python:3.11.3-alpine3.18",
+    )
 
     for image in images:
         tree = generate_ast_tree(tokenize(f"run_on image {image}"))

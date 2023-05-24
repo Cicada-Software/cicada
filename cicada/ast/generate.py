@@ -740,7 +740,8 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
             | ColonToken
             | FloatLiteralToken
             | IntegerLiteralToken
-            | SlashToken,
+            | SlashToken
+            | MinusToken,
         ):
             break
 
