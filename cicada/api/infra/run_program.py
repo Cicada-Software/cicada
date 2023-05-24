@@ -9,10 +9,12 @@ from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.domain.triggers import Trigger, TriggerType
-from cicada.ast.entry import parse_and_analyze
-from cicada.ast.generate import AstError
+from cicada.ast.generate import AstError, generate_ast_tree
+from cicada.ast.nodes import RunType
+from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.eval.container import CommandFailed, RemoteContainerEvalVisitor
 from cicada.eval.find_files import find_ci_files
+from cicada.parse.tokenize import tokenize
 
 
 async def process_killer(
@@ -146,7 +148,11 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
     def run_file(self, file: Path) -> int:
         try:
-            tree = parse_and_analyze(file.read_text(), self.trigger)
+            tokens = tokenize(file.read_text())
+            tree = generate_ast_tree(tokens)
+
+            semantics = SemanticAnalysisVisitor(self.trigger)
+            tree.accept(semantics)
 
         except AstError as exc:
             # Shouldn't happen, gather phase should pass without issues
@@ -154,10 +160,16 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
             return 1
 
+        image = "alpine"
+
+        if semantics.run_on and semantics.run_on.type == RunType.IMAGE:
+            image = semantics.run_on.value
+
         visitor = RemoteContainerEvalVisitor(
             self.cloned_repo,
             self.trigger,
             self.terminal,
+            image=image,
         )
 
         try:

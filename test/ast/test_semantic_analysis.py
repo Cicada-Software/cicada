@@ -251,11 +251,35 @@ def test_cannot_use_non_constexpr_stmt_before_on_stmt() -> None:
         parse_and_analyze("echo hi\non x")
 
 
+def test_cannot_use_non_constexpr_stmt_before_run_on_stmt() -> None:
+    msg = "cannot use `run_on` statement after a function call"
+
+    code = """\
+echo hi
+run_on image alpine
+"""
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
+
+
 def test_cannot_use_multiple_on_stmts() -> None:
-    msg = "cannot use multiple `on` in a single file"
+    msg = "cannot use multiple `on` statements in a single file"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("on a\non b", build_trigger("a"))
+
+
+def test_cannot_use_multiple_run_on_stmts() -> None:
+    msg = "cannot use multiple `run_on` statements in a single file"
+
+    code = """\
+run_on image alpine
+run_on image ubuntu
+"""
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
 
 
 def test_variable_name_cannot_by_reserved_name() -> None:

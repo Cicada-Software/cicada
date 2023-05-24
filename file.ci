@@ -1,5 +1,7 @@
 on git.push
 
+run_on image python:3.11.3-alpine3.18
+
 cp .env.example .env
 
 make install

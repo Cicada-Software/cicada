@@ -16,6 +16,8 @@ from cicada.ast.nodes import (
     NumericExpression,
     OnStatement,
     ParenthesisExpression,
+    RunOnStatement,
+    RunType,
     StringExpression,
     ToStringExpression,
 )
@@ -897,4 +899,38 @@ def test_show_error_when_expression_is_expected() -> None:
     code = "if ="
 
     with pytest.raises(AstError, match="expected an expression, got `=`"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_generate_run_on_stmt() -> None:
+    images = ("hello_world", "alpine:3.18", "alpine:3", "docker.io/alpine")
+
+    for image in images:
+        tree = generate_ast_tree(tokenize(f"run_on image {image}"))
+
+        match tree.exprs[0]:
+            case RunOnStatement(RunType.IMAGE, value) if value == image:
+                continue
+
+        pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_run_on_must_have_content_after_space() -> None:
+    code = "run_on image "
+
+    with pytest.raises(AstError, match="expected token after ` `"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_run_on_must_have_space_after_run_type() -> None:
+    code = "run_on image"
+
+    with pytest.raises(AstError, match="expected whitespace"):
+        generate_ast_tree(tokenize(code))
+
+
+def test_run_on_must_have_valid_type() -> None:
+    code = "run_on invalid"
+
+    with pytest.raises(AstError, match="invalid `run_on` type `invalid`"):
         generate_ast_tree(tokenize(code))

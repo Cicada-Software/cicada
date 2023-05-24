@@ -130,3 +130,4 @@ class LetToken(KeywordToken): pass
 class OnToken(KeywordToken): pass
 class WhereToken(KeywordToken): pass
 class IsToken(KeywordToken): pass
+class RunOnToken(KeywordToken): pass

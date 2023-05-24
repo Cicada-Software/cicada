@@ -18,6 +18,7 @@ from cicada.ast.nodes import (
     MemberExpression,
     OnStatement,
     ParenthesisExpression,
+    RunOnStatement,
     ToStringExpression,
     TraversalVisitor,
     UnaryExpression,
@@ -119,6 +120,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     # multiple on statements defined.
     has_on_stmt: bool
 
+    run_on: RunOnStatement | None
+
     env: RecordType | None
 
     def __init__(self, trigger: Trigger | None = None) -> None:
@@ -129,6 +132,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         self.trigger = trigger
         self.has_ran_function = False
         self.has_on_stmt = False
+        self.run_on = None
         self.env = None
 
         if self.trigger:
@@ -291,7 +295,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             # TODO: include location of existing on stmt
 
             raise AstError(
-                "cannot use multiple `on` in a single file", node.info
+                "cannot use multiple `on` statements in a single file",
+                node.info,
             )
 
         if self.has_ran_function:
@@ -328,6 +333,23 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 )
 
         self.has_on_stmt = True
+
+    def visit_run_on_stmt(self, node: RunOnStatement) -> None:
+        super().visit_run_on_stmt(node)
+
+        if self.has_ran_function:
+            raise AstError(
+                "cannot use `run_on` statement after a function call",
+                node.info,
+            )
+
+        if self.run_on:
+            raise AstError(
+                "cannot use multiple `run_on` statements in a single file",
+                node.info,
+            )
+
+        self.run_on = node
 
     def visit_if_expr(self, node: IfExpression) -> None:
         with self.new_scope():

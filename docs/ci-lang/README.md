@@ -10,6 +10,7 @@ a look at our [getting started](./getting-started.md) docs.
 
 * Statements
   * [The `on` Statement](./on-statement.md)
+  * [The `run_on` Statement](./run-on-statement.md)
 
 * Expressions
   * [The `let` Expression](./let-expr.md)

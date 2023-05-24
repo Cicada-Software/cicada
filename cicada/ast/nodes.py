@@ -611,6 +611,30 @@ class OnStatement(Statement):
         return f"{type(self).__name__}({self.event!r}) # {self.info}"
 
 
+class RunType(Enum):
+    IMAGE = "image"
+
+
+@dataclass
+class RunOnStatement(Statement):
+    type: RunType
+    value: str
+
+    __match_args__ = ("type", "value")
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_run_on_stmt(self)
+
+    def __str__(self) -> str:
+        return "".join(
+            [
+                type(self).__name__,
+                f"({self.type.value}:{self.value})",
+                f" # {self.info}",
+            ]
+        )
+
+
 class NodeVisitor(Generic[T]):
     def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError()
@@ -658,6 +682,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError()
 
     def visit_to_string_expr(self, node: ToStringExpression) -> T:
+        raise NotImplementedError()
+
+    def visit_run_on_stmt(self, node: RunOnStatement) -> T:
         raise NotImplementedError()
 
 
@@ -716,3 +743,6 @@ class TraversalVisitor(NodeVisitor[None]):
 
     def visit_to_string_expr(self, node: ToStringExpression) -> None:
         node.expr.accept(self)
+
+    def visit_run_on_stmt(self, node: RunOnStatement) -> None:
+        pass

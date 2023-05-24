@@ -23,6 +23,7 @@ from cicada.ast.nodes import (
     OnStatement,
     ParenthesisExpression,
     RecordValue,
+    RunOnStatement,
     StringExpression,
     StringValue,
     ToStringExpression,
@@ -253,6 +254,9 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
                 return StringValue("true" if value.value else "false")
 
         return UnreachableValue()
+
+    def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
+        return UnitValue()
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

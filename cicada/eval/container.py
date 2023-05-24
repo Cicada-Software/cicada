@@ -38,6 +38,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         cloned_repo: Path,
         trigger: Trigger,
         terminal: TerminalSession,
+        image: str,
     ) -> None:
         super().__init__(trigger)
 
@@ -46,7 +47,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         self.pod_id = uuid4()
 
-        self._start_pod()
+        self._start_pod(image)
 
     def cleanup(self) -> None:
         self.terminal.finish()
@@ -79,7 +80,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return RecordValue({}, RecordType())
 
-    def _start_pod(self) -> None:
+    def _start_pod(self, image: str) -> None:
         # TODO: add timeout
         process = subprocess.run(
             [
@@ -89,7 +90,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 "--detach",
                 "--mount",
                 f"type=bind,src={self.cloned_repo},dst={self.temp_dir}",
-                "alpine",
+                image,
                 "sleep",
                 "infinity",
             ],
@@ -100,7 +101,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         if process.returncode != 0:
             raise ValueError("Could not start container")
 
-        self.container_id = process.stdout.decode().strip()
+        self.container_id = (
+            process.stdout.strip().split(b"\n")[-1].decode().strip()
+        )
 
     def _pod_exec(self, args: list[str]) -> CompletedProcess[bytes]:
         # This command is a hack to make sure we are in cwd from the last

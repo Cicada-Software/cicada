@@ -26,6 +26,8 @@ from cicada.parse.token import (
     NotToken,
     OnToken,
     OpenParenToken,
+    RunOnToken,
+    SlashToken,
     StringLiteralToken,
     Token,
     WhereToken,
@@ -50,6 +52,8 @@ from .nodes import (
     NumericExpression,
     OnStatement,
     ParenthesisExpression,
+    RunOnStatement,
+    RunType,
     StringExpression,
     ToStringExpression,
     UnaryExpression,
@@ -342,6 +346,9 @@ def generate_node(state: ParserState) -> Node:
 
     if isinstance(token, OnToken):
         return generate_on_stmt(state)
+
+    if isinstance(token, RunOnToken):
+        return generate_run_on_stmt(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
@@ -698,4 +705,54 @@ def generate_on_stmt(state: ParserState) -> OnStatement:
         info=LineInfo.from_token(start),
         event=event.content,
         where=where,
+    )
+
+
+def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
+    start = state.current_token
+
+    try:
+        run_type_token = state.next_non_whitespace()
+
+    except StopIteration as ex:
+        raise AstError.expected_token(last=state.current_token) from ex
+
+    try:
+        run_type = RunType(run_type_token.content)
+
+    except ValueError as ex:
+        raise AstError(
+            f"invalid `run_on` type `{run_type_token.content}`",
+            info=run_type_token,
+        ) from ex
+
+    space = next(state, None)
+
+    if not isinstance(space, WhiteSpaceToken):
+        raise AstError("expected whitespace", space or run_type_token)
+
+    value = ""
+
+    for token in state:
+        if not isinstance(
+            token,
+            IdentifierToken
+            | ColonToken
+            | FloatLiteralToken
+            | IntegerLiteralToken
+            | SlashToken,
+        ):
+            break
+
+        value += token.content
+
+    if not value:
+        raise AstError.expected_token(last=space)
+
+    # TODO: check newline or EOF is here
+
+    return RunOnStatement(
+        info=LineInfo.from_token(start),
+        type=run_type,
+        value=value,
     )

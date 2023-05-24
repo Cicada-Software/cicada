@@ -61,6 +61,7 @@ KEYWORD_NAMES = {
     "on": OnToken,
     "where": WhereToken,
     "is": IsToken,
+    "run_on": RunOnToken,
 }
 
 
