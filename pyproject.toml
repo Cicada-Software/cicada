@@ -81,6 +81,7 @@ extend-ignore = [
   "EM101", "EM102",
   "F405",
   "FBT001", "FBT003",
+  "FLY002",
   "G004",
   "I001",
   "N818",
@@ -90,6 +91,8 @@ extend-ignore = [
   "RSE102",
   "S101",
   "SIM102",
+  "TD002",
+  "TD003",
   "TRY003", "TRY301",
 
   # Fix later
