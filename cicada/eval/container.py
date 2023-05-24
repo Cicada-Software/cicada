@@ -126,6 +126,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             [
                 "podman",
                 "exec",
+                "-t",
                 self.container_id,
                 "/bin/sh",
                 "-c",
