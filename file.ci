@@ -2,6 +2,8 @@ on git.push
 
 run_on image python:3.11.3-alpine3.18
 
+shell apk add make
+
 cp .env.example .env
 
 make install
