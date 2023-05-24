@@ -9,11 +9,11 @@ from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.domain.triggers import Trigger, TriggerType
+from cicada.api.infra.repo_get_ci_files import folder_get_runnable_ci_files
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.eval.container import CommandFailed, RemoteContainerEvalVisitor
-from cicada.eval.find_files import find_ci_files
 from cicada.parse.tokenize import tokenize
 
 
@@ -141,7 +141,13 @@ class RemotePodmanExecutionContext(ExecutionContext):
     """
 
     async def run(self) -> int:
-        for file in find_ci_files(self.cloned_repo):
+        files = folder_get_runnable_ci_files(self.cloned_repo, self.trigger)
+
+        for file in files:
+            if isinstance(file, AstError):
+                # TODO: handle this
+                continue
+
             return await asyncio.to_thread(partial(self.run_file, file))
 
         assert False, "Expected at least one workflow"
