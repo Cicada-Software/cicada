@@ -677,6 +677,70 @@ def migrate_v34(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=35)
+def migrate_v35(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE workflows (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT UNIQUE NOT NULL,
+            session_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            sha TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            finished_at TEXT NULL,
+            run_number INT NOT NULL,
+            rerun_number INT NOT NULL
+        );
+        """
+    )
+
+    sessions = db.execute(
+        """
+        SELECT
+            uuid,
+            status,
+            started_at,
+            finished_at,
+            trigger,
+            trigger_id,
+            run_number
+        FROM sessions;
+        """
+    ).fetchall()
+
+    for session in sessions:
+        db.execute(
+            """
+            INSERT INTO workflows (
+                uuid,
+                session_id,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number,
+                rerun_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            [
+                str(uuid4()),
+                session["uuid"],
+                session["status"],
+                session["trigger"],
+                "",
+                session["started_at"],
+                session["finished_at"],
+                session["run_number"],
+                1,
+            ],
+        )
+
+    db.commit()
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()
@@ -698,4 +762,7 @@ def migrate(db: sqlite3.Connection) -> None:
 
 if __name__ == "__main__":
     # TODO: allow this to be configured
-    migrate(sqlite3.connect("./db.db3"))
+    db = sqlite3.connect("./db.db3")
+    db.row_factory = sqlite3.Row
+
+    migrate(db)

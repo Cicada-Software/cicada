@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from cicada.api.domain.session import Session, SessionId
+from cicada.api.domain.session import Run, Session, SessionId
 from cicada.api.domain.user import User
 from cicada.api.repo.repository_repo import Permission
 
@@ -39,6 +39,10 @@ class ISessionRepo(ABC):
     def get_runs_for_session(
         self, user: User, uuid: SessionId
     ) -> list[Session]:
+        ...
+
+    @abstractmethod
+    def get_runs_for_session2(self, user: User, uuid: SessionId) -> list[Run]:
         ...
 
     @abstractmethod

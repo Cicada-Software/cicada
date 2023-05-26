@@ -1,10 +1,19 @@
 import json
 import sqlite3
+from pathlib import Path
+from uuid import uuid4
 
 from cicada.api.common.datetime import UtcDatetime
 from cicada.api.common.json import asjson
-from cicada.api.domain.session import Session, SessionId, SessionStatus
-from cicada.api.domain.triggers import Trigger, json_to_trigger
+from cicada.api.domain.session import (
+    Run,
+    Session,
+    SessionId,
+    SessionStatus,
+    Status,
+    Workflow,
+)
+from cicada.api.domain.triggers import GitSha, Trigger, json_to_trigger
 from cicada.api.domain.user import User
 from cicada.api.infra.db_connection import DbConnection
 from cicada.api.repo.repository_repo import Permission
@@ -56,6 +65,33 @@ class SessionRepo(ISessionRepo, DbConnection):
             ],
         )
 
+        cursor.execute(
+            """
+            INSERT INTO workflows (
+                uuid,
+                session_id,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number,
+                rerun_number
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+            """,
+            [
+                uuid4(),
+                session.id,
+                session.status.name,
+                str(session.trigger.sha),
+                "",
+                session.started_at,
+                session.finished_at,
+                session.run,
+                1,
+            ],
+        )
+
         self.conn.commit()
 
     def update(self, session: Session) -> None:
@@ -67,6 +103,21 @@ class SessionRepo(ISessionRepo, DbConnection):
                 status=?,
                 finished_at=?
             WHERE uuid=? AND run_number=?;
+            """,
+            [
+                session.status.name,
+                session.finished_at,
+                session.id,
+                session.run,
+            ],
+        )
+
+        cursor.execute(
+            """
+            UPDATE workflows SET
+                status=?,
+                finished_at=?
+            WHERE session_id=? AND run_number=?;
             """,
             [
                 session.status.name,
@@ -284,6 +335,19 @@ class SessionRepo(ISessionRepo, DbConnection):
         *,
         permission: Permission,
     ) -> bool:
+        return self._can_user_access_session_id(
+            user,
+            session.id,
+            permission=permission,
+        )
+
+    def _can_user_access_session_id(
+        self,
+        user: User,
+        session_id: SessionId,
+        *,
+        permission: Permission,
+    ) -> bool:
         if user.is_admin:
             return True
 
@@ -294,7 +358,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 FROM v_user_sessions
                 WHERE session_uuid=?
                 """,
-                [session.id],
+                [session_id],
             ).fetchone()
 
             if rows and rows["repo_is_public"]:
@@ -306,7 +370,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             FROM v_user_sessions
             WHERE session_uuid=? AND user_uuid=?
             """,
-            [session.id, user.id],
+            [session_id, user.id],
         ).fetchone()
 
         if not rows or not rows[0]:
@@ -320,6 +384,49 @@ class SessionRepo(ISessionRepo, DbConnection):
             permission_levels.index(p) >= required_level
             for p in rows[0].split(",")
         )
+
+    def get_runs_for_session2(self, user: User, uuid: SessionId) -> list[Run]:
+        if not self._can_user_access_session_id(user, uuid, permission="read"):
+            return []
+
+        rows = self.conn.execute(
+            """
+            SELECT
+                uuid,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number
+            FROM workflows w
+            WHERE session_id = ?;
+            """,
+            [uuid],
+        ).fetchall()
+
+        if not rows:
+            return []
+
+        runs: list[Run] = []
+
+        for row in rows:
+            workflow = Workflow(
+                id=row["uuid"],
+                filename=Path(row["filename"]),
+                sha=GitSha(row["sha"]),
+                status=Status(row["status"]),
+                started_at=UtcDatetime.fromisoformat(row["started_at"]),
+                finished_at=(
+                    UtcDatetime.fromisoformat(row["finished_at"])
+                    if row["finished_at"]
+                    else None
+                ),
+            )
+
+            runs.append(Run({workflow.filename: [workflow]}))
+
+        return runs
 
     def _get_trigger(self, uuid: SessionId) -> Trigger | None:
         cursor = self.conn.execute(

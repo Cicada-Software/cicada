@@ -1,5 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import uuid4
 
 from cicada.api.common.datetime import UtcDatetime
@@ -194,6 +195,53 @@ class TestSessionRepo(SqliteTestWrapper):
             )
 
             assert test.is_allowed == is_allowed
+
+    def test_get_runs_for_session2(self) -> None:
+        self.reset()
+
+        user = self.create_dummy_user(username="bob")
+        session = build(Session)
+
+        self.session_repo.create(session)
+
+        self.create_dummy_repo_for_user(
+            user,
+            perms=["read"],
+            url=session.trigger.repository_url,
+        )
+
+        runs = self.session_repo.get_runs_for_session2(user, session.id)
+
+        assert len(runs) == 1
+        run = runs[0]
+
+        workflows = run.workflows[Path()]
+
+        assert len(workflows) == 1
+        workflow = workflows[0]
+
+        assert workflow.filename == Path()
+        assert workflow.sha == session.trigger.sha
+        assert workflow.started_at == session.started_at
+        assert workflow.finished_at == session.finished_at
+
+    def test_get_runs_for_session2_fails_when_user_doesnt_have_access(
+        self,
+    ) -> None:
+        self.reset()
+
+        user = self.create_dummy_user(username="bob")
+        session = build(Session)
+
+        self.session_repo.create(session)
+
+        self.create_dummy_repo_for_user(
+            user,
+            perms=[],
+            url=session.trigger.repository_url,
+        )
+
+        assert not self.session_repo.get_runs_for_session2(user, session.id)
 
     def create_dummy_repo_for_user(
         self,
