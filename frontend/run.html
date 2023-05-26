@@ -172,6 +172,7 @@ let displayTimerInterval;
 const SCROLL_SNAP_OFFSET = 50;
 
 const BACKSPACE_REGEX = new RegExp(/\x08/g);
+const CARRIAGE_RETURN_REGEX = new RegExp(/\x0d+/g);
 
 function main() {
   const socketUrl = getWebSocketUrl();
@@ -239,8 +240,12 @@ function handleWebsocketMessage(event) {
   const data = JSON.parse(event.data);
 
   if ("stdout" in data) {
-    const lines = data.stdout.join("").replace(BACKSPACE_REGEX, "");
-    const html = ansi_up.ansi_to_html(lines);
+    const stdout = data.stdout
+      .join("")
+      .replace(BACKSPACE_REGEX, "")
+      .replace(CARRIAGE_RETURN_REGEX, "\r");
+
+    const html = ansi_up.ansi_to_html(stdout);
     const terminal = document.getElementById("terminal");
 
     terminal.innerHTML += html;

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
+import pty
 import shlex
 import subprocess
-from subprocess import PIPE, STDOUT, CompletedProcess
+from contextlib import suppress
+from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -71,12 +74,10 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             args = [shlex.quote(arg) for arg in args]
 
-            process = self._pod_exec(args)
+            exit_code = self._pod_exec(args)
 
-            self.terminal.handle_line(process.stdout.decode())
-
-            if process.returncode != 0:
-                raise CommandFailed(process.returncode)
+            if exit_code != 0:
+                raise CommandFailed(exit_code)
 
         return RecordValue({}, RecordType())
 
@@ -105,7 +106,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             process.stdout.strip().split(b"\n")[-1].decode().strip()
         )
 
-    def _pod_exec(self, args: list[str]) -> CompletedProcess[bytes]:
+    def _pod_exec(self, args: list[str]) -> int:
         # This command is a hack to make sure we are in cwd from the last
         # command that was ran. Because each `exec` command is executed in the
         # container WORKDIR folder the cwd is not saved after `exec` finishes.
@@ -122,7 +123,10 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             ]
         )
 
-        return subprocess.run(
+        # Hacky tty magic from: https://stackoverflow.com/a/28925318
+        master, slave = pty.openpty()
+
+        process = subprocess.Popen(
             [
                 "podman",
                 "exec",
@@ -132,9 +136,23 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 "-c",
                 cmd,
             ],
-            stdout=PIPE,
+            stdout=slave,
             stderr=STDOUT,
+            close_fds=True,
         )
+
+        os.close(slave)
+
+        with suppress(IOError):
+            while True:
+                data = os.read(master, 1024)
+
+                if not data:
+                    break
+
+                self.terminal.handle_line(data.decode())
+
+        return process.wait()
 
     @property
     def temp_dir(self) -> str:
