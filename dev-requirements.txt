@@ -12,9 +12,9 @@ pathspec==0.11.1
 platformdirs==3.5.1
 pluggy==1.0.0
 pytest-asyncio==0.21.0
-pytest-cov==4.0.0
+pytest-cov==4.1.0
 pytest==7.3.1
-ruff==0.0.269
+ruff==0.0.270
 tomli==2.0.1
 types-passlib==1.7.7.12
 types-requests==2.31.0.0
