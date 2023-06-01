@@ -4,6 +4,8 @@ import os
 import pty
 import shlex
 import subprocess
+import sys
+import termios
 from contextlib import suppress
 from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING
@@ -35,6 +37,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     container_id: str
     terminal: TerminalSession
     cloned_repo: Path
+
+    max_columns: int = 120
 
     def __init__(
         self,
@@ -126,10 +130,19 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         # Hacky tty magic from: https://stackoverflow.com/a/28925318
         master, slave = pty.openpty()
 
+        with suppress(termios.error):
+            # Attempt to set TTY to desired max_column size. This might fail,
+            # so we suppress the error. This is probably due to the terminal
+            # not supporting the ability to resize the terminal.
+            lines, _ = termios.tcgetwinsize(sys.stdout)
+            termios.tcsetwinsize(sys.stdout, (lines, self.max_columns))
+
         process = subprocess.Popen(
             [
                 "podman",
                 "exec",
+                "-e",
+                f"COLUMNS={self.max_columns}",
                 "-t",
                 self.container_id,
                 "/bin/sh",
