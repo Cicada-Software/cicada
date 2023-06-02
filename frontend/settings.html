@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="/static/common.css">
 <script src="/static/common.js"></script>
+<script src="/static/vendor/vanjs/vanjs.min.js"></script>
 </head>
 
 <body>
@@ -94,10 +95,17 @@ button:disabled {
   color: var(--lightgray);
   padding: 1em;
   cursor: pointer;
+  transition: background 150ms;
+}
+
+.installation-card:hover {
+  background: var(--medium-gray);
 }
 </style>
 
 <script>
+const {div, span} = van.tags;
+
 const MIN_PASSWORD_LEN = 12;
 
 const jwtPayload = JSON.parse(atob(localStorage.getItem("jwt").split(".")[1]));
@@ -118,37 +126,36 @@ cicadaFetch("/api/installations")
     if (!resp.ok) return;
 
     resp.json().then(installations => {
+      for (const installation of installations) {
+        van.add(
+          document.getElementById("installations"),
+          Installation(installation),
+        );
+      }
+
       if (installations.length !== 0) {
-        const template = `
-          <div class="installation-card">
-            <span>
-              <span class="installation-name blue"></span>
-              on
-              <span class="installation-provider"></span>
-              <span class="installation-perms"></span>
-            </span>
-          </div>
-        `;
-
-        for (const installation of installations) {
-          const { id, name, provider } = installation;
-
-          const element = document.createElement("div");
-
-          element.innerHTML = template;
-          element.querySelector(".installation-name").innerText = `@${name}`;
-          element.querySelector(".installation-provider").innerText = normalizeProvider(provider);
-          element.querySelector(".installation-perms").innerText = "(Admin)";
-
-          document.getElementById("installations").insertAdjacentElement("beforeend", element);
-
-          element.onclick = () => window.location.href = `/installation/${id}`;
-        }
-
         document.getElementById("installation-hider").style.display = "block";
       }
     });
   });
+
+function Installation(installation) {
+  const { id, name, provider } = installation;
+
+  return div(
+    {
+      class: "installation-card",
+      onclick: () => window.location.href = `/installation/${id}`,
+    },
+    span(
+      span({class: "installation-name blue"}, `@${name}`),
+      " on ",
+      span({class: "installation-provider"}, normalizeProvider(provider)),
+      " ",
+      span({class: "installation-perms"}, "(Admin)"),
+    )
+  );
+}
 
 const handleChangePassword = e => {
   e.preventDefault();

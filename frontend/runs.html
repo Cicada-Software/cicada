@@ -7,6 +7,7 @@
 
 <link rel="stylesheet" href="/static/common.css">
 <script src="/static/common.js"></script>
+<script src="/static/vendor/vanjs/vanjs.min.js"></script>
 </head>
 
 <body>
@@ -92,146 +93,218 @@ ol.list-view {
 </style>
 
 <script>
+const {li, div, span, a} = van.tags;
+
 const timerData = {};
 const sessionStatuses = [];
 
-// TODO: cleanup this function
-const generateElapsedDisplay = (element, session) => {
-  return () => {
-    const finished_at = session.finished_at ? new Date(session.finished_at) : new Date();
-    const started_at = new Date(session.started_at);
+cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
+  if (!e.ok) {
+    const errorMsg = document.getElementById("error-msg");
 
-    const diffSeconds = Math.floor((finished_at - started_at) / 1_000);
+    errorMsg.style.display = "block";
+    errorMsg.innerText = httpStatusToMessage(e.status);
 
-    const seconds = String(Math.floor(diffSeconds % 60)).padStart(2, "0");
-    const mins = String(Math.floor((diffSeconds / 60) % 60)).padStart(2, "0");
-    const hours = String(Math.floor(diffSeconds / 3600)).padStart(2, "0");
-    const display = `${hours}:${mins}:${seconds}`;
+    return;
+  }
 
-    element.querySelector(".elapsed-time").innerText = display;
-  };
-};
+  e.json().then(e => {
+    const sessions = document.querySelector("ol");
 
-const displayStatus = (element, status) => {
+    if (new URLSearchParams(window.location.search).has("session")) {
+      sessions.classList.add("list-view");
+    }
+
+    for (const session of e) {
+      const triggerType = session.trigger.type;
+
+      if (triggerType == "git.push") {
+        van.add(sessions, CommitSession(session));
+      }
+      else if (["issue.open", "issue.close"].includes(triggerType)) {
+        van.add(sessions, IssueSession(session));
+      }
+    }
+
+    listenForSessionStatusUpdates();
+
+    if (!e.length) {
+      sessions.innerHTML = '<span class="no-recents">No recent sessions!</span>';
+    }
+  });
+});
+
+function prettyPrintElapsedTime(session) {
+  const finishedAt = session.finished_at ? new Date(session.finished_at) : new Date();
+  const startedAt = new Date(session.started_at);
+
+  const diffSeconds = Math.floor((finishedAt - startedAt) / 1_000);
+
+  const seconds = String(Math.floor(diffSeconds % 60)).padStart(2, "0");
+  const mins = String(Math.floor((diffSeconds / 60) % 60)).padStart(2, "0");
+  const hours = String(Math.floor(diffSeconds / 3600)).padStart(2, "0");
+
+  return `${hours}:${mins}:${seconds}`;
+}
+
+function CiStatus(status) {
+  // TODO: can "data-status" be cleaned up?
+  return span(
+    {class: "ci-status", "data-status": status.toLowerCase()},
+    status,
+  );
+}
+
+// TODO: remove
+function displayStatus(element, status) {
   element.querySelector(".ci-status").innerText = status;
   element.querySelector(".ci-status").dataset["status"] = status.toLowerCase();
-};
+}
 
-const generateCommitUrl = (provider, repository, sha) => {
+function RepositoryUrl(repoUrl, provider) {
+  const shortUrl = new URL(repoUrl).pathname.substr(1);
+
+  return a(
+    {
+      class: "repo",
+      href: `/repo/${provider}/${shortUrl}`
+    },
+    shortUrl,
+  );
+}
+
+function CommitUrl(provider, repository, sha, ref) {
+  let url;
+
   if (provider == "github") {
-    return `${repository}/commit/${sha}`;
+    url = `${repository}/commit/${sha}`;
   }
-  if (provider == "gitlab") {
-    return `${repository}/-/commit/${sha}`;
+  else if (provider == "gitlab") {
+    url = `${repository}/-/commit/${sha}`;
   }
-};
-
-const generateIssueUrl = (provider, repository, id) => {
-  if (provider == "github") {
-    return `${repository}/issues/${id}`;
-  }
-  if (provider == "gitlab") {
-    return `${repository}/-/issues/${id}`;
-  }
-};
-
-const renderCommitSession = (session) => {
-  const { message, sha, ref, repository_url, provider } = session.trigger;
-
-  const element = document.createElement("li");
-
-  // TODO: use <a> to allow for showing tooltip at bottom of browser
-  element.innerHTML = `
-  <div class="status-bar">
-    <span class="ci-status"></span>
-    <span>
-      <a class="repo"></a>
-      <span class="provider"></span>
-    </span>
-    <span class="trigger-type"></span>
-    <a class="sha"></a>
-    <span class="commit-message"></span>
-    <span class="elapsed-time">--:--:--</span>
-  </div>
-  `;
-
-  element.onclick = makeRunCallback(event, session);
-
-  displayStatus(element, session.status);
-  element.querySelector(".trigger-type").innerText = session.trigger.type;
-
-  element.querySelector(".provider").innerText = `(${provider})`;
-
-  const shortUrl = new URL(repository_url).pathname.substr(1);
-  element.querySelector(".repo").href = `/repo/${provider}/${shortUrl}`;
-  element.querySelector(".repo").innerText = shortUrl;
-
-  element.querySelector(".sha").href = generateCommitUrl(provider, repository_url, sha);
 
   const shortSha = sha.substring(0, 8);
   const shortRef = ref.split("/").slice(2).join("/");
-  element.querySelector(".sha").innerText = `${shortSha} (${shortRef})`;
 
-  element.querySelector(".commit-message").innerText = message.split("\n")[0];
-  element.querySelector(".commit-message").title = message;
+  return a(
+    {class: "sha", href: url},
+    `${shortSha} (${shortRef})`
+  );
+}
 
-  const display = generateElapsedDisplay(element, session);
-  display();
+function CommitMessage(message) {
+  return span(
+    {class: "commit-message", title: message},
+    message.split("\n")[0],
+  );
+}
+
+function IssueUrl(provider, repository, id) {
+  let url = "";
+
+  if (provider == "github") {
+    url = `${repository}/issues/${id}`;
+  }
+  else if (provider == "gitlab") {
+    url = `${repository}/-/issues/${id}`;
+  }
+
+  return a({class: "issue-id", href: url}, `Issue #${id}`);
+}
+
+function IssueTitle(title, body) {
+  return span(
+    {
+      class: "issue-title",
+      title: body ? `${title}\n\n${body}` : title,
+    },
+    title,
+  );
+}
+
+function Provider(provider) {
+  return span({class: "provider"}, `(${normalizeProvider(provider)})`);
+}
+
+function ElapsedTime(session) {
+  return span({class: "elapsed-time"}, prettyPrintElapsedTime(session));
+}
+
+function CommitSession(session) {
+  const { message, sha, ref, repository_url, provider } = session.trigger;
+
+  const elapsed = ElapsedTime(session);
+
+  // TODO: use a tag to allow for showing tooltip at bottom of browser
+
+  const element = li(
+    div(
+      {
+        class: "status-bar",
+        onclick: makeRunCallback(event, session),
+      },
+      CiStatus(session.status),
+      span(
+        RepositoryUrl(repository_url, provider),
+        " ",
+        Provider(provider),
+      ),
+      span({class: "trigger-type"}, session.trigger.type),
+      CommitUrl(provider, repository_url, sha, ref),
+      CommitMessage(message),
+      elapsed,
+    ),
+  );
 
   if (!session.finished_at) {
-    timerData[session.id] = {element, timer: setInterval(display, 1_000)};
+    timerData[session.id] = {
+      element,
+      timer: setInterval(() => {
+        elapsed.innerText = prettyPrintElapsedTime(session);
+      }, 1_000),
+    };
     sessionStatuses.push(session.id);
   }
 
-  document.querySelector("ol").insertAdjacentElement("beforeend", element);
-};
+  return element;
+}
 
-const renderIssueSession = (session) => {
+function IssueSession(session) {
   const { title, body, id, repository_url, provider } = session.trigger;
 
-  const element = document.createElement("li");
+  const elapsed = ElapsedTime(session);
 
-  element.innerHTML = `
-  <div class="status-bar">
-    <span class="ci-status"></span>
-    <span>
-      <a class="repo"></a>
-      <span class="provider"></span>
-    </span>
-    <span class="trigger-type"></span>
-    <a class="issue-id"></a>
-    <span class="issue-title"></span>
-    <span class="elapsed-time">--:--:--</span>
-  </div>
-  `;
-
-  element.onclick = makeRunCallback(event, session);
-
-  displayStatus(element, session.status);
-  element.querySelector(".trigger-type").innerText = session.trigger.type;
-
-  element.querySelector(".provider").innerText = `(${normalizeProvider(provider)})`;
-
-  const shortUrl = new URL(repository_url).pathname.substr(1);
-  element.querySelector(".repo").href = `/repo/${provider}/${shortUrl}`;
-  element.querySelector(".repo").innerText = shortUrl;
-
-  element.querySelector(".issue-id").href = generateIssueUrl(provider, repository_url, id);
-  element.querySelector(".issue-id").innerText = `Issue #${id}`;
-
-  element.querySelector(".issue-title").innerText = title;
-  element.querySelector(".issue-title").title = body ? `${title}\n\n${body}` : title;
-
-  const display = generateElapsedDisplay(element, session);
-  display();
+  const element = li(
+    div(
+      {
+        class: "status-bar",
+        onclick: makeRunCallback(event, session),
+      },
+      CiStatus(session.status),
+      span(
+        RepositoryUrl(repository_url, provider),
+        " ",
+        Provider(provider),
+      ),
+      span({class: "trigger-type"}, session.trigger.type),
+      IssueUrl(provider, repository_url, id),
+      IssueTitle(title, body),
+      elapsed,
+    )
+  );
 
   if (!session.finished_at) {
-    timerData[session.id] = {element, timer: setInterval(display, 1_000)};
+    timerData[session.id] = {
+      element,
+      timer: setInterval(() => {
+        elapsed.innerText = prettyPrintElapsedTime(session);
+      }, 1_000),
+    };
     sessionStatuses.push(session.id);
   }
 
-  document.querySelector("ol").insertAdjacentElement("beforeend", element);
-};
+  return element;
+}
 
 function makeRunCallback(event, session) {
   const f = (event) => {
@@ -248,40 +321,6 @@ function makeRunCallback(event, session) {
 
   return f;
 }
-
-cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
-  if (!e.ok) {
-    const errorMsg = document.getElementById("error-msg");
-
-    errorMsg.style.display = "block";
-    errorMsg.innerText = httpStatusToMessage(e.status);
-
-    return;
-  }
-
-  e.json().then(e => {
-    if (new URLSearchParams(window.location.search).has("session")) {
-      document.querySelector("ol").classList.add("list-view");
-    }
-
-    for (const session of e) {
-      const triggerType = session.trigger.type;
-
-      if (session.trigger.type == "git.push") {
-        renderCommitSession(session);
-      }
-      else if (["issue.open", "issue.close"].includes(triggerType)) {
-        renderIssueSession(session);
-      }
-    }
-
-    listenForSessionStatusUpdates();
-
-    if (!e.length) {
-      document.querySelector("ol").innerHTML = '<span class="no-recents">No recent sessions!</span>';
-    }
-  });
-});
 
 function listenForSessionStatusUpdates() {
   if (sessionStatuses.length === 0) return;
@@ -303,7 +342,9 @@ function listenForSessionStatusUpdates() {
 
     clearInterval(timer);
 
-    generateElapsedDisplay(element, session)();
+    const elapsed = prettyPrintElapsedTime(session);
+    element.querySelector(".elapsed-time").innerText = elapsed;
+
     displayStatus(element, session.status);
   }
 }

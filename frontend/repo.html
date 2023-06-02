@@ -4,6 +4,7 @@
 <head>
 <link rel="stylesheet" href="/static/common.css">
 <script src="/static/common.js"></script>
+<script src="/static/vendor/vanjs/vanjs.min.js"></script>
 </head>
 
 <body>
@@ -134,7 +135,14 @@ button:disabled {
 </style>
 
 <script>
+const {tr, td, input, textarea, button} = van.tags;
+
 let repo;
+
+main();
+
+document.getElementById("add").addEventListener("click", onClickAdd);
+document.getElementById("save").addEventListener("click", onClickSave);
 
 function main() {
   ping();
@@ -161,7 +169,12 @@ function main() {
       if (resp.ok) {
         resp.json().then(j => {
           for (const env of j) {
-            addRow(env.key, env.value);
+            van.add(
+              document.querySelector("table"),
+              EnvVarRow(env.key, env.value)
+            );
+
+            onEnvVarListUpdate();
           }
         });
       } else {
@@ -170,8 +183,6 @@ function main() {
     });
   }
 }
-
-main();
 
 function getRepoInfo() {
   const parts = window.location.pathname.split("/").slice(1);
@@ -195,35 +206,58 @@ function getGitUrl(provider, shortUrl) {
   return `https://${repo.provider}.com/${repo.shortUrl}`;
 }
 
-function addRow(key, value) {
-  const row = document.createElement("tr");
+function EnvVarRow(key, value) {
+  const deleted = van.state(false);
 
-  row.innerHTML = `
-    <td><input type="text" name="key" value="" spellcheck=false /></td>
-    <td><textarea type="text" name="value" autocomplete=off spellcheck=false></textarea></td>
-    <td><button class="delete" onclick="removeEnvVar(this)">Remove</button></td>
-  `;
+  const deleteRow = () => {
+    if (confirm("Are you sure you want to delete this environment variable?")) {
+      deleted.val = true;
 
-  const keyInput = row.querySelector("input[name=key]");
-  const valueInput = row.querySelector("textarea[name=value]");
+      onEnvVarListUpdate();
+      dirtySaveButton();
+    }
+  };
 
-  keyInput.oninput = dirtySaveButton;
-  valueInput.oninput = dirtySaveButton;
+  let row = tr(
+    td(
+      input(
+        {
+          type: "text",
+          name: "key",
+          value: key ?? "",
+          oninput: dirtySaveButton,
+          spellcheck: false,
+        }
+      )
+    ),
+    td(
+      textarea(
+        {
+          type: "text",
+          name: "value",
+          value: value ?? "",
+          oninput: dirtySaveButton,
+          autocomplete: "off",
+          spellcheck: false,
+        }
+      )
+    ),
+    td(
+      button({class: "delete", onclick: deleteRow}, "Remove")
+    ),
+  );
 
-  keyInput.value = key ?? "";
-  valueInput.value = value ?? "";
-
-  document.querySelector("table").appendChild(row);
-
-  onEnvVarListUpdate();
+  return van.bind(deleted, d => d ? null : row);
 }
 
-document.getElementById("add").addEventListener("click", (event) => {
-  addRow();
-  dirtySaveButton();
-});
+function onClickAdd(event) {
+  van.add(document.querySelector("table"), EnvVarRow());
 
-document.getElementById("save").addEventListener("click", (event) => {
+  onEnvVarListUpdate();
+  dirtySaveButton();
+}
+
+function onClickSave(event) {
   const data = {
     provider: repo.provider,
     repository_url: getGitUrl(repo.provider, repo.shortUrl),
@@ -253,15 +287,6 @@ document.getElementById("save").addEventListener("click", (event) => {
       }
     })
     .catch(err => console.log({err}));
-});
-
-function removeEnvVar(element) {
-  if (confirm("Are you sure you want to delete this environment variable?")) {
-    document.querySelector("table").removeChild(element.parentNode.parentNode);
-
-    onEnvVarListUpdate();
-    dirtySaveButton();
-  }
 }
 
 function onEnvVarListUpdate() {
