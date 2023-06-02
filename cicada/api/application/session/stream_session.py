@@ -50,8 +50,8 @@ class StreamSession:
 
         interceptor = create_task(intercept_stop())
 
-        async for lines in terminal.stream_batched_lines():
-            yield {"stdout": lines}
+        async for chunks in terminal.stream_chunks():
+            yield {"stdout": chunks.decode()}
 
         terminal.finish()
 

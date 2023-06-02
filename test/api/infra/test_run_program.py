@@ -14,7 +14,7 @@ async def test_basic_stdout_capturing() -> None:
 
     assert exit_code == 0
     assert terminal_session.is_done
-    assert terminal_session.lines == ["hello world\n"]
+    assert terminal_session.chunks == [b"hello world\n"]
 
 
 async def test_long_running_process_is_awaited() -> None:
@@ -44,7 +44,7 @@ async def test_non_existent_program_closes_terminal_session() -> None:
 async def test_exception_in_terminal_session_handler_cleans_up_session() -> None:  # noqa: E501
     terminal_session = TerminalSession()
 
-    def callback(_: str) -> None:
+    def callback(_: bytes) -> None:
         raise ValueError("This is handled")
 
     terminal_session.callback = callback

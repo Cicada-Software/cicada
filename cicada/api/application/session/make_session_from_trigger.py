@@ -78,11 +78,11 @@ class MakeSessionFromTrigger:
 
         session_id = uuid4()
 
-        def cb(line: str) -> None:
-            self.terminal_session_repo.add_line(session_id, line)
+        def callback(data: bytes) -> None:
+            self.terminal_session_repo.append_to_session(session_id, data)
 
         terminal = self.terminal_session_repo.create(session_id)
-        terminal.callback = cb
+        terminal.callback = callback
 
         session = Session(id=session_id, trigger=trigger)
         self.session_repo.create(session)

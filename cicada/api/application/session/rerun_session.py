@@ -63,15 +63,15 @@ class RerunSession:
             id=session.id, trigger=session.trigger, run=session.run + 1
         )
 
-        def cb(line: str) -> None:
-            self.terminal_session_repo.add_line(
-                session.id, line, run=session.run
+        def callback(data: bytes) -> None:
+            self.terminal_session_repo.append_to_session(
+                session.id, data, run=session.run
             )
 
         terminal = self.terminal_session_repo.create(
             session.id, run=session.run
         )
-        terminal.callback = cb
+        terminal.callback = callback
 
         self.session_repo.create(session)
 

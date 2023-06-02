@@ -10,8 +10,8 @@ class ITerminalSessionRepo(ABC):
         ...
 
     @abstractmethod
-    def add_line(
-        self, session_id: SessionId, line: str, run: int = -1
+    def append_to_session(
+        self, session_id: SessionId, data: bytes, run: int = -1
     ) -> None:
         ...
 

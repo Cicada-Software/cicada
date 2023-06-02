@@ -24,8 +24,8 @@ async def test_stream_full_session() -> None:
     session_id = uuid4()
 
     terminal = TerminalSession()
-    terminal.handle_line("hello")
-    terminal.handle_line("world")
+    terminal.append(b"hello\n")
+    terminal.append(b"world")
     terminal.finish()
     terminal_session_repo.get_by_session_id.return_value = terminal
 
@@ -39,7 +39,7 @@ async def test_stream_full_session() -> None:
 
     data = [data async for data in stream.stream(session_id, run=1)]
 
-    assert data == [{"stdout": ["hello", "world"]}, {"status": "SUCCESS"}]
+    assert data == [{"stdout": "hello\nworld"}, {"status": "SUCCESS"}]
 
     session_stopper.assert_not_called()
 
@@ -52,8 +52,8 @@ async def test_stop_session_mid_stream() -> None:
     session_id = uuid4()
 
     terminal = TerminalSession()
-    terminal.handle_line("hello")
-    terminal.handle_line("world")
+    terminal.append(b"hello\n")
+    terminal.append(b"world")
     terminal_session_repo.get_by_session_id.return_value = terminal
 
     session_repo.get_session_by_session_id.return_value = SlimSession()
@@ -72,7 +72,7 @@ async def test_stop_session_mid_stream() -> None:
     stream.send_command("STOP")
     data = await task
 
-    assert data == [{"stdout": ["hello", "world"]}, {"status": "STOPPED"}]
+    assert data == [{"stdout": "hello\nworld"}, {"status": "STOPPED"}]
 
     session_stopper.assert_called()
 

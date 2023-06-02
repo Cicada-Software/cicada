@@ -47,7 +47,7 @@ async def run_program(args: list[str], terminal: TerminalSession) -> int:
             line = await process.stdout.readline()
 
             if line:
-                terminal.handle_line(line.decode())
+                terminal.append(line)
 
             if not line or terminal.should_stop.is_set():
                 break

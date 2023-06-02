@@ -8,8 +8,8 @@ LIVE_TERMINAL_SESSIONS = dict[tuple[SessionId, int], TerminalSession]()
 
 
 class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
-    def add_line(
-        self, session_id: SessionId, line: str, run: int = -1
+    def append_to_session(
+        self, session_id: SessionId, data: bytes, run: int = -1
     ) -> None:
         if run == -1:
             run = self._get_run_count_for_session(session_id)
@@ -23,7 +23,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
             ON CONFLICT(session_id)
             DO UPDATE SET lines=lines || excluded.lines;
             """,
-            [f"{session_id}#{run}", line],
+            [f"{session_id}#{run}", data],
         )
 
         self.conn.commit()
@@ -47,15 +47,8 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         )
 
         if rows := cursor.fetchone():
-            stdout = rows["lines"]
-
-            lines = [f"{line}\n" for line in rows["lines"].split("\n")]
-
-            if stdout.endswith("\n"):
-                lines.pop(-1)
-
             terminal = TerminalSession()
-            terminal.lines = lines
+            terminal.chunks = [rows[0].encode()]
             terminal.finish()
 
             return terminal

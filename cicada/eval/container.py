@@ -163,7 +163,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 if not data:
                     break
 
-                self.terminal.handle_line(data.decode())
+                self.terminal.append(data)
 
         return process.wait()
 
