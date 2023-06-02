@@ -61,15 +61,38 @@ class StreamSession:
 
         interceptor.cancel()
 
-        # TODO: this is terrible, fix it
-        await sleep(0.5)
+        status = await self._get_session_status(session_id, run)
 
-        session = self.session_repo.get_session_by_session_id(
-            session_id, run=run
-        )
-        assert session
+        yield {"status": status.name}
 
-        yield {"status": session.status.name}
+    async def _get_session_status(
+        self, session_id: SessionId, run: int
+    ) -> SessionStatus:
+        """
+        Repeatedly get the session to see what the new status is. Since the
+        cleanup process can take a few seconds we will have to check
+        periodically to until we give up (we cant wait forever, and if it gets
+        stuck its probably a bug or timeout issue).
+        """
+
+        check_count = 0
+        give_up_after = 10
+
+        while check_count < give_up_after:
+            session = self.session_repo.get_session_by_session_id(
+                session_id, run=run
+            )
+            assert session
+
+            if session.status == SessionStatus.PENDING:
+                check_count += 1
+                await sleep(0.5)
+                continue
+
+            return session.status
+
+        # session is still pending, bail and return pending status
+        return SessionStatus.PENDING
 
     def send_command(self, command: str) -> None:
         self.command_queue.put_nowait(command)
