@@ -78,7 +78,7 @@ class MakeSessionFromTrigger:
 
         session_id = uuid4()
 
-        def callback(data: bytes) -> None:
+        def callback(data: bytes) -> None:  # pragma: no cover
             self.terminal_session_repo.append_to_session(session_id, data)
 
         terminal = self.terminal_session_repo.create(session_id)

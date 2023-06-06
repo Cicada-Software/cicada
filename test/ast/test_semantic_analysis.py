@@ -430,7 +430,7 @@ if true:
     parse_and_analyze(code)
 
 
-def test_shell_function_args_are_stringifyable() -> None:
+def test_shell_function_args_are_not_stringifyable() -> None:
     code = """\
 let x =
     echo hi

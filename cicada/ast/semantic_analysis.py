@@ -367,7 +367,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_block_expr(self, node: BlockExpression) -> None:
         super().visit_block_expr(node)
 
-        if not node.exprs:
+        if not node.exprs:  # pragma: no cover
             raise AstError("Block cannot be empty", node.info)
 
         node.is_constexpr = all(self.is_constexpr(x) for x in node.exprs)

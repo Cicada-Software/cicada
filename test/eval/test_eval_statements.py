@@ -129,3 +129,12 @@ def test_on_statement_converts_trigger_data_to_record() -> None:
             return
 
     pytest.fail(f"event does not match: {event}")
+
+
+def test_run_on_statement_does_nothing_at_runtime() -> None:
+    tree = parse_and_analyze("run_on image alpine\nlet x = 1")
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    assert "x" in visitor.symbols

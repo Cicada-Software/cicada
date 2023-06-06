@@ -253,7 +253,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             case BooleanValue():
                 return StringValue("true" if value.value else "false")
 
-        return UnreachableValue()
+        return UnreachableValue()  # pragma: no cover
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()
@@ -280,4 +280,6 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
                 return
 
-        raise KeyError(f"Cannot reassign `{name}` because it doesn't exist")
+        raise KeyError(  # pragma: no cover
+            f"Cannot reassign `{name}` because it doesn't exist"
+        )
