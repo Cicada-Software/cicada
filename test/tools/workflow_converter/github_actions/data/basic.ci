@@ -1,0 +1,15 @@
+on git.push where event.branch is "master"
+
+runs_on image ubuntu:22.04
+
+# Pip Install
+make install
+
+# Pytest
+make test
+
+# Lint
+make lint
+
+# Mypy
+make mypy

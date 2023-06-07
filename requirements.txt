@@ -20,6 +20,8 @@ python-gitlab==3.14.0
 python-multipart==0.0.6
 requests-toolbelt==1.0.0
 requests==2.31.0
+ruamel.yaml.clib==0.2.7
+ruamel.yaml==0.17.31
 six==1.16.0
 sniffio==1.3.0
 starlette==0.27.0
