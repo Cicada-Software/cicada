@@ -1,0 +1,15 @@
+on git.push
+
+echo one command, one line
+
+shell cmd one command, one line
+
+echo single command, multi line
+
+shell cmd single command, multi line
+
+echo command 1
+echo command 2
+
+shell cmd command 1
+shell cmd command 2

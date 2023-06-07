@@ -314,8 +314,13 @@ class StringExpression(Expression, StringValue):
     def from_token(cls, token: Token) -> Self:
         contents = token.content
 
-        if not token.content.startswith(("'", '"')):
-            contents = f'"{contents}"'
+        # TODO: test this
+        if contents.startswith("'"):
+            contents = f"''{contents}''"
+        elif contents.startswith('"'):
+            contents = f'""{contents}""'
+        else:
+            contents = f'"""{contents}"""'
 
         value = ast.literal_eval(contents)
 

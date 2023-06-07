@@ -1,0 +1,22 @@
+on:
+  push:
+
+jobs:
+  test:
+    steps:
+      - run: echo one command, one line
+      - run: cmd one command, one line
+
+      - run: |
+          echo single command, multi line
+
+      - run: |
+          cmd single command, multi line
+
+      - run: |
+          echo command 1
+          echo command 2
+
+      - run: |
+          cmd command 1
+          cmd command 2

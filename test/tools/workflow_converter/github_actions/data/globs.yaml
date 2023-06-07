@@ -1,0 +1,11 @@
+on:
+  push:
+    branches:
+      # "**" is a special case because it basically just means "match everything",
+      # so basically just ignore it.
+      - "**"
+
+jobs:
+  test:
+    steps:
+      - run: echo hello world
