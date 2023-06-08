@@ -10,9 +10,14 @@ FOLDER_BAN_LIST = {
     ".mypy_cache",
 }
 
+CICADA_IGNORE_FILE = ".cicadaignore"
 
-def find_ci_files(start: Path) -> Generator[Path, None, None]:
-    for path in start.iterdir():
+
+def find_ci_files(dir: Path) -> Generator[Path, None, None]:
+    if (dir / CICADA_IGNORE_FILE).exists():
+        return
+
+    for path in dir.iterdir():
         if path.suffix == ".ci":
             yield path
 
