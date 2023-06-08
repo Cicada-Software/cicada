@@ -1,0 +1,8 @@
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  test:
+    steps:
+      - run: echo hello world

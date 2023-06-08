@@ -1,0 +1,3 @@
+on issue.open
+
+echo hello world

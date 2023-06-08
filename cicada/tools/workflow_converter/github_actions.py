@@ -16,6 +16,11 @@ WORKFLOW_IMAGE_MAPPINGS = {
     "ubuntu-20.04": "ubuntu:20.04",
 }
 
+GITHUB_ISSUE_TYPE_MAPPINGS = {
+    "opened": "open",
+    "closed": "close",
+}
+
 
 def is_supported_glob(glob: str) -> bool:
     return not set(glob).intersection("*?+[]!")
@@ -47,6 +52,19 @@ def convert_push_event(push: dict[str, Any] | str) -> str:  # type: ignore
         line += f" where {condition}"
 
     return f"{line}\n"
+
+
+def convert_issues_event(issues: dict[str, Any]) -> str:  # type: ignore
+    types = issues.get("types")
+
+    assert isinstance(types, list), "expected list of `types`"
+    assert len(types) == 1, "only one issue type can be specified"
+
+    issue_type = GITHUB_ISSUE_TYPE_MAPPINGS.get(types[0])
+
+    assert issue_type, "only opened/closed issues are supported currently"
+
+    return f"on issue.{issue_type}\n"
 
 
 def convert_steps(steps: list[Any]) -> str:  # type: ignore
@@ -121,6 +139,13 @@ def convert_on(on: dict[str, Any] | list[Any]) -> str:  # type: ignore
         else:
             on.remove("push")
             events += convert_push_event("push")
+
+    elif "issues" in on:
+        assert isinstance(
+            on, dict
+        ), "Only opened and closed issues are supported"
+
+        events += convert_issues_event(on.pop("issues"))
 
     for event in on:
         events += f"# ERR: `{event}` events are currently unsupported\n"
