@@ -2,7 +2,7 @@ on git.push
 
 run_on image python:3.11.3-alpine3.18
 
-shell apk add make gcc
+shell apk add make gcc musl-dev
 
 cp .env.example .env
 
