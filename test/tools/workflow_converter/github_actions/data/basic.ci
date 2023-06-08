@@ -1,7 +1,7 @@
 on git.push where event.branch is "master"
 # ERR: `pull_request` events are currently unsupported
 
-runs_on image ubuntu:22.04
+run_on image ubuntu:22.04
 
 # ERR: GitHub Action `actions/setup-python@v4` not supported
 

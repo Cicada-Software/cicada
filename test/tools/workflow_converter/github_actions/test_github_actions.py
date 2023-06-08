@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from cicada.ast.entry import parse_and_analyze
 from cicada.tools.workflow_converter.github_actions import convert
 
 
@@ -20,6 +21,8 @@ def test_github_actions_workflow_convertion() -> None:
             expected = file.with_suffix(".ci").read_text().strip()
 
             assert expected == got
+
+            assert parse_and_analyze(expected, validate=False)
 
 
 def test_branch_globs_not_allowed() -> None:

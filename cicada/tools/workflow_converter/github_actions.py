@@ -102,7 +102,7 @@ def convert_jobs(jobs: dict[str, Any]) -> str:  # type: ignore
         if image is None:
             raise AssertionError(f"Unexpected runner `{runs_on}`")
 
-        workflow += f"runs_on image {image}\n\n"
+        workflow += f"run_on image {image}\n\n"
 
     if steps := job.get("steps"):
         assert isinstance(steps, list), "`steps` must be a list"
