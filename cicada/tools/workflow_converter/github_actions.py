@@ -164,7 +164,10 @@ def convert(contents: str) -> str:
     workflow = ""
 
     if on := data.get("on"):
-        assert isinstance(on, dict | list)
+        assert isinstance(on, dict | list | str)
+
+        if isinstance(on, str):
+            on = [on]
 
         workflow += convert_on(on)
 
