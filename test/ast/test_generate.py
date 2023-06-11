@@ -940,3 +940,48 @@ def test_run_on_must_have_valid_type() -> None:
 
     with pytest.raises(AstError, match="invalid `run_on` type `invalid`"):
         generate_ast_tree(tokenize(code))
+
+
+def test_parse_c_style_function_call() -> None:
+    code = "print(123)"
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case FunctionExpression(
+            name="print",
+            args=[NumericExpression()],
+            is_shell_mode=False,
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_parse_c_style_function_call_with_no_args() -> None:
+    code = "print()"
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case FunctionExpression(
+            name="print",
+            args=[],
+            is_shell_mode=False,
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_parse_c_style_function_call_with_many_args() -> None:
+    code = 'print("hello", "world")'
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case FunctionExpression(
+            name="print",
+            args=[StringExpression("hello"), StringExpression("world")],
+            is_shell_mode=False,
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")

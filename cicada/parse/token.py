@@ -50,6 +50,7 @@ class MinusToken(Token): pass
 class ColonToken(Token): pass
 class EqualToken(Token): pass
 class DotToken(Token): pass
+class CommaToken(Token): pass
 class WhiteSpaceToken(Token): pass
 
 

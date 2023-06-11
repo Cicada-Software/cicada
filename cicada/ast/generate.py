@@ -11,6 +11,7 @@ from cicada.parse.token import (
     BooleanLiteralToken,
     CloseParenToken,
     ColonToken,
+    CommaToken,
     CommentToken,
     DanglingToken,
     EqualToken,
@@ -604,7 +605,7 @@ def regroup_binary_expr(expr: BinaryExpression) -> None:
             expr.rhs = rhs2
 
 
-def generate_expr(state: ParserState) -> Expression:
+def generate_expr(state: ParserState) -> Expression:  # noqa: PLR0915
     token = state.current_token
 
     expr: Expression | None = None
@@ -657,6 +658,40 @@ def generate_expr(state: ParserState) -> Expression:
 
     with state.peek() as peek:
         oper = state.next_non_whitespace_or_eof()
+
+        if isinstance(oper, OpenParenToken):
+            # TODO: allow non-identifier to be function expressions
+            assert isinstance(expr, IdentifierExpression)
+
+            state.next_non_whitespace()
+
+            args: list[Expression] = []
+
+            if not isinstance(state.current_token, CloseParenToken):
+                while True:
+                    args.append(generate_expr(state))
+                    state.next_non_whitespace()
+
+                    if isinstance(state.current_token, CloseParenToken):
+                        break
+
+                    if not isinstance(state.current_token, CommaToken):
+                        raise AstError.unexpected_token(
+                            state.current_token, expected=","
+                        )
+
+                    state.next_non_whitespace()
+
+            peek.drop_peeked_tokens()
+
+            return FunctionExpression(
+                info=LineInfo.from_token(token),
+                name=expr.name,
+                args=args,
+                type=UnknownType(),
+                is_constexpr=False,
+                is_shell_mode=False,
+            )
 
         # TODO: allow for more oper tokens
         if isinstance(oper, tuple(TOKEN_TO_BINARY_OPER.keys())):

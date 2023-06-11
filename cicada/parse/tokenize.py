@@ -38,6 +38,7 @@ TOKEN_SEPARATORS = {
     "-": MinusToken,
     ":": ColonToken,
     "=": EqualToken,
+    ",": CommaToken,
 }
 
 KEYWORD_NAMES = {
