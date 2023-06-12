@@ -126,7 +126,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     def __init__(self, trigger: Trigger | None = None) -> None:
         # TODO: populate symbol table with builtins
-        self.function_names = {*SHELL_ALIASES, "shell"}
+        self.function_names = {*SHELL_ALIASES, "shell", "print"}
         self.types = {}
         self.symbols = ChainMap()
         self.trigger = trigger

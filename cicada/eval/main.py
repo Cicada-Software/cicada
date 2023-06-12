@@ -11,26 +11,27 @@ from cicada.ast.nodes import (
     FunctionExpression,
     RecordValue,
     StringValue,
+    UnitValue,
     Value,
 )
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType
-from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
+from cicada.eval.constexpr_visitor import ConstexprEvalVisitor, value_to_string
 from cicada.eval.find_files import find_ci_files
 
 
 class EvalVisitor(ConstexprEvalVisitor):
     def visit_func_expr(self, node: FunctionExpression) -> Value:
+        args: list[str] = []
+
+        for arg in node.args:
+            value = value_to_string(arg.accept(self))
+
+            assert isinstance(value, StringValue)
+
+            args.append(value.value)
+
         if node.name == "shell":
-            args: list[str] = []
-
-            for arg in node.args:
-                value = arg.accept(self)
-
-                assert isinstance(value, StringValue)
-
-                args.append(value.value)
-
             # TODO: test this
             args = [shlex.quote(arg) for arg in args]
 
@@ -41,8 +42,13 @@ class EvalVisitor(ConstexprEvalVisitor):
             if process.returncode != 0:
                 sys.exit(process.returncode)
 
-        # TODO: return rich "command type" value
-        return RecordValue({}, RecordType())
+            # TODO: return rich "command type" value
+            return RecordValue({}, RecordType())
+
+        if node.name == "print":
+            print(*args)
+
+        return UnitValue()
 
 
 def run_pipeline(

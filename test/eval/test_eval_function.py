@@ -61,3 +61,10 @@ def test_can_call_multiple_functions() -> None:
         call(["/bin/sh", "-c", "echo hello"]),
         call(["/bin/sh", "-c", "echo world"]),
     ]
+
+
+def test_calling_builtin_print_function_calls_print() -> None:
+    with patch("builtins.print") as p:
+        run_pipeline('print("testing 123")')
+
+    assert p.call_args == call("testing 123")

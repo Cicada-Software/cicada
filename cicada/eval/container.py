@@ -15,6 +15,7 @@ from cicada.ast.nodes import (
     FunctionExpression,
     RecordValue,
     StringValue,
+    UnitValue,
     Value,
 )
 from cicada.ast.types import RecordType
@@ -66,16 +67,16 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         )
 
     def visit_func_expr(self, node: FunctionExpression) -> Value:
+        args: list[str] = []
+
+        for arg in node.args:
+            value = arg.accept(self)
+
+            assert isinstance(value, StringValue)
+
+            args.append(value.value)
+
         if node.name == "shell":
-            args: list[str] = []
-
-            for arg in node.args:
-                value = arg.accept(self)
-
-                assert isinstance(value, StringValue)
-
-                args.append(value.value)
-
             args = [shlex.quote(arg) for arg in args]
 
             exit_code = self._pod_exec(args)
@@ -83,7 +84,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             if exit_code != 0:
                 raise CommandFailed(exit_code)
 
-        return RecordValue({}, RecordType())
+            return RecordValue({}, RecordType())
+
+        if node.name == "print":
+            self.terminal.append(" ".join(args).encode())
+
+        return UnitValue()
 
     def _start_pod(self, image: str) -> None:
         # TODO: add timeout

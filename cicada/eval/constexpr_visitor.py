@@ -36,6 +36,20 @@ from cicada.ast.nodes import (
 from cicada.ast.types import RecordType
 
 
+def value_to_string(value: Value) -> Value:
+    match value:
+        case StringValue():
+            return value
+
+        case NumericValue():
+            return StringValue(str(value.value))
+
+        case BooleanValue():
+            return StringValue("true" if value.value else "false")
+
+    return UnreachableValue()  # pragma: no cover
+
+
 class ConstexprEvalVisitor(NodeVisitor[Value]):
     """
     The constexpr visitor is a visitor which only evaluates expressions which
@@ -243,17 +257,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
     def visit_to_string_expr(self, node: ToStringExpression) -> Value:
         value = node.expr.accept(self)
 
-        match value:
-            case StringValue():
-                return value
-
-            case NumericValue():
-                return StringValue(str(value.value))
-
-            case BooleanValue():
-                return StringValue("true" if value.value else "false")
-
-        return UnreachableValue()  # pragma: no cover
+        return value_to_string(value)
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()
