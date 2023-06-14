@@ -16,3 +16,4 @@ class User:
     is_admin: bool = False
     provider: str = "cicada"
     last_login: UtcDatetime | None = None
+    email: str | None = None

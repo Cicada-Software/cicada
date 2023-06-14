@@ -10,7 +10,14 @@ class UserRepo(IUserRepo, DbConnection):
     def get_user_by_username(self, username: str) -> User | None:
         row = self.conn.execute(
             """
-            SELECT uuid, username, hash, is_admin, platform, last_login
+            SELECT
+                uuid,
+                username,
+                hash,
+                is_admin,
+                platform,
+                last_login,
+                email
             FROM users WHERE username=?
             """,
             [username],
@@ -30,6 +37,7 @@ class UserRepo(IUserRepo, DbConnection):
                     if row["last_login"]
                     else None
                 ),
+                email=row["email"],
             )
 
         return None
@@ -44,9 +52,10 @@ class UserRepo(IUserRepo, DbConnection):
                 username,
                 hash,
                 is_admin,
-                platform
+                platform,
+                email
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON CONFLICT DO UPDATE SET
                 hash=excluded.hash,
                 is_admin=excluded.is_admin
@@ -58,6 +67,7 @@ class UserRepo(IUserRepo, DbConnection):
                 pw_hash,
                 user.is_admin,
                 user.provider,
+                user.email,
             ],
         ).fetchone()[0]
 

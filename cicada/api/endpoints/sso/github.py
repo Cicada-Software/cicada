@@ -1,10 +1,11 @@
+from contextlib import suppress
 from functools import cache
 from urllib.parse import quote as url_escape
 from uuid import uuid4
 
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, RedirectResponse
-from githubkit import GitHub, OAuthWebAuthStrategy
+from githubkit import GitHub, OAuthWebAuthStrategy, TokenAuthStrategy
 
 from cicada.api.di import DiContainer
 from cicada.api.domain.user import User
@@ -74,10 +75,40 @@ async def generate_jwt_from_github_sso(di: DiContainer, code: str) -> str:
         )
     )
 
+    # TODO: use githubkit to exchange token
+    resp = await github.arequest(  # type: ignore
+        url="https://github.com/login/oauth/access_token",
+        method="post",
+        params={
+            "client_id": settings.client_id,
+            "client_secret": settings.client_secret,
+            "code": code,
+        },
+        headers={"Accept": "application/json"},
+    )
+
+    github = GitHub(TokenAuthStrategy(resp.json()["access_token"]))
+
+    email: str | None = None
+
+    # Ignore exceptions since email permissions might not be setup for GitHub
+    # app, or email might not be set (for some reason).
+    with suppress(Exception):
+        resp = (
+            await github.rest.users.async_list_emails_for_authenticated_user()
+        )
+        email = [email.email for email in resp.parsed_data if email.primary][0]
+
+    # TODO: run these in parallel
     user = await github.rest.users.async_get_authenticated()
     username = user.parsed_data.login
 
-    new_github_user = User(id=uuid4(), username=username, provider="github")
+    new_github_user = User(
+        id=uuid4(),
+        username=username,
+        email=email,
+        provider="github",
+    )
 
     user_repo = di.user_repo()
 

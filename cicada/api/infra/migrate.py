@@ -741,6 +741,11 @@ def migrate_v35(db: sqlite3.Connection) -> None:
     db.commit()
 
 
+@auto_migrate(version=36)
+def migrate_v36(db: sqlite3.Connection) -> None:
+    db.executescript("ALTER TABLE users ADD COLUMN email TEXT;")
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

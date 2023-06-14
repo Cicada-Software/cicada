@@ -41,6 +41,11 @@ issue-related events.
 * Workflows: Make this *Read and Write*. This permission might not be needed in
 the future, but should be enabled until further notice.
 
+Under the "Account Permissions" section, add the following:
+
+* Email addresses: Make this *Read-only*. This is optional, but required if you want to send
+  notifications or handle billing.
+
 ### Webhook Events
 
 Now that we have permissions set up, we need to tell GitHub which webhook events to send
