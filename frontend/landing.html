@@ -2,124 +2,179 @@
 <html>
 
 <head>
-<title>Cicada: CI/CD For The Modern Age</title>
+<title>Cicada: CI/CD For Power Users</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="apple-touch-icon" sizes="180x180" href="/static/img/icon/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/img/icon/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/img/icon/favicon-16x16.png">
+<link rel="manifest" href="/static/img/icon/site.webmanifest">
 </head>
 
 <body>
 
-<div class="navbar">
-  <a href="/login">Login</a>
+<div id="page-1">
+  <a href="/login" id="login"><button>Login</button></a>
+
+  <h1>cicada</h1>
+  <h3>CI/CD For Power Users</h3>
+
+  <img class="screenshot" src="/static/img/screenshot.png">
+
 </div>
 
-<h1>Cicada</h1>
-<h2>CI/CD For The Modern Age</h2>
+<div id="page-2">
 
-<h3 style="margin-top: 3em">Write your worfklow once</h3>
-<p class="ascii-art" style="margin-top: 0.25em">│</p>
+<h2>Write Simpler Workflows</h2>
 
-<div class="code-block">
-  <p class="filename">hello_world.ci</p>
-  <!-- scrolling animation from: https://codepen.io/cschembri/pen/roMGRa -->
-  <span class="animation-wrapper">
-    <span id="on">on</span>
-    <div id="window">
-      <ul>
-        <li>git.push</li>
-        <li>git.tag</li>
-        <li>issue.open</li>
-        <li>issue.close</li>
-        <li>pull_request.open</li>
-        <li>pull_request.close</li>
-        <li>pull_request.comment</li>
-        <li>git.push</li>
-      </ul>
+<h3>With Cicada, less is more. Write more expressive code in less lines.</h3>
+
+<div id="workflow-comparison">
+  <div id="cicada-sticky">
+    <span>Cicada</span>
+    <pre>on git.push where event.branch is "main"
+
+shell npm install
+shell npm run test</pre>
+  </div>
+
+  <span id="compare-to">Compare that to GitHub:</span>
+
+  <div>
+    <span id="github-comparison">GitHub Actions</span>
+    <pre>name: Test
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run tests
+        run: |
+          npm install
+          npm run test</pre>
+
+    <div id="gitlab-comparison">
+      <span>Gitlab CI</span>
+      <pre>stages:
+  - test
+
+run-tests:
+  stage: test
+  script:
+    - npm install
+    - npm run test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"</pre>
     </div>
-  </span>
-
-  <span style="padding-top: 0"><span id="echo">echo</span> hello world!</span>
+  </div>
 </div>
 
-<p class="ascii-art" style="margin-bottom: 0.5em">│</p>
-<h3>Run it on any platform</h3>
-
-<p class="ascii-art" style="margin-bottom: 1em">╭───────────┼───────────╮</p>
-
-<div class="git-providers">
-  <img src="/static/img/github-logo.svg" />
-  <img src="/static/img/gitlab-logo.svg" />
-  <img src="/static/img/ado.svg" />
 </div>
 
-<h3 style="margin: 2em 0 1em 0">Start using it today</h3>
+<div id="page-3">
+<h2>Use Your Favorite Git Providers</h2>
 
-<h4 class="mobile" style="margin-top: 2em">Hosting Options</h4>
+<h3>Cicada supports both GitHub and Gitlab. Azure DevOps, Bitbucket and many more coming soon.</h3>
 
-<div class="host-options">
-  <div class="desktop" style="flex: 1"></div>
-  <div class="card self-host">
-    <span>Self-host</span>
+<img id="git-providers" src="/static/img/diagram.svg" >
 
-    <p>
-      We
-      <svg xmlns="http://www.w3.org/2000/svg" id="heart" class="icon icon-tabler icon-tabler-heart-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-         <path d="M6.979 3.074a6 6 0 0 1 4.988 1.425l.037 .033l.034 -.03a6 6 0 0 1 4.733 -1.44l.246 .036a6 6 0 0 1 3.364 10.008l-.18 .185l-.048 .041l-7.45 7.379a1 1 0 0 1 -1.313 .082l-.094 -.082l-7.493 -7.422a6 6 0 0 1 3.176 -10.215z" stroke-width="0" fill="currentColor"></path>
-      </svg>
-      Open Source. AGPLv3 licensed.
-    </p>
+</div>
+
+<div id="page-4">
+<h2>No Vendor Lock-in</h2>
+
+<ul class="arrows">
+  <li>
+    Triggers in Cicada are platform agnostic, meaning a <code>git.push</code>
+    trigger coming from GitHub will look the same as one from Gitlab.
+  </li>
+
+  <li>
+    Similar to GitHub Actions, Cicada supports many different triggers types including
+    <code>issue.open</code>, <code>issue.close</code>, <code>git.push</code>, and more.
+  </li>
+
+  <li>
+    Say goodbye to porting your workflows from platform to platform!
+  </li>
+</ul>
+
+</div>
+
+<div id="page-5">
+
+<h2 id="pricing">Pricing</h2>
+
+<div id="tiers">
+  <div id="tier-free">
+    <span class="title">Free</span>
+
+    <ul class="arrows">
+      <li>Self host for free, forever</li>
+      <li>Unlimited users</li>
+    </ul>
 
     <a href="https://github.com/Cicada-Software/cicada"><button>View on GitHub</button></a>
   </div>
+  <div id="tier-cloud">
+    <span>
+      <span class="title">Cloud</span>
+      <span class="cost">$100/month</span>
+    </span>
 
-  <div class="card cloud">
-    <span>Join Cloud Waitlist</span>
-    <form onSubmit="handleSubmit(event)" onInput="handleInput(event)">
-      <input type="text" name="email" placeholder="Email" autocomplete="off" />
-      <button type="submit" disabled>Notify Me</button>
-    </form>
-    <span id="post-notify" style="display: none"></span>
+    <ul class="arrows">
+      <li>Fully managed, maintaince free</li>
+      <li>Unlimited users</li>
+      <li>2,000 minutes a month</li>
+    </ul>
+
+    <a href="/login"><button>Sign Up Today</button></a>
   </div>
-  <div class="desktop" style="flex: 1"></div>
+  <div id="tier-custom">
+    <span class="title">Custom</span>
+
+    <ul class="arrows">
+      <li>Need something custom? Contact us</li>
+    </ul>
+
+    <a href="mailto:contact@cicada.sh"><button>Contact Us</button></a>
+  </div>
 </div>
 
-<script>
-const handleSubmit = e => {
-  e.preventDefault();
+</div>
 
-  const box = document.getElementById("post-notify")
-  let msg = "";
+<div id="page-6">
 
-  fetch("/api/join_waitlist", {method: "POST", body: new FormData(e.target)})
-    .then(resp => {
-      resp.json().then(j => {
-        if (resp.ok) {
-          box.style.display = "block";
-          box.innerText = "Done! We'll keep you updated";
+<footer>
+  <span>
+    <a href="https://github.com/Cicada-Software">Open Source</a>
+    <span class="divider">│</span>
+    <a href="mailto:contact@cicada.sh">Contact Us</a>
+    <span class="divider">│</span>
+    <a href="">Privacy</a>
+    <span class="divider">│</span>
+    <a href="">Terms</a>
+  </span>
 
-          document.querySelector("input[name=email]").value = "";
-        } else {
-          box.style.display = "block";
-          box.innerText = j.detail;
-        }
-      });
-    })
-    .catch(err => console.log({err}));
-};
+  <br>
 
-const handleInput = e => {
-  document.querySelector("button[type=submit]").disabled = !e.target.value;
-};
-</script>
+  <p>&copy; 2023 Cicada Software, Inc.</p>
+</footer>
+
+</div>
 
 <style>
 :root {
   --background: #eee;
   --foreground: #111;
   --subtext: #555;
-  --faded-red: #e8dddd;
-  --faded-green: #e6ffd5;
-  --faded-blue: #d4e4e8;
 }
 
 @font-face {
@@ -128,220 +183,388 @@ const handleInput = e => {
 }
 
 @font-face {
+  font-family: "roboto-black";
+  src: url("/static/fonts/Roboto-Black.ttf");
+}
+
+@font-face {
+  font-family: "roboto";
+  src: url("/static/fonts/Roboto-Regular.ttf");
+}
+
+@font-face {
   font-family: "jetbrains";
   src: url("/static/fonts/JetBrainsMono.ttf");
 }
 
+@font-face {
+  font-family: "logotype";
+  src: url("/static/fonts/Tschichold Alt Bold.ttf");
+}
+
 body, html {
-  background: var(--faded-red);
+  background: var(--background);
   color: var(--foreground);
 
-  font-family: dejavu;
+  margin: 0;
+
+  font-family: roboto;
 }
 
-.navbar {
-  display: flex;
+#login {
+  position: absolute;
+  right: 0.5em;
+  top: 0.5em;
 }
 
-.navbar > * {
-  margin-left: auto;
+h1, #logotype {
+  font-family: logotype;
+  color: var(--foreground);
+  user-select: none;
 }
 
 h1 {
-  font-weight: bold;
-  font-size: 3em;
+  font-size: 6em;
 }
 
-h2, h4 {
-  color: var(--subtext);
+h2 {
+  font-family: roboto-black;
+  font-size: 2.5em;
+
+  color: #111;
+  padding: 1em !important;
 }
 
-h1, h2, h3, h4 {
-  text-align: center;
-  margin: 0;
-  padding: 0;
-}
-
-.git-providers {
+.screenshot {
   display: flex;
-  gap: 3em;
-  margin: auto;
-  width: 26em;
-}
-
-.git-providers > * {
-  flex: 1;
-
-  width: 0;
-}
-
-.ascii-art {
-  font-size: 1.35em;
-  text-align: center;
-  color: var(--foreground);
-  margin: 0.5em;
-}
-
-.code-block {
-  font-family: "jetbrains";
-  font-size: 1rem;
-
-  background: var(--background);
-  border: 2px solid var(--foreground);
+  aspect-ratio: 16/9;
+  margin: 3em auto;
+  background: #ddd;
+  max-height: 60vh;
+  max-width: 75vw;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
   border-radius: 0.5em;
-  width: min-content;
-  margin: auto;
 }
 
-.code-block p.filename {
-  color: var(--background);
-  background: var(--foreground);
-  padding: 0.5em;
-  margin: 0;
-  display: block;
-  border-radius: 0.3em 0.3em 0 0;
+h3 {
+  font-size: 1.5em;
+  margin-top: 0.5em;
 }
 
-.code-block > span {
-  padding: 1em;
-  margin: 0;
-  display: inline-block;
-  width: max-content;
-}
-
-.animation-wrapper {
-  height: 1.25em;
-  display: inline-block;
-}
-
-#on {
-  color: #bc2d2d;
-  vertical-align: top;
-}
-
-#window {
-  color: #862aa8;
-  display: inline-block;
-  height: 100%;
-  overflow: hidden;
-}
-
-#window ul {
+h1, h2, h3 {
+  text-align: center;
   margin: 0;
   padding: 0;
-  animation: scroll 12s linear infinite normal;
-  list-style: none;
-  white-space: normal;
 }
 
-#window li {
-  line-height: 1.5em;
+#page-1 {
+  background: linear-gradient(to bottom right, #b7fb3f, #6fe357);
+  height: calc(100vh - 13em);
+  padding: 2em;
 }
 
-#echo {
-  color: #336609;
+#page-1 h3 {
+  color: #353535;
 }
 
-.mobile {
-  display: none;
+#login button {
+  color: #b7fb3f;
+  padding: 0.75em;
+  margin: 0;
 }
 
-@media (max-width: 48em) {
-  .desktop { display: none; }
-  .mobile { display: block; }
-
-  .git-providers {
-    width: 20em;
-  }
-
-  .ascii-art {
-    font-size: 1.075em;
-  }
-
-  .host-options {
-    flex-direction: column;
-  }
-
-  .host-options div.card {
-    width: unset !important;
-  }
-
-  form input {
-    margin-left: 0;
-  }
-}
-
-@keyframes scroll {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(calc(-100% + 1.5em));
-  }
-}
-
-#heart {
-  color: red;
-  width: 1em;
-  height: 1em;
-  vertical-align: top;
-}
-
-.host-options {
-  margin-top: 0.5em;
-  display: flex;
-  gap: 1em;
-}
-
-.host-options div.card {
-  text-align: center;
-  border: 2px solid var(--foreground);
-  border-radius: 0.3em;
+#page-2 {
+  background: linear-gradient(to bottom right, #8bfb3f, #2ed240);
   padding: 1em;
-  width: 20em;
+  padding-bottom: 2em;
 }
 
-.host-options span {
+#page-2 h3 {
+  margin-bottom: 2em;
+}
+
+#page-3 {
+  background: linear-gradient(to bottom right, #68fb3f, #3ffb80);
+  padding: 3em;
+}
+
+#page-3 > h3 {
+  margin-bottom: 2em;
+}
+
+#page-4 {
+  background: linear-gradient(to bottom right, #3ffb65, #3ffbbd);
+  padding: 2em;
+}
+
+#page-4 ul {
+  font-size: 1.5em;
+  font-family: roboto;
+  line-height: 2em;
+  list-style: none;
+}
+
+#page-4 ul li {
+  padding: 0.5em;
+}
+
+ul.arrows li::marker {
+  content: '→ ';
   font-weight: bold;
+  padding-right: 1em;
 }
 
-.self-host {
-  background: var(--faded-green);
+#page-4 code {
+  background: rgba(0, 0, 0, 0.2);
+  font-family: jetbrains;
+  font-size: 0.9em;
+  padding: 0.15em;
+  border-radius: 0.25em;
 }
 
-.cloud {
-  background: var(--faded-blue);
+#cicada-sticky {
+  position: sticky;
+  top: 1em;
+  height: min-content;
+}
+
+#workflow-comparison {
+  display: flex;
+}
+
+#workflow-comparison > div {
+  flex: 1;
+  font-size: 1.25em;
+}
+
+#workflow-comparison span {
+  font-family: roboto-black;
+  font-size: 1.25em;
+  margin-left: 1em;
+  display: block;
+  margin: auto;
+  text-align: center;
+}
+
+#workflow-comparison pre {
+  background: rgba(0, 0, 0, 0.05);
+  margin: 1em;
+  padding: 1em;
+
+  border-radius: 0.5em;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+}
+
+#gitlab-comparison {
+  margin-top: 2em !important;
+}
+
+#compare-to {
+  display: none !important;
+}
+
+#git-providers {
+  display: flex;
+  width: 35vw;
+  margin: auto;
+  border-radius: 1em;
+
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+}
+
+.filler {
+  flex: 1;
+}
+
+#page-5 {
+  background: linear-gradient(to bottom right, #31fda7, #3fd8fb);
+  padding: 2em;
+  padding-bottom: 10em;
+}
+
+#page-6 {
+  background: linear-gradient(to bottom right, #3fd8fb, #779df4);
+  padding: 2em;
+  padding-top: 10em;
+}
+
+#logotype {
+  font-size: 2em;
+  margin: 0.5em 0;
+}
+
+footer {
+  text-align: center;
+}
+
+footer a {
+  white-space: nowrap;
+}
+
+footer .divider {
+  color: #0000008f;
+}
+
+#page-6 ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  line-height: 2em;
+}
+
+.links {
+  font-family: roboto-black;
+  margin-bottom: 1.5em;
+  display: block;
+}
+
+#page-6 a {
+  color: var(--foreground);
+}
+
+#pricing {
+  padding-bottom: 2em !important;
+}
+
+#tiers {
+  display: flex;
+  gap: 2em;
+}
+
+#tier-cloud {
+  height: calc(30vh + 0.5em);
+  padding-top: 3em !important;
+  padding-bottom: 3em !important;
+  margin-top: -1em;
+  background: #ecececa6 !important;
+}
+
+#tiers > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 30vh;
+  background: rgba(213, 235, 236, 0.6);
+  padding: 2em 1em;
+  border-radius: 0.5em;
+  text-align: center;
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+}
+
+#tiers a {
+  margin: auto auto 0 auto;
+  width: min-width;
+}
+
+#tiers button {
+  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+}
+
+#tiers .title {
+  font-family: roboto-black;
+  font-size: 2em;
+}
+
+#tiers .cost {
+  color: var(--foreground);
+  vertical-align: bottom;
+  line-height: 2em;
+  padding-left: 0.15em;
+}
+
+#tiers ul {
+  color: var(--foreground);
+  text-align: left;
+  line-height: 3em;
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
 }
 
 button {
   background: var(--foreground);
   color: var(--background);
   border: 0;
-  padding: 0.5em;
-  margin: auto;
+  padding: 1em;
   border-radius: 0.3em;
   cursor: pointer;
   white-space: nowrap;
 }
 
-button:disabled {
-  background: var(--subtext);
-  color: var(--background);
-  cursor: default;
+@media (max-width: 48em) {
+  #page-1 {
+    height: max-content;
+  }
+
+  h2 {
+    padding: 1em 0 !important;
+  }
+
+  #cicada-sticky {
+    position: initial;
+  }
+
+  #github-comparison {
+    display: block !important;
+  }
+
+  #gitlab-comparison {
+    display: none !important;
+  }
+
+  #github-comparison {
+    margin-top: 2em;
+  }
+
+  #compare-to {
+    display: block !important;
+    font-family: roboto !important;
+    margin: 0 !important;
+    margin-bottom: 1em !important;
+  }
+
+  #workflow-comparison {
+    flex-direction: column;
+  }
+
+  #git-providers {
+    width: 75vw;
+  }
+
+  #tiers {
+    gap: 3em;
+    flex-direction: column;
+  }
+
+  #tiers ul {
+    padding-left: 1.5em;
+  }
+
+  #tiers li {
+    padding-left: 1em;
+  }
+
+  #tiers > div {
+    padding: 2em;
+    margin: 0 2em;
+  }
+
+  #tier-cloud {
+    padding: 2em 1em !important;
+  }
 }
 
-input {
-  background: var(--background);
-  color: var(--foreground);
-  border: 2px solid var(--foreground);
-  border-radius: 0.3em;
-  margin: 1em;
-  padding: 0.5em;
-  width: calc(100% - 3em);
-}
+@media (min-width: 60em) {
+  #page-4 ul {
+    padding: 0 10vw;
+  }
 
-form {
-  display: flex;
+  #tiers {
+    padding: 0 15vw;
+  }
+
+  #workflow-comparison {
+    padding: 0 15vw;
+  }
 }
 </style>
 
