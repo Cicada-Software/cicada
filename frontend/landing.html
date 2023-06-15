@@ -123,10 +123,26 @@ run-tests:
 
     <a href="https://github.com/Cicada-Software/cicada"><button>View on GitHub</button></a>
   </div>
-  <div id="tier-cloud">
+
+  <div id="tier-starter">
     <span>
-      <span class="title">Cloud</span>
-      <span class="cost">$100/month</span>
+      <span class="title">Starter</span>
+      <span class="cost">$5/month</span>
+    </span>
+
+    <ul class="arrows">
+      <li>Fully managed, maintaince free</li>
+      <li>Unlimited users</li>
+      <li>50 minutes a month</li>
+    </ul>
+
+    <a href="/login"><button>Sign Up Today</button></a>
+  </div>
+
+  <div id="tier-pro">
+    <span>
+      <span class="title">Pro</span>
+      <span class="cost">$50/month</span>
     </span>
 
     <ul class="arrows">
@@ -137,16 +153,12 @@ run-tests:
 
     <a href="/login"><button>Sign Up Today</button></a>
   </div>
-  <div id="tier-custom">
-    <span class="title">Custom</span>
 
-    <ul class="arrows">
-      <li>Need something custom? Contact us</li>
-    </ul>
-
-    <a href="mailto:contact@cicada.sh"><button>Contact Us</button></a>
-  </div>
 </div>
+
+<span id="custom">
+  Need something custom? Let's <a href="mailto:contact@cicada.sh">get in touch</a>.
+</span>
 
 </div>
 
@@ -431,7 +443,7 @@ footer .divider {
   gap: 2em;
 }
 
-#tier-cloud {
+#tier-starter {
   height: calc(30vh + 0.5em);
   padding-top: 3em !important;
   padding-bottom: 3em !important;
@@ -478,6 +490,17 @@ footer .divider {
   line-height: 3em;
   margin-top: 1.5em;
   margin-bottom: 1.5em;
+}
+
+#custom {
+  color: var(--foreground);
+  text-align: center;
+  display: block;
+  margin-top: 3em;
+}
+
+#custom a {
+  color: var(--foreground);
 }
 
 button {
@@ -548,7 +571,7 @@ button {
     margin: 0 2em;
   }
 
-  #tier-cloud {
+  #tier-starter {
     padding: 2em 1em !important;
   }
 }

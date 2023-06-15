@@ -251,7 +251,7 @@ function handleWebsocketMessage(event) {
   const data = JSON.parse(event.data);
 
   if ("stdout" in data) {
-    terminal.writeln(data.stdout);
+    terminal.write(data.stdout);
   }
   else if ("status" in data) {
     hideTerminalCursor();
