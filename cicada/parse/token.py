@@ -2,8 +2,7 @@
 
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-
-from typing_extensions import Self
+from typing import Self
 
 
 @dataclass(frozen=True)

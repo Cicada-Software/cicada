@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final, Generic, TypeVar
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from typing_extensions import Self
+    from typing import Self
 
 
 from cicada.parse.token import (

@@ -2,9 +2,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
 from itertools import groupby
-from typing import cast
-
-from typing_extensions import Self
+from typing import Self, cast
 
 from cicada.ast.types import UnknownType
 from cicada.parse.token import (

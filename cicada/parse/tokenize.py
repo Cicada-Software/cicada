@@ -1,8 +1,7 @@
 import re
 from collections.abc import Generator, Sequence
 from dataclasses import asdict
-
-from typing_extensions import Self
+from typing import Self
 
 from .token import *  # noqa: F403
 

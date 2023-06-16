@@ -1,9 +1,7 @@
 import json
 import re
 from dataclasses import dataclass, field
-from typing import ClassVar, Literal
-
-from typing_extensions import Self
+from typing import ClassVar, Literal, Self
 
 from cicada.api.common.datetime import Datetime
 

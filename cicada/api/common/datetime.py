@@ -1,6 +1,5 @@
 from datetime import datetime, timezone, tzinfo
-
-from typing_extensions import Self
+from typing import Self
 
 
 class Datetime(datetime):

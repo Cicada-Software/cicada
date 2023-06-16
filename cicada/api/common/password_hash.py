@@ -1,5 +1,6 @@
+from typing import Self
+
 from passlib.context import CryptContext
-from typing_extensions import Self
 
 
 class PasswordHash:
