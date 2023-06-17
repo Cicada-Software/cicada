@@ -77,6 +77,11 @@ async def settings() -> FileResponse:
     return FileResponse("./frontend/settings.html")
 
 
+@app.get("/terms")
+async def terms() -> FileResponse:
+    return FileResponse("./frontend/terms.html")
+
+
 @app.get("/installation/{_}")
 async def installation(_: InstallationId) -> FileResponse:
     return FileResponse("./frontend/installation.html")
