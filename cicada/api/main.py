@@ -82,6 +82,11 @@ async def terms() -> FileResponse:
     return FileResponse("./frontend/terms.html")
 
 
+@app.get("/cookies")
+async def cookies() -> FileResponse:
+    return FileResponse("./frontend/cookies.html")
+
+
 @app.get("/installation/{_}")
 async def installation(_: InstallationId) -> FileResponse:
     return FileResponse("./frontend/installation.html")
