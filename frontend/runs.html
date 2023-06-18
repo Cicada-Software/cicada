@@ -98,6 +98,8 @@ const {li, div, span, a} = van.tags;
 const timerData = {};
 const sessionStatuses = [];
 
+refreshTokenLoop();
+
 cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
   if (!e.ok) {
     const errorMsg = document.getElementById("error-msg");
@@ -331,7 +333,7 @@ function listenForSessionStatusUpdates() {
   const ws = new WebSocket(socketUrl.toString());
 
   ws.onopen = () => {
-    ws.send(localStorage.getItem("jwt"));
+    ws.send(getKey("jwt"));
     ws.send(JSON.stringify(sessionStatuses));
   };
 

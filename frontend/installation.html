@@ -75,6 +75,8 @@ h3 {
 </style>
 
 <script>
+refreshTokenLoop();
+
 const uuid = new URL(window.location.href).pathname.split("/").pop();
 
 cicadaFetch(`/api/installation/${uuid}`)

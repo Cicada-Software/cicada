@@ -51,10 +51,13 @@ async def github_sso(di: Di, code: str) -> HTMLResponse:  # pragma: no cover
         f"""\
 <!DOCTYPE html>
 <html>
-<head><title>You are being redirected</title></head>
+<head>
+<title>You are being redirected</title>
+<script src="/static/common.js"></script>
+</head>
 <body>
 <script>
-localStorage.setItem("jwt", "{jwt}");
+setKey("jwt", "{jwt}");
 
 window.location.href = "/dashboard";
 </script>

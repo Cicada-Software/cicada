@@ -102,7 +102,7 @@ const handleLogin = e => {
     .then(resp => {
       if (resp.ok) {
         resp.json().then(j => {
-          localStorage.setItem("jwt", j["access_token"]);
+          setKey("jwt", j["access_token"]);
           window.location.href = "/dashboard";
         });
       }

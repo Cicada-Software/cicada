@@ -108,7 +108,7 @@ const {div, span} = van.tags;
 
 const MIN_PASSWORD_LEN = 12;
 
-const jwtPayload = JSON.parse(atob(localStorage.getItem("jwt").split(".")[1]));
+const jwtPayload = JSON.parse(atob(getKey("jwt").split(".")[1]));
 
 if (jwtPayload["iss"] !== "cicada") {
   const form = document.getElementById("change-pwd");
@@ -119,6 +119,7 @@ if (jwtPayload["iss"] !== "cicada") {
   }
 }
 
+refreshTokenLoop();
 ping();
 
 cicadaFetch("/api/installations")

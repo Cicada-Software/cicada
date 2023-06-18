@@ -173,6 +173,7 @@ let displayTimerInterval;
 const BACKSPACE_REGEX = new RegExp(/\x08/g);
 const CARRIAGE_RETURN_REGEX = new RegExp(/\x0d+/g);
 
+refreshTokenLoop();
 main();
 
 function main() {
@@ -189,7 +190,7 @@ function main() {
 
   // After connection is made, authorize our stream by sending the server our JWT token.
   ws.onopen = () => {
-    ws.send(localStorage.getItem("jwt"));
+    ws.send(getKey("jwt"));
   };
 
   displayTimerInterval = null;
