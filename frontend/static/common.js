@@ -141,7 +141,9 @@ function displayCookieBanner() {
 #accept-cookies {
   margin: auto;
   height: min-content;
+  color: #eee;
   background: #3b3bff;
+  border-radius: 0.3em;
 }
 </style>`;
 
