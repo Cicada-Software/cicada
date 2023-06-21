@@ -27,7 +27,7 @@ JWT_TOKEN_SECRET=change-this-to-something-different
 JWT_TOKEN_EXPIRE_SECONDS=300
 REPO_WHITE_LIST=".*"
 ENABLED_PROVIDERS=github,gitlab
-CICADA_EXECUTOR=docker
+CICADA_EXECUTOR=remote-podman
 ```
 
 Some of these can be as-is, but others should be changed immediately:
@@ -60,7 +60,7 @@ workflows for the `repo` repository owned by `alice`.
 specified in that list, Cicada will recieve webhooks from GitHub, as well as enable GitHub SSO.
 
 * `CICADA_EXECUTOR`: The exexutor used to run workflows. Currently workflows can only be ran using
-`docker` or `podman`. If this env var is not set, `docker` is used by default.
+the `remote-podman` executor. For a list of workflow executors and their use cases click [here](./executors.md).
 
 ## Next Steps
 
@@ -96,11 +96,10 @@ Install dependencies:
 $ pip install -r requirements.txt
 ```
 
-Run migrations and build docker executor image (these will need to be re-ran every update):
+Run database migrations (this will need to be re-ran every update):
 
 ```
 $ python3 -m cicada.api.infra.migrate
-$ docker build -f executor.Dockerfile -t cicada .
 ```
 
 Then start the server!

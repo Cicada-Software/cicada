@@ -44,10 +44,10 @@ class ExecutionSettings:
     executor: str
 
     # TODO: make this dynamic
-    AVAILABLE_EXECUTORS: Final = {"docker", "podman", "remote-podman"}
+    AVAILABLE_EXECUTORS: Final = {"remote-podman"}
 
     def __init__(self) -> None:
-        self.executor = os.getenv("CICADA_EXECUTOR", "docker")
+        self.executor = os.getenv("CICADA_EXECUTOR", "remote-podman")
 
         if self.executor not in self.AVAILABLE_EXECUTORS:
             executors = ", ".join(f'"{x}"' for x in self.AVAILABLE_EXECUTORS)

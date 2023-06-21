@@ -121,8 +121,8 @@ def test_enabled_providers_must_be_valid() -> None:
 
 def test_executor_must_be_valid() -> None:
     is_executor_valid = {
-        "docker": True,
-        "podman": True,
+        "docker": False,
+        "podman": False,
         "": False,
         "xyz": False,
     }

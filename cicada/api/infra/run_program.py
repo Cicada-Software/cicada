@@ -1,11 +1,9 @@
 import asyncio
-import json
 from asyncio import create_subprocess_exec, create_task, subprocess
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 
-from cicada.api.common.json import asjson
 from cicada.api.domain.session import SessionStatus
 from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.domain.triggers import Trigger, TriggerType
@@ -90,46 +88,6 @@ class ExecutionContext:
         raise NotImplementedError()
 
 
-class DockerExecutionContext(ExecutionContext):
-    async def run(self) -> int:
-        trigger = json.dumps(asjson(self.trigger), separators=(",", ":"))
-
-        return await run_program(
-            [
-                "docker",
-                "run",
-                "-e",
-                f"CLONE_URL={self.url}",
-                "-e",
-                f"CICADA_TRIGGER={trigger}",
-                "--rm",
-                "-t",
-                "cicada",
-            ],
-            self.terminal,
-        )
-
-
-class PodmanExecutionContext(ExecutionContext):
-    async def run(self) -> int:
-        trigger = json.dumps(asjson(self.trigger), separators=(",", ":"))
-
-        return await run_program(
-            [
-                "podman",
-                "run",
-                "-e",
-                f"CLONE_URL={self.url}",
-                "-e",
-                f"CICADA_TRIGGER={trigger}",
-                "--rm",
-                "-t",
-                "cicada",
-            ],
-            self.terminal,
-        )
-
-
 class RemotePodmanExecutionContext(ExecutionContext):
     """
     Inject commands into a running container as opposed to running a container
@@ -191,8 +149,6 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
 
 EXECUTOR_MAPPING = {
-    "docker": DockerExecutionContext,
-    "podman": PodmanExecutionContext,
     "remote-podman": RemotePodmanExecutionContext,
 }
 
