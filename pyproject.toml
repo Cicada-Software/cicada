@@ -102,6 +102,9 @@ extend-ignore = [
   "C901",
   "PLR0911", "PLR0912", "PLR0913",
   "T201",
+
+  # False positive
+  "RUF012",
 ]
 
 [tool.ruff.per-file-ignores]

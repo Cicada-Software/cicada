@@ -99,7 +99,7 @@ class ChunkGrouper:
         chunk = self._chunks[self._chunk_index]
         self._chunk_index += 1
 
-        return chunk  # noqa: RET504
+        return chunk
 
     @property
     def current_chunk(self) -> Chunk:
@@ -263,7 +263,7 @@ def tokenize(code: str) -> Generator[Token, None, None]:
             # Treat \r\n as a single character instead of 2.
             data = {**asdict(token), "column_end": token.column_start}
 
-            yield NewlineToken(**data)  # type: ignore[arg-type]
+            yield NewlineToken(**data)
 
         elif token.content.isspace():
             yield WhiteSpaceToken(**asdict(token))

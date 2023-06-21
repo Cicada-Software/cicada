@@ -139,7 +139,7 @@ class ParserState:
         token = self.tokens[self._current_index]
         self._current_index += 1
 
-        return token  # noqa: RET504
+        return token
 
     def next_non_whitespace_or_eof(self) -> Token | None:
         try:

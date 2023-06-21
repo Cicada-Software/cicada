@@ -43,8 +43,8 @@ class StreamSession:
 
                 if command == "STOP":
                     await self.stop_session()
-                    terminal.should_stop.set()  # type: ignore[union-attr]
-                    terminal.finish()  # type: ignore[union-attr]
+                    terminal.should_stop.set()
+                    terminal.finish()
 
                     break
 
