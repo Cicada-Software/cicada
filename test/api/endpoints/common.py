@@ -1,7 +1,7 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Final
+from typing import ClassVar
 from unittest.mock import patch
 
 from fastapi import FastAPI
@@ -82,7 +82,7 @@ class TestEndpointWrapper:
     di: TestDiContainer
     test_admin_pw: str = "password123"
 
-    default_env: Final = {
+    default_env: ClassVar[dict[str, str]] = {
         "CICADA_DOMAIN": "example.com",
         "GITHUB_APP_CLIENT_ID": "example_client_id",
         "GITHUB_APP_ID": "1337",

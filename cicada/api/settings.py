@@ -1,7 +1,7 @@
 import os
 from contextlib import suppress
 from pathlib import Path
-from typing import Final
+from typing import ClassVar
 
 from cicada.api.domain.triggers import Trigger, json_to_trigger
 
@@ -44,7 +44,7 @@ class ExecutionSettings:
     executor: str
 
     # TODO: make this dynamic
-    AVAILABLE_EXECUTORS: Final = {"remote-podman"}
+    AVAILABLE_EXECUTORS: ClassVar[set[str]] = {"remote-podman"}
 
     def __init__(self) -> None:
         self.executor = os.getenv("CICADA_EXECUTOR", "remote-podman")
@@ -86,7 +86,7 @@ class GitProviderSettings(DNSSettings):
     repo_white_list: list[str]
     enabled_providers: set[str]
 
-    AVAILABLE_PROVIDERS: Final = {"github", "gitlab"}
+    AVAILABLE_PROVIDERS: ClassVar[set[str]] = {"github", "gitlab"}
 
     def __init__(self) -> None:
         super().__init__()
