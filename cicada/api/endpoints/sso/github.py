@@ -11,6 +11,7 @@ from cicada.api.di import DiContainer
 from cicada.api.domain.user import User
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import create_jwt
+from cicada.api.infra.github.common import get_github_integration
 from cicada.api.settings import GitHubSettings
 
 router = APIRouter()
@@ -33,9 +34,26 @@ def get_github_sso_link() -> str:
     return f"https://github.com/login/oauth/authorize?{url_params}"
 
 
+@cache
+def get_github_app_install_link() -> str:
+    github = get_github_integration()
+
+    # Use synchronous version because this is only ran once then cached, and
+    # using the async version requires manually caching the result which was
+    # too much extra work.
+    resp = github.rest.apps.get_authenticated()
+
+    return f"{resp.parsed_data.html_url}/installations/new"
+
+
 @router.get("/api/github_sso_link")
 async def github_sso_link() -> RedirectResponse:
     return RedirectResponse(get_github_sso_link(), status_code=302)
+
+
+@router.get("/api/github_app_install_link")
+async def github_app_install_link() -> RedirectResponse:
+    return RedirectResponse(get_github_app_install_link(), status_code=302)
 
 
 @router.get("/api/github_sso")

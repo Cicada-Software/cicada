@@ -7,3 +7,4 @@ dist
 *.pem
 .env
 *.db3
+*.bak

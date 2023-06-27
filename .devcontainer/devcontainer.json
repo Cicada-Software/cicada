@@ -1,11 +1,11 @@
 {
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+    "dockerfile": "Dockerfile"
   },
   "forwardPorts": [80],
   "portsAttributes": {
     "80": {
+      "label": "Cicada",
       "onAutoForward": "openBrowserOnce"
     },
     "8000": {
@@ -19,7 +19,10 @@
       ]
     },
     "vscode": {
-      "extensions": ["bierner.markdown-preview-github-styles"]
+      "extensions": [
+        "bierner.markdown-preview-github-styles",
+        "ms-python.python"
+      ]
     }
   },
   "capAdd": ["NET_ADMIN", "NET_RAW"],

@@ -30,23 +30,28 @@ else:
     CICADA_DOMAIN = os.getenv("CICADA_DOMAIN", "")
     CICADA_USER = os.getenv("CICADA_USER", "")
 
-assert (
-    CICADA_DOMAIN and CICADA_USER
-), "CICADA_DOMAIN and CICADA_USER must be set"
+assert CICADA_DOMAIN, "CICADA_DOMAIN must be set"
 
 
 def get_github_app_manifest() -> str:
     url = f"https://{CICADA_DOMAIN}"
-    user = CICADA_USER
+    sso_url = f"{url}/api/github_sso"
+
+    if CICADA_USER:
+        name = f"Cicada Self Hosted ({CICADA_USER})"
+        description = f"Cicada integration for @{CICADA_USER}"
+    else:
+        name = f"Cicada Self Hosted ({token_urlsafe(8)})"
+        description = ""
 
     payload = {
-        "name": "Cicada Manifest Test",
+        "name": name,
         "url": url,
         "hook_attributes": {"url": f"{url}/api/github_webhook"},
-        "redirect_url": url,
-        "callback_urls": [f"{url}/api/github_sso"],
+        "redirect_url": sso_url,
+        "callback_urls": [sso_url],
         "setup_url": f"{url}/setup_url",
-        "description": f"Cicada integration for @{user}",
+        "description": description,
         "public": False,
         "default_events": [
             "meta",
@@ -151,7 +156,13 @@ async def redirect_url(code: str) -> RedirectResponse:
         f"https://api.github.com/app-manifests/{code}/conversions", timeout=10
     )
 
-    id, pem, webhook_secret, client_id, client_secret = resp.json()
+    j = resp.json()
+
+    id = j["id"]
+    pem = j["pem"]
+    webhook_secret = j["webhook_secret"]
+    client_id = j["client_id"]
+    client_secret = j["client_secret"]
 
     key_filename = f"cicada-key-{id}.pem"
     Path(key_filename).write_text(pem)

@@ -40,11 +40,11 @@ Then start the server:
 
 ```
 $ export CICADA_DOMAIN=yourdomain.here
-$ export CICADA_USER=username
+$ export CICADA_USER=optional-username-here
 $ python3 -m cicada.api
 ```
 
-The `CICADA_DOMAIN` and `CICADA_USER` environment variables are used to setup the
+The `CICADA_DOMAIN` and `CICADA_USER` environment variables are used to setup/configure the
 GitHub App.
 
 `CICADA_DOMAIN` must be a publicly accessible domain that you own,
@@ -53,8 +53,9 @@ as a domain. If you want to use `localhost` you will need to setup a reverse pro
 such as [ngrok](https://ngrok.com/). In addition, `CICADA_DOMAIN` must be a plain
 domain name, that is, it should not start with `https://` or end with `/`.
 
-`CICADA_USER` can be anything, but it must not be empty. It is used to create a unique
-app id on GitHub. It is best to use your GitHub username as the value for `CICADA_USER`.
+`CICADA_USER` is an optional string (typically your GitHub username) which is used to
+create a unique app id for your GitHub App. If you don't set this environment variable,
+a random string will be used to make your app id unique.
 
 ### Creating GitHub App
 

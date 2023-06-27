@@ -13,6 +13,7 @@ test
 *.pem
 .env
 *.db3
+*.bak
 
 # only used on my local machine
 x
