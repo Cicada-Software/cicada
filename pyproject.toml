@@ -44,7 +44,9 @@ omit = [
   "cicada/api/repo/*",
   "cicada/api/logging.py",
   "cicada/api/infra/migrate.py",
-  "cicada/api/__main__.py"
+  "cicada/api/__main__.py",
+  # Only used during setup, needs to be manually tested
+  "cicada/api/setup.py",
 ]
 
 [tool.coverage.report]
@@ -111,6 +113,7 @@ extend-ignore = [
 "test/ast/test_generate.py" = ["W293"]
 "cicada/eval/container.py" = ["S603", "S607", "S108"]
 "cicada/tools/workflow_converter/github_actions.py" = ["E501"]
+"cicada/api/setup.py" = ["E501"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

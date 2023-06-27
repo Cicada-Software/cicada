@@ -6,12 +6,15 @@ A FOSS, cross-platform version of GitHub Actions and Gitlab CI.
 
 > Example workflow run is from the [demo](https://github.com/Cicada-Software/demo) repo.
 
+## Demo
+
+You can spin up a new Cicada demo server using [GitHub Codespaces](https://github.com/features/codespaces) in minutes using the button below:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Cicada-Software/cicada?quickstart=1)
+
 ## Installing
 
-Cicada is currently in closed-beta. You can [join the waitlist](https://cicada.sh) on our homepage.
-
-In the meantime you will have to self-host. Read the [installation docs](./docs/installing.md) for
-info on how to install Cicada.
+To install Cicada in a more permanent environment (ie, a server), see the [installation docs](./docs/installing.md) for more info.
 
 ## Syntax Highlighting
 

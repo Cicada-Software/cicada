@@ -150,6 +150,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 "-e",
                 f"COLUMNS={self.max_columns}",
                 "-t",
+                # TODO: Fix GitHub Codespaces emitting warnings
+                "--log-level=error",
                 self.container_id,
                 "/bin/sh",
                 "-c",

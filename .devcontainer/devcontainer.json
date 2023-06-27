@@ -1,0 +1,28 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "forwardPorts": [80],
+  "portsAttributes": {
+    "80": {
+      "onAutoForward": "openBrowserOnce"
+    },
+    "8000": {
+      "onAutoForward": "ignore"
+    }
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "docs/github-codespaces.md"
+      ]
+    },
+    "vscode": {
+      "extensions": ["bierner.markdown-preview-github-styles"]
+    }
+  },
+  "capAdd": ["NET_ADMIN", "NET_RAW"],
+  "securityOpt": ["seccomp=unconfined"],
+  "privileged": true
+}
