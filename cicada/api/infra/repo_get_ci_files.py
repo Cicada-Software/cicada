@@ -30,6 +30,8 @@ async def repo_get_ci_files(
             ["git", "checkout", "FETCH_HEAD"],
         ]
 
+        logger = logging.getLogger("cicada")
+
         for args in cmds:
             process = await create_subprocess_exec(
                 args[0],
@@ -41,10 +43,10 @@ async def repo_get_ci_files(
 
             await process.wait()
 
-            print(args, "->", process.returncode)
+            logger.debug(args, "->", process.returncode)
 
             if process.stdout and (data := await process.stdout.read()):
-                print(data.decode())
+                logger.debug(data.decode())
 
             if process.returncode != 0:
                 return []
@@ -63,8 +65,10 @@ def folder_get_runnable_ci_files(
 ) -> list[Path | AstError]:  # pragma: no cover
     files_or_errors: list[Path | AstError] = []
 
+    logger = logging.getLogger("cicada")
+
     for file in find_ci_files(folder):
-        print(f"checking {file}")
+        logger.debug(f"checking {file}")
 
         try:
             tree = parse_and_analyze(file.read_text(), trigger)
@@ -75,18 +79,20 @@ def folder_get_runnable_ci_files(
                 tree.accept(visitor)
 
             except ShouldRunWorkflow as ex:
-                print(f"on statement reached: {ex.should_run}")
+                logger.debug(f"on statement reached: {ex.should_run}")
                 if ex.should_run:
                     files_or_errors.append(file)
 
-            print("checking next file")
+            logger.debug("checking next file")
 
         except IgnoreWorkflow:
-            print("ignoring workflow")
+            logger.debug("ignoring workflow")
+
             pass
 
         except AstError as err:
-            print("file contains errors")
+            logger.debug("file contains errors")
+
             err.filename = str(file.relative_to(folder))
 
             files_or_errors.append(err)

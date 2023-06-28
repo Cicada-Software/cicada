@@ -46,7 +46,7 @@ class EvalVisitor(ConstexprEvalVisitor):
             return RecordValue({}, RecordType())
 
         if node.name == "print":
-            print(*args)
+            print(*args)  # noqa: T201
 
         return UnitValue()
 
@@ -69,7 +69,7 @@ def run_pipeline(
     except AstError as ex:  # pragma: no cover
         ex.filename = filename
 
-        print(ex)
+        print(ex)  # noqa: T201
 
 
 def main(filenames: list[str]) -> None:  # pragma: no cover

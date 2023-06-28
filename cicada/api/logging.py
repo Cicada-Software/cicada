@@ -1,7 +1,10 @@
 import logging
 from contextlib import suppress
+from os import getenv
 from pathlib import Path
 from typing import Any, Final
+
+from dotenv import load_dotenv
 
 COLORS: Final = {
     logging.DEBUG: "\x1b[38;5;40m\x1b[48;5;232m",
@@ -43,3 +46,16 @@ class CustomFormatter(logging.Formatter):
         fmt = f"{color}{self.fmt}\x1b[0m"
 
         return logging.Formatter(fmt, datefmt=self.datefmt).format(record)
+
+
+def setup() -> None:
+    load_dotenv()
+
+    handler = logging.StreamHandler()
+    handler.setFormatter(CustomFormatter())
+
+    log_level = getenv("CICADA_LOG_LEVEL", "WARNING").upper()
+
+    logger = logging.getLogger("cicada")
+    logger.setLevel(log_level)
+    logger.addHandler(handler)

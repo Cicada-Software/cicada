@@ -1,18 +1,12 @@
 # pragma: no cover
 
-import logging
 from pathlib import Path
 
 import uvicorn
 
-from cicada.api.logging import CustomFormatter
+from cicada.api.logging import setup as setup_logging
 
-handler = logging.StreamHandler()
-handler.setFormatter(CustomFormatter())
-
-logger = logging.getLogger("cicada")
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+setup_logging()
 
 
 def run_setup_wizard() -> None:

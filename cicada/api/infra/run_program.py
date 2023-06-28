@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from asyncio import create_subprocess_exec, create_task, subprocess
 from dataclasses import dataclass
 from functools import partial
@@ -120,7 +121,8 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
         except AstError as exc:
             # Shouldn't happen, gather phase should pass without issues
-            print(exc)
+
+            logging.getLogger("cicada").exception(exc)
 
             return 1
 
