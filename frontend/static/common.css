@@ -74,6 +74,7 @@ a[disabled] {
   color: var(--red);
   background: var(--dark-red);
   padding: 0.5em;
+  border-radius: 0.15em;
 }
 
 #logout {

@@ -13,24 +13,29 @@
 
 <main>
   <div class="wrapper">
-    <form onSubmit="handleLogin(event)">
-      <h1>Cicada</h1>
-      <input type="text" name="username" placeholder="Username" autocomplete=on />
-      <input type="password" name="password" placeholder="Password" autocomplete=on />
-      <button type="submit">Login</button>
-    </form>
+    <div id="crop">
+      <img src="/static/img/cicada-logo.jpg">
+    </div>
 
-    <p class="lightgray m-auto">or</p>
+    <div class="inner-wrapper">
+      <form onSubmit="handleLogin(event)">
+        <input type="text" name="username" placeholder="Username" oninput="handleInput()" autocomplete=on />
+        <input type="password" name="password" placeholder="Password" oninput="handleInput()" autocomplete=on />
+        <button type="submit" disabled>Login</button>
+      </form>
 
-    <a href="/api/github_sso_link" class="github-sso">Sign-in with GitHub</a>
+      <p class="lightgray m-auto">or</p>
 
-    <span id="error-msg" style="display: none"></span>
+      <a href="/api/github_sso_link" class="github-sso">Login with GitHub</a>
+
+      <span id="error-msg" style="display: none"></span>
+    </div>
   </div>
 </main>
 
 <style>
 a.github-sso {
-  color: var(--dark-green);
+  color: var(--black);
   background: var(--green);
 
   padding: 1em;
@@ -40,10 +45,27 @@ a.github-sso {
 }
 
 .wrapper {
+  margin: auto;
+}
+
+.inner-wrapper {
   display: flex;
   flex-direction: column;
   gap: 1.5em;
   margin: auto;
+}
+
+#crop {
+  width: 500px;
+  height: 175px;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 0.15em 0.15em 0 0;
+}
+
+#crop img {
+  width: 100%;
+  margin-top: -170px;
 }
 
 form {
@@ -51,9 +73,9 @@ form {
   flex-direction: column;
   gap: 1.5em;
   max-width: 35em;
-  width: 50vw;
   background: var(--gray);
   padding: 2em;
+  border-radius: 0 0 0.15em 0.15em;
 }
 
 #error-msg {
@@ -74,10 +96,20 @@ input {
 }
 
 button[type=submit] {
-  background: var(--blue);
+  background: var(--lightgray);
   color: var(--gray);
   width: 33%;
   margin: auto;
+}
+
+button[type=submit]:disabled {
+  background: var(--medium-gray);
+  color: var(--black);
+  cursor: default;
+}
+
+button[type=submit], a.github-sso, input {
+  border-radius: 0.15em;
 }
 
 p, pre {
@@ -88,6 +120,16 @@ p, pre {
   form {
     width: calc(100vw - 10em);
     max-width: unset !important;
+  }
+
+  #crop {
+    width: calc(100vw - 6em);
+    max-width: unset !important;
+    height: calc(15vw + 120px);
+  }
+
+  #crop img {
+    margin-top: calc(80px + -45%) !important;
   }
 }
 </style>
@@ -113,6 +155,13 @@ const handleLogin = e => {
       }
     })
     .catch(err => console.log({err}));
+};
+
+const handleInput = () => {
+  const username = document.querySelector("input[name=username]").value;
+  const password = document.querySelector("input[name=password]").value;
+
+  document.querySelector("button[type=submit]").disabled = !username || !password;
 };
 </script>
 
