@@ -2,7 +2,7 @@
 
 A FOSS, cross-platform version of GitHub Actions and Gitlab CI.
 
-![Workflow Run Example](/docs/img/ci-session-example.png)
+![Workflow Run Example](/frontend/static/img/screenshot.png)
 
 > Example workflow run is from the [demo](https://github.com/Cicada-Software/demo) repo.
 
