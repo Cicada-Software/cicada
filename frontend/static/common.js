@@ -148,7 +148,7 @@ function displayCookieBanner() {
 </style>`;
 
   banner.id = "cookie-banner-wrapper";
-  banner.onclick = (e) => {
+  banner.querySelector("#accept-cookies").onclick = () => {
     enableCookies();
     disableCookieBanner();
 
