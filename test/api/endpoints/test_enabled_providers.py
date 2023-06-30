@@ -31,11 +31,15 @@ class TestEndabledProviders(TestEndpointWrapper):
 
             response = client.post("/api/github_webhook")
 
-            assert response.status_code != 404
+            # Expect 401 status means the webhook is ready, but rejecting us
+            # because the webhook is invalid. All is good.
+            assert response.status_code == 401
 
+            # Expect 405 status because the webhook is not connected, server
+            # then tries to see if the file exists, it fails, and returns
+            # 405 bad method.
             response = client.post("/api/gitlab_webhook")
-
-            assert response.status_code == 404
+            assert response.status_code == 405
 
     def test_enabling_gitlab_enables_just_gitlab_endpoints(self) -> None:
         with self.inject_dummy_env_vars() as env_vars:
@@ -47,9 +51,8 @@ class TestEndabledProviders(TestEndpointWrapper):
             client = TestClient(app)
 
             response = client.post("/api/gitlab_webhook")
-
-            assert response.status_code != 404
+            assert response.status_code == 401
 
             response = client.post("/api/github_webhook")
 
-            assert response.status_code == 404
+            assert response.status_code == 405
