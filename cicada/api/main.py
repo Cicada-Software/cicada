@@ -22,7 +22,6 @@ from cicada.api.middleware import (
 from cicada.api.settings import GitProviderSettings
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="frontend/static"), "static")
 app.include_router(login_router)
 app.include_router(session_router)
 app.include_router(env_router)
@@ -114,3 +113,8 @@ async def join_waitlist(di: Di, email: Annotated[str, Form()] = "") -> None:
 
     except ValueError as ex:
         raise HTTPException(status_code=400, detail=str(ex)) from ex
+
+
+# The static files must be mounted after all the endpoints have been defined,
+# otherwise the static files would take precedence.
+app.mount("/", StaticFiles(directory="frontend/"), "static")
