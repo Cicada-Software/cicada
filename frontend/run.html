@@ -83,6 +83,7 @@ p, pre {
   padding: 1em;
   color: var(--white);
   background: var(--gray);
+  border-radius: var(--border-radius);
 }
 
 .hide-by-default {
@@ -99,6 +100,7 @@ p, pre {
 #status-bar > * {
   padding: 0.5em;
   background: var(--gray);
+  border-radius: var(--border-radius);
 }
 
 #elapsed-time, .triggered-wrapper, #trigger {
@@ -372,10 +374,6 @@ function getSessionAndCommitInfo(callback) {
 
       updateStatus(e.status);
 
-      if (e.status !== "PENDING") {
-        hideTerminalCursor();
-      }
-
       // TODO: cleanup this function
       const displayElapsedTime = () => {
         const finished_at = e.finished_at ? new Date(e.finished_at) : new Date();
@@ -396,7 +394,11 @@ function getSessionAndCommitInfo(callback) {
 
       displayElapsedTime();
 
-      displayTimerInterval = setInterval(displayElapsedTime, 1_000);
+      if (e.status === "PENDING") {
+        displayTimerInterval = setInterval(displayElapsedTime, 1_000);
+      } else {
+        hideTerminalCursor();
+      }
 
       callback();
     });

@@ -60,7 +60,7 @@ a.github-sso {
   height: 175px;
   margin: auto;
   overflow: hidden;
-  border-radius: 0.15em 0.15em 0 0;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
 
 #crop img {
@@ -75,7 +75,7 @@ form {
   max-width: 35em;
   background: var(--gray);
   padding: 2em;
-  border-radius: 0 0 0.15em 0.15em;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 #error-msg {
@@ -109,7 +109,7 @@ button[type=submit]:disabled {
 }
 
 button[type=submit], a.github-sso, input {
-  border-radius: 0.15em;
+  border-radius: var(--border-radius);
 }
 
 p, pre {

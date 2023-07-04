@@ -12,6 +12,7 @@
   --dark-green: #030;
   --red: #f00;
   --dark-red: #300;
+  --border-radius: 4px;
 }
 
 .blue { color: var(--blue); }
@@ -74,7 +75,7 @@ a[disabled] {
   color: var(--red);
   background: var(--dark-red);
   padding: 0.5em;
-  border-radius: 0.15em;
+  border-radius: var(--border-radius);
 }
 
 #logout {
@@ -122,9 +123,10 @@ a[disabled] {
   75% { content: ' |'; }
 }
 
-input, textarea {
+input[type=text], input[type=password], textarea {
   border: none;
   padding: 1em;
+  border-radius: var(--border-radius);
 }
 
 button {
@@ -157,6 +159,7 @@ button:disabled {
 #navbar > * {
   padding: 0.5em;
   background: var(--gray);
+  border-radius: var(--border-radius);
 }
 
 #navbar-filler {
