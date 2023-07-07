@@ -1,3 +1,5 @@
+import sqlite3
+
 from cicada.api.domain.installation import (
     Installation,
     InstallationId,
@@ -68,22 +70,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
             [user.id],
         ).fetchall()
 
-        installations: list[Installation] = []
-
-        for row in rows:
-            installations.append(
-                Installation(
-                    id=InstallationId(row[0]),
-                    name=row[1],
-                    provider=row[2],
-                    scope=InstallationScope(row[3]),
-                    provider_id=row[4],
-                    provider_url=row[5],
-                    admin_id=UserId(row[6]),
-                )
-            )
-
-        return installations
+        return [self._convert(row) for row in rows]
 
     def get_installation_by_provider_id(
         self, *, id: str, provider: str
@@ -109,15 +96,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
         if not row:
             return None
 
-        return Installation(
-            id=InstallationId(row[0]),
-            name=row[1],
-            provider=row[2],
-            scope=InstallationScope(row[3]),
-            provider_id=row[4],
-            provider_url=row[5],
-            admin_id=UserId(row[6]),
-        )
+        return self._convert(row)
 
     def add_repository_to_installation(
         self, repo: Repository, installation: Installation
@@ -135,3 +114,14 @@ class InstallationRepo(IInstallationRepo, DbConnection):
         )
 
         self.conn.commit()
+
+    def _convert(self, row: sqlite3.Row) -> Installation:
+        return Installation(
+            id=InstallationId(row[0]),
+            name=row[1],
+            provider=row[2],
+            scope=InstallationScope(row[3]),
+            provider_id=row[4],
+            provider_url=row[5],
+            admin_id=UserId(row[6]),
+        )

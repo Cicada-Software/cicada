@@ -99,7 +99,7 @@ class UnionType(Type):
         # Copy unique types while maintaining order
         for ty in types:
             if ty not in copy:
-                copy.append(ty)
+                copy.append(ty)  # noqa: PERF401
 
         self.types = tuple(copy)
 
