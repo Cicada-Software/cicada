@@ -7,10 +7,12 @@ import subprocess
 import sys
 import termios
 from contextlib import suppress
+from itertools import chain
 from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from cicada.api.domain.triggers import CommitTrigger
 from cicada.ast.nodes import (
     FunctionExpression,
     RecordValue,
@@ -143,12 +145,20 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             lines, _ = termios.tcgetwinsize(sys.stdout)
             termios.tcsetwinsize(sys.stdout, (lines, self.max_columns))
 
+        assert self.trigger, "impossible"
+
+        env_vars = get_provider_default_env_vars(self.trigger)
+
+        # Add "-e" flag before each env var
+        extra_args = chain.from_iterable(["-e", x] for x in env_vars)
+
         process = subprocess.Popen(
             [
                 "podman",
                 "exec",
                 "-e",
                 f"COLUMNS={self.max_columns}",
+                *extra_args,
                 "-t",
                 # TODO: Fix GitHub Codespaces emitting warnings
                 "--log-level=error",
@@ -178,3 +188,20 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     @property
     def temp_dir(self) -> str:
         return f"/tmp/{self.pod_id}"
+
+
+def get_provider_default_env_vars(trigger: Trigger) -> list[str]:
+    # TODO: add gitlab equivalent arg names
+
+    args = ["CI=true", f"GITHUB_SHA={trigger.sha}"]
+
+    # TODO: add to all triggers
+    if isinstance(trigger, CommitTrigger):
+        args.extend(
+            [
+                f"GITHUB_REF={trigger.ref}",
+                f"GITHUB_REF_NAME={trigger.branch}",
+            ]
+        )
+
+    return args
