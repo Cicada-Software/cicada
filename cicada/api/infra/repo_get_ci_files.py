@@ -43,7 +43,7 @@ async def repo_get_ci_files(
 
             await process.wait()
 
-            logger.debug(args, "->", process.returncode)
+            logger.debug(f"{args} -> {process.returncode}")
 
             if process.stdout and (data := await process.stdout.read()):
                 logger.debug(data.decode())
