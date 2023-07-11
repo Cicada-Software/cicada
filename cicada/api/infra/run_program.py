@@ -12,7 +12,10 @@ from cicada.api.infra.repo_get_ci_files import folder_get_runnable_ci_files
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
-from cicada.eval.container import CommandFailed, ContainerTermination, RemoteContainerEvalVisitor
+from cicada.eval.container import (
+    ContainerTermination,
+    RemoteContainerEvalVisitor,
+)
 from cicada.parse.tokenize import tokenize
 
 
