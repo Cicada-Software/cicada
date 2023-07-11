@@ -126,10 +126,13 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
             return 1
 
-        image = "alpine"
+        image = "alpine:latest"
 
         if semantics.run_on and semantics.run_on.type == RunType.IMAGE:
             image = semantics.run_on.value
+
+        if ":" not in image:
+            image += ":latest"
 
         visitor = RemoteContainerEvalVisitor(
             self.cloned_repo,

@@ -112,7 +112,14 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         )
 
         if process.returncode != 0:
-            raise ValueError("Could not start container")
+            msg = f"Could not start container. Make sure image `{image}` exists and is valid, and retry."  # noqa: E501
+
+            self.terminal.append(msg.encode())
+            self.terminal.finish()
+
+            # TODO: use catch-all exception to indicate general failure,
+            # not just a command failing.
+            raise CommandFailed(1)
 
         self.container_id = (
             process.stdout.strip().split(b"\n")[-1].decode().strip()
