@@ -30,9 +30,13 @@ if TYPE_CHECKING:
     from cicada.api.domain.triggers import Trigger
 
 
-class CommandFailed(ValueError):
+class ContainerTermination(ValueError):
     def __init__(self, return_code: int) -> None:
         self.return_code = return_code
+
+
+class CommandFailed(ContainerTermination):
+    pass
 
 
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
@@ -112,14 +116,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         )
 
         if process.returncode != 0:
-            msg = f"Could not start container. Make sure image `{image}` exists and is valid, and retry."  # noqa: E501
+            msg = f"Could not start container. Make sure image `{image}` exists and is valid, then retry."  # noqa: E501
 
             self.terminal.append(msg.encode())
             self.terminal.finish()
 
-            # TODO: use catch-all exception to indicate general failure,
-            # not just a command failing.
-            raise CommandFailed(1)
+            raise ContainerTermination(1)
 
         self.container_id = (
             process.stdout.strip().split(b"\n")[-1].decode().strip()

@@ -12,7 +12,7 @@ from cicada.api.infra.repo_get_ci_files import folder_get_runnable_ci_files
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
-from cicada.eval.container import CommandFailed, RemoteContainerEvalVisitor
+from cicada.eval.container import CommandFailed, ContainerTermination, RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
 
 
@@ -134,21 +134,24 @@ class RemotePodmanExecutionContext(ExecutionContext):
         if ":" not in image:
             image += ":latest"
 
-        visitor = RemoteContainerEvalVisitor(
-            self.cloned_repo,
-            self.trigger,
-            self.terminal,
-            image=image,
-        )
+        visitor: RemoteContainerEvalVisitor | None = None
 
         try:
+            visitor = RemoteContainerEvalVisitor(
+                self.cloned_repo,
+                self.trigger,
+                self.terminal,
+                image=image,
+            )
+
             tree.accept(visitor)
 
-        except CommandFailed as exc:
+        except ContainerTermination as exc:
             return exc.return_code
 
         finally:
-            visitor.cleanup()
+            if visitor:
+                visitor.cleanup()
 
         return 0
 
