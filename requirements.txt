@@ -3,10 +3,10 @@ anyio==3.7.1
 bcrypt==4.0.1
 certifi==2023.5.7
 cffi==1.15.1
-charset-normalizer==3.1.0
-click==8.1.4
-cryptography==41.0.1
-fastapi==0.99.1
+charset-normalizer==3.2.0
+click==8.1.5
+cryptography==41.0.2
+fastapi==0.100.0
 githubkit==0.10.6
 h11==0.14.0
 httpcore==0.17.3

@@ -35,7 +35,7 @@ def get_default_type(field_type: Any) -> Any:  # type: ignore
         return field_type.now()
 
     if issubclass(field_type, Enum):
-        return list(field_type)[0]
+        return next(iter(field_type))
 
     if issubclass(field_type, Trigger):
         return build(
