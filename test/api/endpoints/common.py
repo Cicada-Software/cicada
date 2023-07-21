@@ -7,8 +7,6 @@ from unittest.mock import patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from cicada.api.application.exceptions import CicadaException
-from cicada.api.application.session.stop_session import SessionTerminator
 from cicada.api.di import DiContainer
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.installation_repo import InstallationRepo
@@ -18,13 +16,15 @@ from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
 from cicada.api.middleware import cicada_exception_handler
-from cicada.api.repo.environment_repo import IEnvironmentRepo
-from cicada.api.repo.installation_repo import IInstallationRepo
-from cicada.api.repo.repository_repo import IRepositoryRepo
-from cicada.api.repo.session_repo import ISessionRepo
-from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
-from cicada.api.repo.user_repo import IUserRepo
-from cicada.api.repo.waitlist_repo import IWaitlistRepo
+from cicada.application.exceptions import CicadaException
+from cicada.application.session.stop_session import SessionTerminator
+from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.installation_repo import IInstallationRepo
+from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.repo.waitlist_repo import IWaitlistRepo
 from test.api.common import SqliteTestWrapper
 
 

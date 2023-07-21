@@ -3,13 +3,13 @@ from dataclasses import dataclass
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from cicada.api.application.env.add_env_vars_to_repo import (
-    AddEnvironmentVariablesToRepository,
-)
-from cicada.api.common.json import asjson
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser
-from cicada.api.repo.environment_repo import EnvironmentVariable
+from cicada.application.env.add_env_vars_to_repo import (
+    AddEnvironmentVariablesToRepository,
+)
+from cicada.common.json import asjson
+from cicada.domain.env_var import EnvironmentVariable
 
 router = APIRouter()
 

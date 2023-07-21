@@ -6,14 +6,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.endpoints.webhook.github.converters import (
     github_event_to_commit,
     github_event_to_issue,
 )
 from cicada.api.endpoints.webhook.github.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.github.main import router as github_webhook
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
 from test.api.endpoints.common import TestEndpointWrapper
 
 
@@ -186,7 +186,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         # fmt: off
 
         pkg = "cicada.api.endpoints.webhook.github.main"
-        pkg2 = "cicada.api.domain.services.repository"
+        pkg2 = "cicada.domain.services.repository"
 
         with (
             patch(f"{pkg}.update_github_repo_perms"),

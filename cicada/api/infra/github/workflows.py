@@ -8,21 +8,16 @@ from pathlib import Path
 
 from githubkit import GitHub
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.common.http import url_get_user_and_repo
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.domain.triggers import (
-    CommitTrigger,
-    GitSha,
-    IssueTrigger,
-    Trigger,
-)
+from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.run_program import (
     exit_code_to_status_code,
     get_execution_type,
 )
 from cicada.api.settings import DNSSettings, ExecutionSettings
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.triggers import CommitTrigger, GitSha, IssueTrigger, Trigger
 
 from .common import (
     gather_workflows_via_trigger,

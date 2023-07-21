@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import NewType
 from uuid import UUID
 
-from cicada.api.common.datetime import UtcDatetime
+from cicada.domain.datetime import UtcDatetime
 
 from .triggers import GitSha, Trigger
 

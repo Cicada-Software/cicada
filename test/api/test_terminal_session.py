@@ -1,6 +1,6 @@
 import asyncio
 
-from cicada.api.domain.terminal_session import TerminalSession
+from cicada.domain.terminal_session import TerminalSession
 
 
 async def test_if_session_is_over_results_are_returned_immediately() -> None:

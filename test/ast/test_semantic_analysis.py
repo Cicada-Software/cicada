@@ -1,7 +1,5 @@
 import pytest
 
-from cicada.api.common.datetime import Datetime
-from cicada.api.domain.triggers import CommitTrigger, GitSha
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import (
@@ -31,6 +29,8 @@ from cicada.ast.types import (
     RecordType,
     StringType,
 )
+from cicada.domain.datetime import Datetime
+from cicada.domain.triggers import CommitTrigger, GitSha
 from cicada.parse.tokenize import tokenize
 from test.ast.common import build_trigger
 

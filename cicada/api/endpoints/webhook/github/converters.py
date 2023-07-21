@@ -1,7 +1,7 @@
 from typing import Any
 
-from cicada.api.common.datetime import Datetime
-from cicada.api.domain.triggers import (
+from cicada.domain.datetime import Datetime
+from cicada.domain.triggers import (
     CommitTrigger,
     GitSha,
     IssueCloseTrigger,

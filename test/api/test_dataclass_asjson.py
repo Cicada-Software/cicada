@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import ClassVar
 
-from cicada.api.common.json import asjson
+from cicada.common.json import asjson
 
 
 def test_stringify_basic_dataclass() -> None:

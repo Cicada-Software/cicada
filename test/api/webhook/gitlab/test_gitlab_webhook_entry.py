@@ -6,14 +6,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.endpoints.webhook.gitlab.converters import (
     gitlab_event_to_commit,
     gitlab_event_to_issue,
 )
 from cicada.api.endpoints.webhook.gitlab.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
 from test.api.endpoints.common import TestEndpointWrapper
 
 
@@ -178,7 +178,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
         # fmt: off
 
         pkg = "cicada.api.endpoints.webhook.gitlab.main"
-        pkg2 = "cicada.api.domain.services.repository"
+        pkg2 = "cicada.domain.services.repository"
 
         with (
             patch(f"{pkg}.run_workflow") as run_workflow,

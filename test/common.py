@@ -5,8 +5,8 @@ from types import GenericAlias, NoneType, UnionType
 from typing import Any, Literal, TypeVar
 from uuid import UUID, uuid4
 
-from cicada.api.common.datetime import Datetime, UtcDatetime
-from cicada.api.domain.triggers import CommitTrigger, GitSha, Trigger
+from cicada.domain.datetime import Datetime, UtcDatetime
+from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 def get_default_type(field_type: Any) -> Any:  # type: ignore

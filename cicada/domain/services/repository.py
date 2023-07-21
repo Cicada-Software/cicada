@@ -1,6 +1,6 @@
-from cicada.api.domain.triggers import Trigger
-from cicada.api.repo.environment_repo import IEnvironmentRepo
-from cicada.api.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.triggers import Trigger
 
 
 def get_env_vars_for_repo(

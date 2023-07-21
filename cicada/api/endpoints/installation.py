@@ -3,11 +3,11 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from cicada.api.application.exceptions import NotFound
-from cicada.api.common.json import asjson
-from cicada.api.domain.installation import Installation, InstallationId
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser
+from cicada.application.exceptions import NotFound
+from cicada.common.json import asjson
+from cicada.domain.installation import Installation, InstallationId
 
 router = APIRouter()
 

@@ -1,13 +1,13 @@
 from unittest.mock import MagicMock
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.user import User
 from cicada.api.endpoints.login_util import (
     create_access_token,
     create_jwt,
     get_user_and_payload_from_jwt,
 )
 from cicada.api.main import app
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.user import User
 from test.api.endpoints.common import TestEndpointWrapper
 from test.common import build
 

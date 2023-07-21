@@ -1,11 +1,11 @@
 from copy import deepcopy
 from uuid import uuid4
 
-from cicada.api.common.json import asjson
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.user import User
 from cicada.api.endpoints.login_util import create_access_token
 from cicada.api.endpoints.session import router as session_router
+from cicada.common.json import asjson
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.user import User
 from test.api.endpoints.common import TestEndpointWrapper
 from test.common import build
 

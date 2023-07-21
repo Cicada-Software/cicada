@@ -1,5 +1,5 @@
 from cicada.api.infra.environment_repo import EnvironmentRepo
-from cicada.api.repo.environment_repo import EnvironmentVariable
+from cicada.domain.repo.environment_repo import EnvironmentVariable
 from test.api.common import SqliteTestWrapper
 
 

@@ -1,6 +1,6 @@
 from datetime import timezone
 
-from cicada.api.common.datetime import Datetime, UtcDatetime
+from cicada.domain.datetime import Datetime, UtcDatetime
 
 
 def test_parse_utc_datetime_with_z_suffix() -> None:

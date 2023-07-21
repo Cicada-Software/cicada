@@ -3,10 +3,10 @@ import shlex
 from asyncio.subprocess import PIPE, STDOUT, create_subprocess_exec
 from pathlib import Path
 
-from cicada.api.domain.triggers import Trigger
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
 from cicada.ast.semantic_analysis import IgnoreWorkflow
+from cicada.domain.triggers import Trigger
 from cicada.eval.find_files import find_ci_files
 from cicada.eval.on_statement_visitor import (
     OnStatementEvalVisitor,

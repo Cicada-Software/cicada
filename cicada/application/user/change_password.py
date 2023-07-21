@@ -1,7 +1,6 @@
-from cicada.api.application.exceptions import Unauthorized
-from cicada.api.common.password_hash import PasswordHash
-from cicada.api.domain.user import User
-from cicada.api.repo.user_repo import IUserRepo
+from cicada.application.exceptions import Unauthorized
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.user import PasswordHash, User
 
 
 class ChangePassword:

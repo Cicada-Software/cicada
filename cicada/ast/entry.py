@@ -1,7 +1,7 @@
-from cicada.api.domain.triggers import Trigger
 from cicada.ast.generate import generate_ast_tree
 from cicada.ast.nodes import FileNode
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
+from cicada.domain.triggers import Trigger
 from cicada.parse.tokenize import tokenize
 
 

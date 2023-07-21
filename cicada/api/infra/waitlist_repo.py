@@ -1,6 +1,6 @@
-from cicada.api.common.datetime import UtcDatetime
 from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.waitlist_repo import IWaitlistRepo
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.repo.waitlist_repo import IWaitlistRepo
 
 
 class WaitlistRepo(IWaitlistRepo, DbConnection):

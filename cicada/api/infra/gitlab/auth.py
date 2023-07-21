@@ -2,7 +2,7 @@ from typing import Any
 from uuid import uuid4
 
 from cicada.api.di import DiContainer
-from cicada.api.domain.user import User
+from cicada.domain.user import User
 
 
 def update_gitlab_repo_perms(  # type: ignore[misc]

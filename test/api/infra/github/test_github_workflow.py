@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.github.workflows import run_workflow
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
 from test.common import build
 
 

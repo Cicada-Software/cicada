@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from cicada.api.domain.installation import Installation, InstallationId
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.user import User
+from cicada.domain.installation import Installation, InstallationId
+from cicada.domain.repository import Repository
+from cicada.domain.user import User
 
 
 class IInstallationRepo(ABC):

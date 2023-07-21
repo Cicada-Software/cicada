@@ -3,9 +3,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import FileResponse
 
-from cicada.api.application.user.change_password import ChangePassword
-from cicada.api.application.user.local_user_login import LocalUserLogin
 from cicada.api.endpoints.di import Di, JWTToken, PasswordForm
+from cicada.application.user.change_password import ChangePassword
+from cicada.application.user.local_user_login import LocalUserLogin
 
 from .login_util import (
     CurrentUser,

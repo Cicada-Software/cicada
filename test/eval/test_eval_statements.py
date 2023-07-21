@@ -1,15 +1,15 @@
 import pytest
 
-from cicada.api.domain.triggers import (
+from cicada.ast.entry import parse_and_analyze
+from cicada.ast.nodes import RecordValue, StringValue
+from cicada.ast.semantic_analysis import IgnoreWorkflow
+from cicada.ast.types import RecordField, RecordType, StringType
+from cicada.domain.triggers import (
     CommitTrigger,
     GitSha,
     IssueOpenTrigger,
     Trigger,
 )
-from cicada.ast.entry import parse_and_analyze
-from cicada.ast.nodes import RecordValue, StringValue
-from cicada.ast.semantic_analysis import IgnoreWorkflow
-from cicada.ast.types import RecordField, RecordType, StringType
 from cicada.eval.main import EvalVisitor
 from test.common import build
 

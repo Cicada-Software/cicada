@@ -2,11 +2,11 @@ from typing import Any
 from uuid import uuid4
 
 from cicada.api.di import DiContainer
-from cicada.api.domain.installation import Installation, InstallationScope
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.user import User, UserId
-from cicada.api.repo.installation_repo import IInstallationRepo
-from cicada.api.repo.user_repo import IUserRepo
+from cicada.domain.installation import Installation, InstallationScope
+from cicada.domain.repo.installation_repo import IInstallationRepo
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.repository import Repository
+from cicada.domain.user import User, UserId
 
 
 def create_or_update_github_user(  # type: ignore[misc]

@@ -5,14 +5,14 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from cicada.api.application.exceptions import (
+from cicada.api.settings import NotificationSettings
+from cicada.application.exceptions import (
     CicadaException,
     Forbidden,
     InvalidRequest,
     NotFound,
     Unauthorized,
 )
-from cicada.api.settings import NotificationSettings
 
 
 class SlowRequestMiddleware:  # pragma: no cover

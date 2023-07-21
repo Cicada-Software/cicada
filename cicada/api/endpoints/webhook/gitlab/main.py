@@ -4,9 +4,6 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
-from cicada.api.application.session.make_session_from_trigger import (
-    MakeSessionFromTrigger,
-)
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.webhook.common import is_repo_in_white_list
@@ -17,6 +14,9 @@ from cicada.api.infra.gitlab.workflows import (
     run_workflow,
 )
 from cicada.api.settings import GitlabSettings, GitProviderSettings
+from cicada.application.session.make_session_from_trigger import (
+    MakeSessionFromTrigger,
+)
 
 from .converters import gitlab_event_to_commit, gitlab_event_to_issue
 

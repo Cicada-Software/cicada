@@ -1,4 +1,3 @@
-from cicada.api.application.session.stop_session import SessionTerminator
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.github.stop_session import github_session_terminator
 from cicada.api.infra.installation_repo import InstallationRepo
@@ -7,13 +6,14 @@ from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
-from cicada.api.repo.environment_repo import IEnvironmentRepo
-from cicada.api.repo.installation_repo import IInstallationRepo
-from cicada.api.repo.repository_repo import IRepositoryRepo
-from cicada.api.repo.session_repo import ISessionRepo
-from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
-from cicada.api.repo.user_repo import IUserRepo
-from cicada.api.repo.waitlist_repo import IWaitlistRepo
+from cicada.application.session.stop_session import SessionTerminator
+from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.installation_repo import IInstallationRepo
+from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.repo.waitlist_repo import IWaitlistRepo
 
 
 class DiContainer:  # pragma: no cover

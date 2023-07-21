@@ -1,14 +1,14 @@
 import sqlite3
 
-from cicada.api.domain.installation import (
+from cicada.api.infra.db_connection import DbConnection
+from cicada.domain.installation import (
     Installation,
     InstallationId,
     InstallationScope,
 )
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.user import User, UserId
-from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.installation_repo import IInstallationRepo
+from cicada.domain.repo.installation_repo import IInstallationRepo
+from cicada.domain.repository import Repository
+from cicada.domain.user import User, UserId
 
 
 class InstallationRepo(IInstallationRepo, DbConnection):

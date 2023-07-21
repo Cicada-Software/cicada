@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pytest
 
-from cicada.api.common.datetime import UtcDatetime
+from cicada.domain.datetime import UtcDatetime
 from test.common import build
 
 

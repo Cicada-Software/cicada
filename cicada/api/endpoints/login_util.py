@@ -7,11 +7,11 @@ from typing import Annotated, Any
 import jwt
 from fastapi import Depends, HTTPException
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.user import User
 from cicada.api.endpoints.di import Di, JWTToken
-from cicada.api.repo.user_repo import IUserRepo
 from cicada.api.settings import JWTSettings
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.user import User
 
 
 def create_jwt(  # type: ignore[misc]

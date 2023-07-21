@@ -1,6 +1,6 @@
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.user import User
 from cicada.api.infra.repository_repo import RepositoryRepo
+from cicada.domain.repository import Repository
+from cicada.domain.user import User
 from test.api.common import SqliteTestWrapper
 from test.common import build
 

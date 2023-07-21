@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import ast
 from abc import ABC, abstractmethod
+from ast import literal_eval as python_literal_eval
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, auto
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from typing import Self
-
 
 from cicada.parse.token import (
     AndToken,
@@ -322,7 +321,7 @@ class StringExpression(Expression, StringValue):
         else:
             contents = f'"""{contents}"""'
 
-        value = ast.literal_eval(contents)
+        value = python_literal_eval(contents)
 
         assert isinstance(value, str)
 

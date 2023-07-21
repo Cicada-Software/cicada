@@ -3,11 +3,11 @@ from uuid import uuid4
 
 import pytest
 
-from cicada.api.application.exceptions import InvalidRequest, NotFound
-from cicada.api.application.session.stop_session import StopSession
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.triggers import CommitTrigger, GitSha
+from cicada.application.exceptions import InvalidRequest, NotFound
+from cicada.application.session.stop_session import StopSession
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.triggers import CommitTrigger, GitSha
 
 
 async def test_stopping_session_that_doesnt_exist_throws_error() -> None:

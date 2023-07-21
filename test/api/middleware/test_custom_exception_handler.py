@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from cicada.api.application.exceptions import (
+from cicada.api.middleware import cicada_exception_handler
+from cicada.application.exceptions import (
     CicadaException,
     Forbidden,
     InvalidRequest,
     NotFound,
     Unauthorized,
 )
-from cicada.api.middleware import cicada_exception_handler
 
 
 def make_exception_handler_app() -> FastAPI:

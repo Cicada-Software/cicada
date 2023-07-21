@@ -3,11 +3,11 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from cicada.api.application.session.rerun_session import RerunSession
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.domain.triggers import CommitTrigger, GitSha
+from cicada.application.session.rerun_session import RerunSession
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.triggers import CommitTrigger, GitSha
 from test.api.application.session.test_make_session_from_trigger import (
     AsyncTap,
 )

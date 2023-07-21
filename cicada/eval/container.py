@@ -12,7 +12,6 @@ from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from cicada.api.domain.triggers import CommitTrigger
 from cicada.ast.nodes import (
     FunctionExpression,
     RecordValue,
@@ -21,13 +20,14 @@ from cicada.ast.nodes import (
     Value,
 )
 from cicada.ast.types import RecordType
+from cicada.domain.triggers import CommitTrigger
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from cicada.api.domain.terminal_session import TerminalSession
-    from cicada.api.domain.triggers import Trigger
+    from cicada.domain.terminal_session import TerminalSession
+    from cicada.domain.triggers import Trigger
 
 
 class ContainerTermination(ValueError):

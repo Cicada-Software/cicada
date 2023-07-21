@@ -1,9 +1,9 @@
 from collections.abc import Callable, Coroutine
 
-from cicada.api.application.exceptions import InvalidRequest, NotFound
-from cicada.api.domain.session import Session, SessionId, SessionStatus
-from cicada.api.domain.user import User
-from cicada.api.repo.session_repo import ISessionRepo
+from cicada.application.exceptions import InvalidRequest, NotFound
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.session import Session, SessionId, SessionStatus
+from cicada.domain.user import User
 
 SessionTerminator = Callable[[Session], Coroutine[None, None, None]]
 

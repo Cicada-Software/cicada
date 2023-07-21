@@ -1,9 +1,7 @@
-from cicada.api.domain.repository import RepositoryId
 from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.environment_repo import (
-    EnvironmentVariable,
-    IEnvironmentRepo,
-)
+from cicada.domain.env_var import EnvironmentVariable
+from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repository import RepositoryId
 
 
 class EnvironmentRepo(IEnvironmentRepo, DbConnection):

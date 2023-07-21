@@ -1,9 +1,9 @@
 from asyncio import Queue, create_task, sleep
 from collections.abc import AsyncGenerator, Callable, Coroutine
 
-from cicada.api.domain.session import SessionId, SessionStatus
-from cicada.api.repo.session_repo import ISessionRepo
-from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.session import SessionId, SessionStatus
 
 
 class StreamSession:

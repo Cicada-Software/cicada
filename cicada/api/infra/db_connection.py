@@ -1,8 +1,8 @@
 import sqlite3
 from uuid import UUID
 
-from cicada.api.common.datetime import Datetime, UtcDatetime
 from cicada.api.settings import DBSettings
+from cicada.domain.datetime import Datetime, UtcDatetime
 
 sqlite3.register_adapter(UtcDatetime, str)
 sqlite3.register_adapter(Datetime, str)

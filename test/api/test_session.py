@@ -2,9 +2,9 @@ from uuid import uuid4
 
 import pytest
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.triggers import CommitTrigger, GitSha
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.triggers import CommitTrigger, GitSha
 
 
 def test_session_creation() -> None:

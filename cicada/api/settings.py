@@ -3,7 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
-from cicada.api.domain.triggers import Trigger, json_to_trigger
+from cicada.domain.triggers import Trigger, json_to_trigger
 
 with suppress(ModuleNotFoundError):
     from dotenv import load_dotenv

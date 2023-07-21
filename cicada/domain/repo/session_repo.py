@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
-from cicada.api.domain.session import Run, Session, SessionId
-from cicada.api.domain.user import User
-from cicada.api.repo.repository_repo import Permission
+from cicada.domain.repo.repository_repo import Permission
+from cicada.domain.session import Run, Session, SessionId
+from cicada.domain.user import User
 
 
 class ISessionRepo(ABC):

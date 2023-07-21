@@ -2,9 +2,9 @@ import json
 
 import pytest
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.common.json import asjson
-from cicada.api.domain.triggers import CommitTrigger, GitSha, json_to_trigger
+from cicada.common.json import asjson
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.triggers import CommitTrigger, GitSha, json_to_trigger
 
 
 def test_convert_trigger_to_and_from_json() -> None:

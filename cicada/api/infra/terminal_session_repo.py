@@ -1,7 +1,7 @@
-from cicada.api.domain.session import SessionId
-from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
+from cicada.domain.session import SessionId
+from cicada.domain.terminal_session import TerminalSession
 
 # TODO: move to class (as singleton)
 LIVE_TERMINAL_SESSIONS = dict[tuple[SessionId, int], TerminalSession]()

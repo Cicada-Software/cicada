@@ -2,9 +2,9 @@ from asyncio import create_task, wait_for
 
 import pytest
 
-from cicada.api.domain.session import SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
 from cicada.api.infra.run_program import exit_code_to_status_code, run_program
+from cicada.domain.session import SessionStatus
+from cicada.domain.terminal_session import TerminalSession
 
 
 async def test_basic_stdout_capturing() -> None:

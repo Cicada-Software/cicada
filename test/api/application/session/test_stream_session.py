@@ -2,9 +2,9 @@ from asyncio import create_task
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from cicada.api.application.session.stream_session import StreamSession
-from cicada.api.domain.session import SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
+from cicada.application.session.stream_session import StreamSession
+from cicada.domain.session import SessionStatus
+from cicada.domain.terminal_session import TerminalSession
 
 
 class SlimSession:

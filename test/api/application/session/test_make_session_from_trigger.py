@@ -4,13 +4,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from cicada.api.application.session.make_session_from_trigger import (
+from cicada.application.session.make_session_from_trigger import (
     MakeSessionFromTrigger,
 )
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.domain.triggers import CommitTrigger, GitSha
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.triggers import CommitTrigger, GitSha
 
 
 class AsyncTap:

@@ -40,13 +40,13 @@ python_version = "3.11"
 
 [tool.coverage.run]
 omit = [
-  # Just a bunch of abstract classes
-  "cicada/api/repo/*",
   "cicada/api/logging.py",
   "cicada/api/infra/migrate.py",
   "cicada/api/__main__.py",
   # Only used during setup, needs to be manually tested
   "cicada/api/setup.py",
+  # Just a bunch of abstract classes
+  "cicada/domain/repo/*",
 ]
 
 [tool.coverage.report]

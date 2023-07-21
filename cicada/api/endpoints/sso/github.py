@@ -8,11 +8,11 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from githubkit import GitHub, OAuthWebAuthStrategy, TokenAuthStrategy
 
 from cicada.api.di import DiContainer
-from cicada.api.domain.user import User
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import create_jwt
 from cicada.api.infra.github.common import get_github_integration
 from cicada.api.settings import GitHubSettings
+from cicada.domain.user import User
 
 router = APIRouter()
 

@@ -1,6 +1,6 @@
-from cicada.api.common.datetime import UtcDatetime
 from cicada.api.endpoints.login import router as login_router
 from cicada.api.endpoints.login_util import get_user_and_payload_from_jwt
+from cicada.domain.datetime import UtcDatetime
 from test.api.endpoints.common import TestEndpointWrapper
 
 

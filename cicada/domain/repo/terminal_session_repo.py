@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
-from cicada.api.domain.session import SessionId
-from cicada.api.domain.terminal_session import TerminalSession
+from cicada.domain.session import SessionId
+from cicada.domain.terminal_session import TerminalSession
 
 
 class ITerminalSessionRepo(ABC):

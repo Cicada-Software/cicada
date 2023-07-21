@@ -1,8 +1,7 @@
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.common.password_hash import PasswordHash
-from cicada.api.domain.user import User, UserId
 from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.user_repo import IUserRepo
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.repo.user_repo import IUserRepo
+from cicada.domain.user import PasswordHash, User, UserId
 
 
 class UserRepo(IUserRepo, DbConnection):

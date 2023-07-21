@@ -108,7 +108,7 @@ To build apps that are robust, configurable, and reduce coupling.
 
 ### The API: The Domain Layer
 
-> Defined in the `cicada/api/domain` folder.
+> Defined in the `cicada/domain` folder.
 
 The domain layer is where the business objects are defined, such as Sessions, Workflows, Users, and more.
 The main reason to have a domain layer is so that the business objects are well defined (in code),
@@ -123,7 +123,7 @@ objects. A single business object might be spread across multiple database table
 
 ### The API: The Repository Layer
 
-> Defined in the `cicada/api/repo` folder.
+> Defined in the `cicada/domain/repo` folder.
 
 A repository is an interface that defines how data is accessed in Cicada. This interface specifies (using
 the business terminology) how data should be accessed, but does not define how the data should be stored.
@@ -136,7 +136,7 @@ you might have more or less than the 4 CRUD operations for a business object, de
 
 ### The API: The Application Layer
 
-> Defined in the `cicada/api/application` folder.
+> Defined in the `cicada/application` folder.
 
 The application layer is where you define application services, which are business operations. Each application service
 defines it's dependencies, usually one or more repository interfaces, and uses these interfaces to manipulate data

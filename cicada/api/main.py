@@ -5,9 +5,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from cicada.api.application.exceptions import CicadaException
-from cicada.api.domain.installation import InstallationId
-from cicada.api.domain.session import SessionId
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.env import router as env_router
 from cicada.api.endpoints.installation import router as installation_router
@@ -20,6 +17,9 @@ from cicada.api.middleware import (
     cicada_exception_handler,
 )
 from cicada.api.settings import GitProviderSettings
+from cicada.application.exceptions import CicadaException
+from cicada.domain.installation import InstallationId
+from cicada.domain.session import SessionId
 
 app = FastAPI()
 app.include_router(login_router)

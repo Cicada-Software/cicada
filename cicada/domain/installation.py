@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Literal
 from uuid import UUID
 
-from cicada.api.domain.user import UserId
+from cicada.domain.user import UserId
 
 
 class InstallationScope(Enum):

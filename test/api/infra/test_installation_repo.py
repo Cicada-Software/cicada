@@ -1,11 +1,11 @@
 from dataclasses import replace
 from uuid import uuid4
 
-from cicada.api.domain.installation import Installation, InstallationScope
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.user import User
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.user_repo import UserRepo
+from cicada.domain.installation import Installation, InstallationScope
+from cicada.domain.repository import Repository
+from cicada.domain.user import User
 from test.api.common import SqliteTestWrapper
 from test.common import build
 

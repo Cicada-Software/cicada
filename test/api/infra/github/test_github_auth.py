@@ -1,12 +1,12 @@
 from uuid import uuid4
 
-from cicada.api.domain.installation import Installation, InstallationScope
-from cicada.api.domain.user import User
 from cicada.api.infra.github.auth import (
     create_or_update_github_installation,
     create_or_update_github_user,
     update_github_repo_perms,
 )
+from cicada.domain.installation import Installation, InstallationScope
+from cicada.domain.user import User
 from test.api.endpoints.common import TestDiContainer
 from test.common import build
 

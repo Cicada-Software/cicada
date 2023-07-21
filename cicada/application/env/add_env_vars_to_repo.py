@@ -1,10 +1,8 @@
-from cicada.api.application.exceptions import NotFound, Unauthorized
-from cicada.api.repo.environment_repo import (
-    EnvironmentVariable,
-    IEnvironmentRepo,
-)
-from cicada.api.repo.repository_repo import IRepositoryRepo
-from cicada.api.repo.user_repo import IUserRepo
+from cicada.application.exceptions import NotFound, Unauthorized
+from cicada.domain.env_var import EnvironmentVariable
+from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.user_repo import IUserRepo
 
 
 class AddEnvironmentVariablesToRepository:

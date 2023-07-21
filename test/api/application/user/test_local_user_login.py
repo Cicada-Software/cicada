@@ -2,10 +2,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cicada.api.application.exceptions import Unauthorized
-from cicada.api.application.user.local_user_login import LocalUserLogin
-from cicada.api.common.password_hash import PasswordHash
-from cicada.api.domain.user import User
+from cicada.application.exceptions import Unauthorized
+from cicada.application.user.local_user_login import LocalUserLogin
+from cicada.domain.user import PasswordHash, User
 from test.common import build
 
 

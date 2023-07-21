@@ -1,16 +1,16 @@
 import json
 from pathlib import Path
 
-from cicada.api.common.datetime import Datetime
-from cicada.api.domain.triggers import (
+from cicada.api.endpoints.webhook.github.converters import (
+    github_event_to_commit,
+    github_event_to_issue,
+)
+from cicada.domain.datetime import Datetime
+from cicada.domain.triggers import (
     CommitTrigger,
     GitSha,
     IssueCloseTrigger,
     IssueOpenTrigger,
-)
-from cicada.api.endpoints.webhook.github.converters import (
-    github_event_to_commit,
-    github_event_to_issue,
 )
 
 TEST_DATA = Path(__file__).parent / "test_data"

@@ -3,9 +3,12 @@ import sqlite3
 from pathlib import Path
 from uuid import uuid4
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.common.json import asjson
-from cicada.api.domain.session import (
+from cicada.api.infra.db_connection import DbConnection
+from cicada.common.json import asjson
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.repo.repository_repo import Permission
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.session import (
     Run,
     Session,
     SessionId,
@@ -13,11 +16,8 @@ from cicada.api.domain.session import (
     Status,
     Workflow,
 )
-from cicada.api.domain.triggers import GitSha, Trigger, json_to_trigger
-from cicada.api.domain.user import User
-from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.repository_repo import Permission
-from cicada.api.repo.session_repo import ISessionRepo
+from cicada.domain.triggers import GitSha, Trigger, json_to_trigger
+from cicada.domain.user import User
 
 
 class SessionRepo(ISessionRepo, DbConnection):

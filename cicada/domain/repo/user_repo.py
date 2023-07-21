@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from cicada.api.domain.user import User, UserId
+from cicada.domain.user import User, UserId
 
 
 class IUserRepo(ABC):

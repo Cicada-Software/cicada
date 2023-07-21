@@ -9,10 +9,7 @@ from urllib.parse import urlparse
 
 import gitlab
 
-from cicada.api.common.http import url_get_user_and_repo
-from cicada.api.domain.session import Session, SessionStatus
-from cicada.api.domain.terminal_session import TerminalSession
-from cicada.api.domain.triggers import CommitTrigger, GitSha, Trigger
+from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.gitlab.common import gitlab_clone_url
 from cicada.api.infra.repo_get_ci_files import repo_get_ci_files
 from cicada.api.infra.run_program import (
@@ -20,6 +17,9 @@ from cicada.api.infra.run_program import (
     get_execution_type,
 )
 from cicada.api.settings import ExecutionSettings, GitlabSettings
+from cicada.domain.session import Session, SessionStatus
+from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 @asynccontextmanager

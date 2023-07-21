@@ -1,8 +1,8 @@
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.common.http import url_get_user_and_repo
-from cicada.api.domain.session import Session
-from cicada.api.domain.triggers import CommitTrigger
+from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.github.common import get_github_integration_for_repo
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.session import Session
+from cicada.domain.triggers import CommitTrigger
 
 
 async def github_session_terminator(session: Session) -> None:

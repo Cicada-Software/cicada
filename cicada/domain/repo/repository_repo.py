@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from cicada.api.domain.repository import Repository, RepositoryId
-from cicada.api.domain.user import User, UserId
+from cicada.domain.repository import Repository, RepositoryId
+from cicada.domain.user import User, UserId
 
 # TODO: replace with enum
 Permission = Literal["owner", "read", "write"]

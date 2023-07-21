@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, field
 from typing import ClassVar, Literal, Self
 
-from cicada.api.common.datetime import Datetime
+from cicada.domain.datetime import Datetime
 
 TriggerType = str
 

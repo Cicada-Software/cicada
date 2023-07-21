@@ -1,7 +1,7 @@
 import pytest
 
-from cicada.api.common.datetime import UtcDatetime
 from cicada.api.infra.waitlist_repo import WaitlistRepo
+from cicada.domain.datetime import UtcDatetime
 from test.api.common import SqliteTestWrapper
 
 

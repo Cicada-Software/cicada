@@ -1,6 +1,13 @@
+from dataclasses import dataclass
 from typing import Self
+from uuid import UUID
 
 from passlib.context import CryptContext
+
+from cicada.domain.datetime import UtcDatetime
+
+# TODO: use typing.NewType
+UserId = UUID
 
 
 class PasswordHash:
@@ -22,3 +29,14 @@ class PasswordHash:
 
     def __str__(self) -> str:
         return self.hash
+
+
+@dataclass
+class User:
+    id: UserId
+    username: str
+    password_hash: PasswordHash | None = None
+    is_admin: bool = False
+    provider: str = "cicada"
+    last_login: UtcDatetime | None = None
+    email: str | None = None

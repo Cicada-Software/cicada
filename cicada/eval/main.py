@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-from cicada.api.domain.triggers import Trigger
 from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
@@ -16,6 +15,7 @@ from cicada.ast.nodes import (
 )
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType
+from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor, value_to_string
 from cicada.eval.find_files import find_ci_files
 

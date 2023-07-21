@@ -3,8 +3,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import cast
 
-from cicada.api.common.json import asjson
-from cicada.api.domain.triggers import Trigger
 from cicada.ast.generate import SHELL_ALIASES, AstError
 from cicada.ast.nodes import (
     BinaryExpression,
@@ -35,6 +33,8 @@ from cicada.ast.types import (
     UnionType,
     UnknownType,
 )
+from cicada.common.json import asjson
+from cicada.domain.triggers import Trigger
 
 
 def json_to_record_type(j: object) -> Type:

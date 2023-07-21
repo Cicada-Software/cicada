@@ -1,14 +1,7 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
-from cicada.api.domain.repository import RepositoryId
-
-
-# TODO: move to domain folder
-@dataclass
-class EnvironmentVariable:
-    key: str
-    value: str
+from cicada.domain.env_var import EnvironmentVariable
+from cicada.domain.repository import RepositoryId
 
 
 class IEnvironmentRepo(ABC):

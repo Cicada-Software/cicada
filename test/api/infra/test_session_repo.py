@@ -3,15 +3,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
-from cicada.api.common.datetime import UtcDatetime
-from cicada.api.domain.repository import Repository
-from cicada.api.domain.session import Session
-from cicada.api.domain.triggers import CommitTrigger
-from cicada.api.domain.user import User
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.user_repo import UserRepo
-from cicada.api.repo.repository_repo import Permission
+from cicada.domain.datetime import UtcDatetime
+from cicada.domain.repo.repository_repo import Permission
+from cicada.domain.repository import Repository
+from cicada.domain.session import Session
+from cicada.domain.triggers import CommitTrigger
+from cicada.domain.user import User
 from test.api.common import SqliteTestWrapper
 from test.common import build
 

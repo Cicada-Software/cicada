@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from decimal import Decimal
 from typing import cast
 
-from cicada.api.domain.triggers import Trigger
 from cicada.ast.common import trigger_to_record
 from cicada.ast.nodes import (
     BinaryExpression,
@@ -34,6 +33,7 @@ from cicada.ast.nodes import (
     Value,
 )
 from cicada.ast.types import RecordType
+from cicada.domain.triggers import Trigger
 
 
 def value_to_string(value: Value) -> Value:

@@ -1,4 +1,4 @@
-from cicada.api.domain.triggers import Trigger
+from cicada.domain.triggers import Trigger
 
 
 # TODO: remove this function

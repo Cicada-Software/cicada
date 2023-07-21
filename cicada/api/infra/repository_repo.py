@@ -1,9 +1,9 @@
 import sqlite3
 
-from cicada.api.domain.repository import Repository, RepositoryId
-from cicada.api.domain.user import User, UserId
 from cicada.api.infra.db_connection import DbConnection
-from cicada.api.repo.repository_repo import IRepositoryRepo, Permission
+from cicada.domain.repo.repository_repo import IRepositoryRepo, Permission
+from cicada.domain.repository import Repository, RepositoryId
+from cicada.domain.user import User, UserId
 
 
 class RepositoryRepo(IRepositoryRepo, DbConnection):

@@ -1,9 +1,9 @@
 from decimal import Decimal
 
-from cicada.api.common.json import asjson
-from cicada.api.domain.triggers import Trigger
 from cicada.ast.nodes import NumericValue, RecordValue, StringValue, Value
 from cicada.ast.types import RecordField, RecordType
+from cicada.common.json import asjson
+from cicada.domain.triggers import Trigger
 
 
 def trigger_to_record(trigger: Trigger) -> Value:
