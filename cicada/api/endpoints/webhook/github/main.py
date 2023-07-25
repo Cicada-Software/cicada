@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import logging
-from asyncio import Task, create_task
 from contextlib import suppress
 from typing import Any
 
@@ -9,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
+from cicada.api.endpoints.task_queue import TaskQueue
 from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.github.auth import (
     add_repository_to_installation,
@@ -30,7 +30,7 @@ from .converters import github_event_to_commit, github_event_to_issue
 
 router = APIRouter()
 
-TASK_QUEUE: set[Task[None]] = set()
+TASK_QUEUE = TaskQueue()
 
 
 logger = logging.getLogger("cicada")
@@ -49,11 +49,8 @@ def handle_github_push_event(  # type: ignore[misc]
     )
 
     commit = github_event_to_commit(event)
-    result = cmd.handle(commit)
 
-    task = create_task(result)
-    TASK_QUEUE.add(task)
-    task.add_done_callback(TASK_QUEUE.discard)
+    TASK_QUEUE.add(cmd.handle(commit))
 
 
 def handle_github_issue_event(  # type: ignore[misc]
@@ -69,11 +66,8 @@ def handle_github_issue_event(  # type: ignore[misc]
     )
 
     issue = github_event_to_issue(event)
-    result = cmd.handle(issue)
 
-    task = create_task(result)
-    TASK_QUEUE.add(task)
-    task.add_done_callback(TASK_QUEUE.discard)
+    TASK_QUEUE.add(cmd.handle(issue))
 
 
 async def verify_webhook_is_signed_by_github(request: Request) -> None:

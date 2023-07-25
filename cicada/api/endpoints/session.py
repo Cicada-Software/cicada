@@ -7,6 +7,7 @@ from websockets.exceptions import ConnectionClosed
 
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser, get_user_from_jwt
+from cicada.api.endpoints.task_queue import TaskQueue
 from cicada.api.infra.github.common import (
     gather_workflows_via_trigger as gather_github_git_push_workflows,
 )
@@ -38,7 +39,7 @@ async def stop_session(
     await cmd.handle(session_id, user)
 
 
-TASK_QUEUE: set[Task[None]] = set()
+TASK_QUEUE = TaskQueue()
 
 
 @router.post("/api/session/{session_id}/rerun")
@@ -78,10 +79,7 @@ async def rerun_session(
         repository_repo=di.repository_repo(),
     )
 
-    task = create_task(cmd.handle(session))
-
-    TASK_QUEUE.add(task)
-    task.add_done_callback(TASK_QUEUE.discard)
+    TASK_QUEUE.add(cmd.handle(session))
 
 
 @router.get("/api/session/{uuid}/session_info")

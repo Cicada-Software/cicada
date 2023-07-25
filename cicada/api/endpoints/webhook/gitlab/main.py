@@ -1,11 +1,11 @@
 import logging
-from asyncio import Task, create_task
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 
 from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
+from cicada.api.endpoints.task_queue import TaskQueue
 from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.gitlab.auth import update_gitlab_repo_perms
 from cicada.api.infra.gitlab.workflows import (
@@ -23,7 +23,7 @@ from .converters import gitlab_event_to_commit, gitlab_event_to_issue
 router = APIRouter()
 
 
-TASK_QUEUE: set[Task[None]] = set()
+TASK_QUEUE = TaskQueue()
 
 logger = logging.getLogger("cicada")
 
@@ -51,11 +51,8 @@ def handle_gitlab_push_event(  # type: ignore[misc]
     )
 
     commit = gitlab_event_to_commit(event)
-    result = cmd.handle(commit)
 
-    task = create_task(result)
-    TASK_QUEUE.add(task)
-    task.add_done_callback(TASK_QUEUE.discard)
+    TASK_QUEUE.add(cmd.handle(commit))
 
 
 def handle_gitlab_issue_event(  # type: ignore[misc]
@@ -71,11 +68,8 @@ def handle_gitlab_issue_event(  # type: ignore[misc]
     )
 
     issue = gitlab_event_to_issue(event)
-    result = cmd.handle(issue)
 
-    task = create_task(result)
-    TASK_QUEUE.add(task)
-    task.add_done_callback(TASK_QUEUE.discard)
+    TASK_QUEUE.add(cmd.handle(issue))
 
 
 @router.post("/api/gitlab_webhook")
