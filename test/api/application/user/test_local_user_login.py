@@ -4,7 +4,8 @@ import pytest
 
 from cicada.application.exceptions import Unauthorized
 from cicada.application.user.local_user_login import LocalUserLogin
-from cicada.domain.user import PasswordHash, User
+from cicada.domain.password_hash import PasswordHash
+from cicada.domain.user import User
 from test.common import build
 
 

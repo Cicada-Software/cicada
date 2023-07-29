@@ -30,3 +30,6 @@ fmt:
 	ruff cicada test --fix
 	isort .
 	black cicada test
+
+clean:
+	rm -rf .mypy_cache .ruff_cache dist build cicada/build cicada/dist
