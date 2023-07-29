@@ -66,8 +66,8 @@ if not RUNNER_SECRET:
     logger.fatal("RUNNER_SECRET env var must be set!")
     sys.exit(1)
 
-CICADA_DOMAIN = os.getenv("CICADA_DOMAIN", "cicada.sh")
-LOG_LEVEL = os.getenv("LOG_LEVEL", "info").upper()
+CICADA_DOMAIN = os.getenv("CICADA_DOMAIN") or "cicada.sh"
+LOG_LEVEL = (os.getenv("LOG_LEVEL") or "info").upper()
 
 logger.setLevel(LOG_LEVEL)
 
