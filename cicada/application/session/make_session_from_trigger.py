@@ -6,6 +6,7 @@ from cicada.application.session.common import (
     IWorkflowGatherer,
     IWorkflowRunner,
 )
+from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.session_repo import ISessionRepo
@@ -87,10 +88,18 @@ class MakeSessionFromTrigger:
         terminal = self.terminal_session_repo.create(session_id)
         terminal.callback = callback
 
-        session = Session(id=session_id, trigger=trigger)
+        filenode = files[0]
+
+        match filenode:
+            case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
+                status = SessionStatus.BOOTING
+            case _:
+                status = SessionStatus.PENDING
+
+        session = Session(id=session_id, trigger=trigger, status=status)
         self.session_repo.create(session)
 
-        await self.workflow_runner(session, terminal, cloned_repo)
+        await self.workflow_runner(session, terminal, cloned_repo, filenode)
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 

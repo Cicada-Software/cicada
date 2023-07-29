@@ -39,11 +39,14 @@ logger = logging.getLogger("cicada")
 def handle_github_push_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
+    async def run(*args: Any) -> None:  # type: ignore[misc]
+        await run_workflow(*args, di=di)  # type: ignore
+
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_workflows_via_trigger,
-        workflow_runner=run_workflow,
+        workflow_runner=run,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
     )
@@ -56,11 +59,14 @@ def handle_github_push_event(  # type: ignore[misc]
 def handle_github_issue_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any]
 ) -> None:
+    async def run(*args: Any) -> None:  # type: ignore[misc]
+        await run_workflow(*args, di=di)  # type: ignore
+
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_issue_workflows,
-        workflow_runner=run_workflow,
+        workflow_runner=run,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
     )

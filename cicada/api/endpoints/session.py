@@ -1,5 +1,6 @@
 import asyncio
 from asyncio import CancelledError, InvalidStateError, Task, create_task
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
@@ -63,10 +64,13 @@ async def rerun_session(
 
     if provider == "github":
         gather = gather_github_git_push_workflows
-        run = run_github_workflow
+
+        async def run(*args: Any) -> None:  # type: ignore[misc]
+            await run_github_workflow(*args, di=di)  # type: ignore
+
     elif provider == "gitlab":
         gather = gather_gitlab_workflows
-        run = run_gitlab_workflow
+        run = run_gitlab_workflow  # type: ignore
     else:
         assert False
 
@@ -145,6 +149,7 @@ async def watch_status(
         await websocket.accept()
 
         # TODO: add timeout here
+        # TODO: pull from header instead
         jwt = await websocket.receive_text()
 
         user = get_user_from_jwt(di.user_repo(), jwt)

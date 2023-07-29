@@ -10,10 +10,19 @@ from .triggers import GitSha, Trigger
 
 
 class Status(Enum):
+    BOOTING = "BOOTING"
     PENDING = "PENDING"
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
     STOPPED = "STOPPED"
+
+    def is_finished(self) -> bool:
+        """
+        A "finished" status means that the status is final, ie, a success or a
+        failure.
+        """
+
+        return self not in (Status.BOOTING, Status.PENDING)
 
 
 SessionStatus = Status

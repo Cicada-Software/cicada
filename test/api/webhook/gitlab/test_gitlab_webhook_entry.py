@@ -12,6 +12,7 @@ from cicada.api.endpoints.webhook.gitlab.converters import (
 )
 from cicada.api.endpoints.webhook.gitlab.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook
+from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
 from test.api.endpoints.common import TestEndpointWrapper
@@ -46,7 +47,10 @@ class TestGitlabWebhook(TestEndpointWrapper):
         ):
 
             async def f(
-                session: Session, _: TerminalSession, __: Path
+                session: Session,
+                _: TerminalSession,
+                __: Path,
+                ___: FileNode,
             ) -> None:
                 session.finish(SessionStatus.SUCCESS)
 
@@ -91,7 +95,10 @@ class TestGitlabWebhook(TestEndpointWrapper):
         ):
 
             async def f(
-                session: Session, _: TerminalSession, __: Path
+                session: Session,
+                _: TerminalSession,
+                __: Path,
+                ___: FileNode,
             ) -> None:
                 session.finish(SessionStatus.SUCCESS)
 

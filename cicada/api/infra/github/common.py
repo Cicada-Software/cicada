@@ -7,6 +7,7 @@ from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.repo_get_ci_files import repo_get_ci_files
 from cicada.api.settings import GitHubSettings
 from cicada.ast.generate import AstError
+from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.triggers import Trigger
 
@@ -87,7 +88,7 @@ def github_clone_url(user: str, repo: str, access_token: str) -> str:
 async def gather_workflows_via_trigger(
     trigger: Trigger,
     cloned_repo: Path,
-) -> list[Path]:
+) -> list[FileNode]:
     assert trigger.sha
 
     started_at = UtcDatetime.now()
@@ -135,7 +136,7 @@ async def gather_workflows_via_trigger(
         # TODO: only fail if all runnable files had errors
         return []
 
-    return [x for x in files_or_errors if isinstance(x, Path)]
+    return [x for x in files_or_errors if not isinstance(x, AstError)]
 
 
 def ast_error_to_github_annotation(error: AstError) -> dict[str, str | int]:

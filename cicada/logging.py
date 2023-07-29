@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 COLORS: Final = {
     logging.DEBUG: "\x1b[38;5;40m\x1b[48;5;232m",
-    logging.INFO: "\x1b[48;5;27m",
     logging.WARNING: "\x1b[38;5;232m\x1b[48;5;214m",
     logging.ERROR: "\x1b[48;5;124m",
     logging.CRITICAL: "\x1b[1m\x1b[48;5;196m",

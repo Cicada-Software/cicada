@@ -902,7 +902,7 @@ def test_show_error_when_expression_is_expected() -> None:
         generate_ast_tree(tokenize(code))
 
 
-def test_generate_run_on_stmt() -> None:
+def test_generate_run_on_stmt_with_image() -> None:
     images = (
         "hello_world",
         "alpine:3.18",
@@ -919,6 +919,16 @@ def test_generate_run_on_stmt() -> None:
                 continue
 
         pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_generate_run_on_stmt_with_self_hosted() -> None:
+    tree = generate_ast_tree(tokenize("run_on self_hosted"))
+
+    match tree.exprs[0]:
+        case RunOnStatement(RunType.SELF_HOSTED, value=""):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree}")
 
 
 def test_run_on_must_have_content_after_space() -> None:

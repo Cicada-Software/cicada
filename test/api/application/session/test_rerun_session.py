@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from cicada.application.session.rerun_session import RerunSession
+from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
@@ -17,7 +18,10 @@ async def test_reran_session_is_created_and_ran() -> None:
     tap = AsyncTap()
 
     async def dummy_check_runner(
-        session: Session, _: TerminalSession, __: Path
+        session: Session,
+        _: TerminalSession,
+        __: Path,
+        ___: FileNode,
     ) -> None:
         await tap.wait_for_close()
 

@@ -17,6 +17,8 @@ from cicada.api.infra.run_program import (
     get_execution_type,
 )
 from cicada.api.settings import ExecutionSettings, GitlabSettings
+from cicada.ast.generate import AstError
+from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
@@ -64,7 +66,11 @@ async def run_workflow(
     session: Session,
     terminal: TerminalSession,
     cloned_repo: Path,
+    filenode: FileNode,
 ) -> None:
+    # TODO: remove
+    assert filenode
+
     settings = GitlabSettings()
 
     wrapper: AbstractAsyncContextManager[None]
@@ -86,6 +92,7 @@ async def run_workflow(
                 url=url,
                 trigger_type=session.trigger.type,
                 trigger=session.trigger,
+                session=session,
                 terminal=terminal,
                 cloned_repo=cloned_repo,
             )
@@ -103,7 +110,7 @@ async def run_workflow(
 async def gather_issue_workflows(
     trigger: Trigger,
     cloned_repo: Path,
-) -> list[Path]:
+) -> list[FileNode]:
     settings = GitlabSettings()
     user, repo = url_get_user_and_repo(trigger.repository_url)
 
@@ -117,7 +124,10 @@ async def gather_issue_workflows(
     return await gather_workflows(trigger, cloned_repo)
 
 
-async def gather_workflows(trigger: Trigger, cloned_repo: Path) -> list[Path]:
+async def gather_workflows(
+    trigger: Trigger,
+    cloned_repo: Path,
+) -> list[FileNode]:
     username, repo_name = url_get_user_and_repo(trigger.repository_url)
 
     settings = GitlabSettings()
@@ -133,4 +143,4 @@ async def gather_workflows(trigger: Trigger, cloned_repo: Path) -> list[Path]:
         cloned_repo,
     )
 
-    return [x for x in files_or_errors if isinstance(x, Path)]
+    return [x for x in files_or_errors if not isinstance(x, AstError)]

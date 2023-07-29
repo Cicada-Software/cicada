@@ -107,12 +107,12 @@ a[disabled] {
   content: ' ✘';
 }
 
-.ci-status[data-status="pending"] {
+.ci-status[data-status="pending"], .ci-status[data-status="booting"] {
   color: var(--yellow);
   background: var(--dark-yellow) !important;
 }
 
-.ci-status[data-status="pending"]::after {
+.ci-status[data-status="pending"]::after, .ci-status[data-status="booting"]::after {
   animation: ci-pending-spinner 0.75s infinite;
   content: ' /';
 }

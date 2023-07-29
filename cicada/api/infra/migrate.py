@@ -746,6 +746,21 @@ def migrate_v36(db: sqlite3.Connection) -> None:
     db.executescript("ALTER TABLE users ADD COLUMN email TEXT;")
 
 
+@auto_migrate(version=37)
+def migrate_v37(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE runners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            installation_uuid TEXT NOT NULL,
+            secret TEXT NOT NULL,
+            groups TEXT NOT NULL
+        );
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

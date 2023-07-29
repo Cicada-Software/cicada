@@ -4,7 +4,7 @@ from pathlib import Path
 
 import uvicorn
 
-from cicada.api.logging import setup as setup_logging
+from cicada.logging import setup as setup_logging
 
 setup_logging()
 

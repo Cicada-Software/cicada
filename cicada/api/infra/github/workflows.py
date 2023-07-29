@@ -8,12 +8,15 @@ from pathlib import Path
 
 from githubkit import GitHub
 
+from cicada.api.di import DiContainer
 from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.run_program import (
+    SelfHostedExecutionContext,
     exit_code_to_status_code,
     get_execution_type,
 )
 from cicada.api.settings import DNSSettings, ExecutionSettings
+from cicada.ast.nodes import FileNode, RunType
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
@@ -30,7 +33,7 @@ from .common import (
 async def gather_issue_workflows(
     trigger: Trigger,
     cloned_repo: Path,
-) -> list[Path]:  # pragma: no cover
+) -> list[FileNode]:  # pragma: no cover
     assert isinstance(trigger, IssueTrigger)
 
     username, repo_name = url_get_user_and_repo(trigger.repository_url)
@@ -106,6 +109,8 @@ async def run_workflow(
     session: Session,
     terminal: TerminalSession,
     cloned_repo: Path,
+    filenode: FileNode,
+    di: DiContainer | None = None,
 ) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
 
@@ -121,15 +126,38 @@ async def run_workflow(
 
     try:
         async with wrapper:
-            executor_type = ExecutionSettings().executor
+            if not filenode.run_on or filenode.run_on.type == RunType.IMAGE:
+                executor_type = ExecutionSettings().executor
 
-            ctx = get_execution_type(executor_type)(
-                url=url,
-                trigger_type=session.trigger.type,
-                trigger=session.trigger,
-                terminal=terminal,
-                cloned_repo=cloned_repo,
-            )
+                ctx = get_execution_type(executor_type)(
+                    url=url,
+                    trigger_type=session.trigger.type,
+                    trigger=session.trigger,
+                    session=session,
+                    terminal=terminal,
+                    cloned_repo=cloned_repo,
+                )
+
+            elif (
+                filenode.run_on and filenode.run_on.type == RunType.SELF_HOSTED
+            ):
+                assert di
+
+                ctx = SelfHostedExecutionContext(
+                    url=url,
+                    trigger_type=session.trigger.type,
+                    trigger=session.trigger,
+                    session=session,
+                    terminal=terminal,
+                    cloned_repo=cloned_repo,
+                )
+
+                # TODO: move to ctor
+                ctx.session_repo = di.session_repo()
+                ctx.runner_repo = di.runner_repo()
+
+            else:
+                assert False, "impossible"
 
             exit_code = await ctx.run()
 

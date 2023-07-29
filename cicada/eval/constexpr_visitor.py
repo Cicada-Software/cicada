@@ -50,6 +50,15 @@ def value_to_string(value: Value) -> Value:
     return UnreachableValue()  # pragma: no cover
 
 
+class WorkflowFailure(ValueError):
+    def __init__(self, return_code: int) -> None:
+        self.return_code = return_code
+
+
+class CommandFailed(WorkflowFailure):
+    pass
+
+
 class ConstexprEvalVisitor(NodeVisitor[Value]):
     """
     The constexpr visitor is a visitor which only evaluates expressions which

@@ -21,7 +21,11 @@ from cicada.ast.nodes import (
 )
 from cicada.ast.types import RecordType
 from cicada.domain.triggers import CommitTrigger
-from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
+from cicada.eval.constexpr_visitor import (
+    CommandFailed,
+    ConstexprEvalVisitor,
+    WorkflowFailure,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -30,12 +34,7 @@ if TYPE_CHECKING:
     from cicada.domain.triggers import Trigger
 
 
-class ContainerTermination(ValueError):
-    def __init__(self, return_code: int) -> None:
-        self.return_code = return_code
-
-
-class CommandFailed(ContainerTermination):
+class ContainerTermination(WorkflowFailure):
     pass
 
 

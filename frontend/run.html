@@ -241,7 +241,7 @@ function updateStatus(status) {
   document.getElementById("status").innerText = status;
   document.getElementById("status").dataset["status"] = status.toLowerCase();
 
-  if (status === "PENDING") {
+  if (status === "PENDING" || status === "BOOTING") {
     document.getElementById("cancel").style.display = "flex";
     document.getElementById("rerun").style.display = "none";
   } else {
@@ -257,13 +257,15 @@ function handleWebsocketMessage(event) {
     terminal.write(data.stdout);
   }
   else if ("status" in data) {
-    hideTerminalCursor();
-
     updateStatus(data.status);
 
-    // TODO: get official stop time from WS, since our timer value might differ
-    // from what the server says
-    clearInterval(displayTimerInterval);
+    if (data.status !== "PENDING") {
+      hideTerminalCursor();
+
+      // TODO: get official stop time from WS, since our timer value might differ
+      // from what the server says
+      clearInterval(displayTimerInterval);
+    }
   }
   else if ("error" in data) {
     const node = document.createElement("i");
@@ -394,7 +396,7 @@ function getSessionAndCommitInfo(callback) {
 
       displayElapsedTime();
 
-      if (e.status === "PENDING") {
+      if (e.status === "PENDING" || e.status === "BOOTING") {
         displayTimerInterval = setInterval(displayElapsedTime, 1_000);
       } else {
         hideTerminalCursor();
@@ -434,7 +436,7 @@ function rerun(event) {
   document.getElementById("run-number").classList.add("hide-by-default");
   document.getElementById("terminal").innerHTML = "";
   document.getElementById("elapsed-time").innerText = "--:--:--";
-  updateStatus("PENDING");
+  updateStatus("BOOTING");
 
   if (currentRun === undefined) currentRun = 1;
   currentRun++;

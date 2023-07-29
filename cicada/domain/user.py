@@ -10,6 +10,7 @@ from cicada.domain.datetime import UtcDatetime
 UserId = UUID
 
 
+# TODO: move to its own folder
 class PasswordHash:
     hash: str
 

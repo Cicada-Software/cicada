@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 
 from cicada.api.infra.github.workflows import run_workflow
+from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
 from test.common import build
@@ -51,7 +52,7 @@ async def test_run_workflow() -> None:
         wrap_in_github_check_run.return_value = nullcontext()
         get_execution_type.return_value.return_value.run.return_value = 0
 
-        await run_workflow(session, TerminalSession(), Path())
+        await run_workflow(session, TerminalSession(), Path(), FileNode([]))
 
         assert session.status == SessionStatus.SUCCESS
         assert session.finished_at
@@ -86,7 +87,12 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
         get_execution_type.return_value.return_value.run.side_effect = f
 
         with pytest.raises(RuntimeError):
-            await run_workflow(session, TerminalSession(), Path())
+            await run_workflow(
+                session,
+                TerminalSession(),
+                Path(),
+                FileNode([]),
+            )
 
         assert session.status == SessionStatus.FAILURE
         assert session.finished_at

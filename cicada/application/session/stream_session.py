@@ -50,6 +50,18 @@ class StreamSession:
 
         interceptor = create_task(intercept_stop())
 
+        session = self.session_repo.get_session_by_session_id(session_id, run)
+        assert session
+
+        if session.status == SessionStatus.BOOTING:
+            status = await self.wait_for_status_change(
+                session_id,
+                run,
+                is_booting=True,
+            )
+
+            yield {"status": status.name}
+
         async for chunks in terminal.stream_chunks():
             yield {"stdout": chunks.decode()}
 
@@ -61,31 +73,40 @@ class StreamSession:
 
         interceptor.cancel()
 
-        status = await self._get_session_status(session_id, run)
+        status = await self.wait_for_status_change(session_id, run)
 
         yield {"status": status.name}
 
-    async def _get_session_status(
-        self, session_id: SessionId, run: int
+    async def wait_for_status_change(
+        self,
+        session_id: SessionId,
+        run: int,
+        is_booting: bool = False,
     ) -> SessionStatus:
         """
-        Repeatedly get the session to see what the new status is. Since the
-        cleanup process can take a few seconds we will have to check
-        periodically to until we give up (we cant wait forever, and if it gets
-        stuck its probably a bug or timeout issue).
+        Repeatedly check for updates to the session status, and return once the
+        status has changed. When we are booting we are looking for a session
+        status that isn't BOOTING, and after we have booted, we are looking for
+        session statuses that aren't PENDING. We have to wait longer for a
+        session to start then we do for a session to stop since it we might
+        have to wait for a self-hosted runner to become available for certain
+        sessions.
         """
 
-        check_count = 0
-        give_up_after = 10
+        if is_booting:
+            ignore = SessionStatus.BOOTING
+            attempts = 1_000
+        else:
+            ignore = SessionStatus.PENDING
+            attempts = 10
 
-        while check_count < give_up_after:
+        for _ in range(attempts):
             session = self.session_repo.get_session_by_session_id(
                 session_id, run=run
             )
             assert session
 
-            if session.status == SessionStatus.PENDING:
-                check_count += 1
+            if session.status == ignore:
                 await sleep(0.5)
                 continue
 

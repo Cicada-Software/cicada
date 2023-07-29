@@ -3,6 +3,8 @@ __pycache__
 .mypy_cache
 dist
 .coverage
+*.egg-info
+build
 
 *.pem
 .env

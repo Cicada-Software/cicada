@@ -9,13 +9,13 @@ from cicada.api.infra.repo_get_ci_files import folder_get_runnable_ci_files
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
-from cicada.domain.session import SessionStatus
+from cicada.domain.repo.runner_repo import IRunnerRepo
+from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import Trigger, TriggerType
-from cicada.eval.container import (
-    ContainerTermination,
-    RemoteContainerEvalVisitor,
-)
+from cicada.eval.constexpr_visitor import WorkflowFailure
+from cicada.eval.container import RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
 
 
@@ -83,8 +83,10 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 @dataclass
 class ExecutionContext:
     url: str
+    # TODO: dont include these, they can be pulled from session
     trigger_type: TriggerType
     trigger: Trigger
+    session: Session
     terminal: TerminalSession
     cloned_repo: Path
 
@@ -110,7 +112,9 @@ class RemotePodmanExecutionContext(ExecutionContext):
                 # TODO: handle this
                 continue
 
-            return await asyncio.to_thread(partial(self.run_file, file))
+            assert file.file
+
+            return await asyncio.to_thread(partial(self.run_file, file.file))
 
         assert False, "Expected at least one workflow"
 
@@ -149,7 +153,7 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
             tree.accept(visitor)
 
-        except ContainerTermination as exc:
+        except WorkflowFailure as exc:
             return exc.return_code
 
         finally:
@@ -157,6 +161,59 @@ class RemotePodmanExecutionContext(ExecutionContext):
                 visitor.cleanup()
 
         return 0
+
+
+class SelfHostedExecutionContext(ExecutionContext):
+    """
+    This is an executor that facilitates communication with a self-hosted
+    runner. Each workflow that needs to be ran is added to the runner queue,
+    and when a runner connects to the runner websocket, the data is popped
+    off the queue and handled. While we wait for the runner to start the job
+    we continually check the status of the session to see if it has finished
+    or not. Once all the workflows are finished we exit, and the session is
+    finished.
+    """
+
+    session_repo: ISessionRepo
+    runner_repo: IRunnerRepo
+
+    async def run(self) -> int:
+        files = folder_get_runnable_ci_files(self.cloned_repo, self.trigger)
+
+        for file in files:
+            if isinstance(file, AstError):
+                continue
+
+            assert file.file
+
+            try:
+                self.runner_repo.queue_session(self.session, file, self.url)
+
+                while True:
+                    # TODO: make specialized function to just get status
+                    session = self.session_repo.get_session_by_session_id(
+                        self.session.id,
+                        run=self.session.run,
+                    )
+                    assert session
+
+                    if session.status.is_finished():
+                        break
+
+                    await asyncio.sleep(1)
+
+            except AstError:  # noqa: PERF203
+                # Shouldn't happen, gather phase should pass without issues
+
+                logging.getLogger("cicada").exception("")
+
+                return 1
+
+            self.terminal.finish()
+
+            return 0
+
+        assert False, "Expected at least one workflow"
 
 
 EXECUTOR_MAPPING = {

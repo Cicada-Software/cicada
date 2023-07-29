@@ -5,6 +5,7 @@ from pathlib import Path
 
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
+from cicada.ast.nodes import FileNode
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.domain.triggers import Trigger
 from cicada.eval.find_files import find_ci_files
@@ -20,7 +21,7 @@ async def repo_get_ci_files(
     ref: str,
     trigger: Trigger,
     cloned_repo: Path,
-) -> list[Path | AstError]:  # pragma: no cover
+) -> list[FileNode | AstError]:  # pragma: no cover
     try:
         # TODO: use python git library instead
         cmds = [
@@ -62,8 +63,8 @@ async def repo_get_ci_files(
 
 def folder_get_runnable_ci_files(
     folder: Path, trigger: Trigger
-) -> list[Path | AstError]:  # pragma: no cover
-    files_or_errors: list[Path | AstError] = []
+) -> list[FileNode | AstError]:  # pragma: no cover
+    files_or_errors: list[FileNode | AstError] = []
 
     logger = logging.getLogger("cicada")
 
@@ -81,7 +82,8 @@ def folder_get_runnable_ci_files(
             except ShouldRunWorkflow as ex:
                 logger.debug(f"on statement reached: {ex.should_run}")
                 if ex.should_run:
-                    files_or_errors.append(file)
+                    tree.file = file
+                    files_or_errors.append(tree)
 
             logger.debug("checking next file")
 

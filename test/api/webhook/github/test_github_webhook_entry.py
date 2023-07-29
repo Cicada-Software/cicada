@@ -13,7 +13,6 @@ from cicada.api.endpoints.webhook.github.converters import (
 from cicada.api.endpoints.webhook.github.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.github.main import router as github_webhook
 from cicada.domain.session import Session, SessionStatus
-from cicada.domain.terminal_session import TerminalSession
 from test.api.endpoints.common import TestEndpointWrapper
 
 
@@ -48,9 +47,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         ):
             mocks["repo_get_env"].return_value = {}
 
-            async def f(
-                session: Session, _: TerminalSession, __: Path
-            ) -> None:
+            async def f(session: Session, *_, **__) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
@@ -93,9 +90,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         ):
             mocks["repo_get_env"].return_value = {}
 
-            async def f(
-                session: Session, _: TerminalSession, __: Path
-            ) -> None:
+            async def f(session: Session, *_, **__) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f

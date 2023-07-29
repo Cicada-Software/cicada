@@ -10,6 +10,7 @@ from cicada.api.endpoints.env import router as env_router
 from cicada.api.endpoints.installation import router as installation_router
 from cicada.api.endpoints.login import router as login_router
 from cicada.api.endpoints.login_util import CurrentUser
+from cicada.api.endpoints.runner import router as runner_router
 from cicada.api.endpoints.session import router as session_router
 from cicada.api.middleware import (
     SlowRequestMiddleware,
@@ -26,6 +27,7 @@ app.include_router(login_router)
 app.include_router(session_router)
 app.include_router(env_router)
 app.include_router(installation_router)
+app.include_router(runner_router)
 app.add_middleware(UnhandledExceptionHandler)
 app.add_middleware(SlowRequestMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)

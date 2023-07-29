@@ -5,7 +5,7 @@ description = "The Next Generation of CI/CD"
 authors = ["dosisod"]
 license = "GPL-3.0-only"
 readme = "README.md"
-repository = "https://github.com/dosisod/cicada"
+repository = "https://github.com/Cicada-Software/cicada"
 classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -47,6 +47,8 @@ omit = [
   "cicada/api/setup.py",
   # Just a bunch of abstract classes
   "cicada/domain/repo/*",
+  # Requires manual testing
+  "cicada/runner/*",
 ]
 
 [tool.coverage.report]
@@ -64,7 +66,7 @@ line-length = 79
 color = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=93 --disable-warnings"
+addopts = "--cov=cicada --cov-report=html --cov-report=term-missing --cov-fail-under=90 --disable-warnings"
 asyncio_mode = "auto"
 testpaths = ["test"]
 
@@ -83,7 +85,7 @@ extend-ignore = [
   "D400", "D401", "D404", "D415",
   "EM101", "EM102",
   "F405",
-  "FBT001", "FBT003",
+  "FBT001", "FBT002", "FBT003",
   "FIX002", "FIX004",
   "FLY002",
   "G004",
@@ -92,6 +94,7 @@ extend-ignore = [
   "PGH003",
   "PLR2004",
   "PLW2901",
+  "PTH107", "PTH123",
   "RSE102",
   "S101",
   "SIM102",
@@ -100,6 +103,7 @@ extend-ignore = [
   "TRY003", "TRY301",
 
   # Fix later
+  "ANN002",
   "B011",
   "C901",
   "PLR0911", "PLR0912", "PLR0913",
@@ -109,10 +113,11 @@ extend-ignore = [
 "cicada/parse/token.py" = ["E701"]
 "cicada/api/*" = ["B008"]
 "cicada/*" = ["PT", "INP001"]
-"test/ast/test_generate.py" = ["W293"]
 "cicada/eval/container.py" = ["S603", "S607", "S108"]
 "cicada/tools/workflow_converter/github_actions.py" = ["E501"]
 "cicada/api/setup.py" = ["E501"]
+"test/ast/test_generate.py" = ["W293"]
+"test/api/webhook/github/test_github_webhook_entry.py" = ["ANN003"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

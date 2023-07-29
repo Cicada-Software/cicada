@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Final, Generic, TypeVar
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
+    from pathlib import Path
     from typing import Self
 
 from cicada.parse.token import (
@@ -184,6 +184,8 @@ class FileNode:
     """
 
     exprs: list[Node]
+    file: Path | None = None
+    run_on: RunOnStatement | None = None
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
         return visitor.visit_file_node(self)
@@ -617,6 +619,7 @@ class OnStatement(Statement):
 
 class RunType(Enum):
     IMAGE = "image"
+    SELF_HOSTED = "self_hosted"
 
 
 @dataclass

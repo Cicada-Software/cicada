@@ -9,6 +9,7 @@ from cicada.ast.nodes import (
     BinaryOperator,
     BlockExpression,
     Expression,
+    FileNode,
     FunctionExpression,
     IdentifierExpression,
     IfExpression,
@@ -124,6 +125,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     env: RecordType | None
 
+    file_node: FileNode | None = None
+
     def __init__(self, trigger: Trigger | None = None) -> None:
         # TODO: populate symbol table with builtins
         self.function_names = {*SHELL_ALIASES, "shell", "print"}
@@ -134,6 +137,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         self.has_on_stmt = False
         self.run_on = None
         self.env = None
+        self.file_node = None
 
         if self.trigger:
             event = cast(RecordType, json_to_record_type(asjson(self.trigger)))
@@ -143,6 +147,11 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 RecordType,
                 [x for x in event.fields if x.name == "env"][0].type,
             )
+
+    def visit_file_node(self, node: FileNode) -> None:
+        self.file_node = node
+
+        super().visit_file_node(node)
 
     def visit_let_expr(self, node: LetExpression) -> None:
         super().visit_let_expr(node)
@@ -349,7 +358,11 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 node.info,
             )
 
+        # TODO: use run_on field from field_node instead
         self.run_on = node
+
+        if self.file_node:
+            self.file_node.run_on = node
 
     def visit_if_expr(self, node: IfExpression) -> None:
         with self.new_scope():

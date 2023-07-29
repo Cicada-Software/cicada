@@ -761,27 +761,29 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
 
     space = next(state, None)
 
-    if not isinstance(space, WhiteSpaceToken):
-        raise AstError("expected whitespace", space or run_type_token)
-
     value = ""
 
-    for token in state:
-        if not isinstance(
-            token,
-            IdentifierToken
-            | ColonToken
-            | FloatLiteralToken
-            | IntegerLiteralToken
-            | SlashToken
-            | MinusToken,
-        ):
-            break
+    if run_type == RunType.IMAGE:
+        if not isinstance(space, WhiteSpaceToken):
+            raise AstError("expected whitespace", space or run_type_token)
 
-        value += token.content
+        for token in state:
+            if not isinstance(
+                token,
+                IdentifierToken
+                | ColonToken
+                | FloatLiteralToken
+                | IntegerLiteralToken
+                | SlashToken
+                | MinusToken
+                | CommaToken,
+            ):
+                break
 
-    if not value:
-        raise AstError.expected_token(last=space)
+            value += token.content
+
+        if not value:
+            raise AstError.expected_token(last=space)
 
     # TODO: check newline or EOF is here
 
