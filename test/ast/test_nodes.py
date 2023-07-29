@@ -5,7 +5,7 @@ from cicada.parse.tokenize import tokenize
 
 
 def test_create_string_expr_from_string_literal() -> None:
-    token = list(tokenize('"hello world"'))[0]
+    token = next(tokenize('"hello world"'))
 
     node = StringExpression.from_token(token)
 
@@ -17,7 +17,7 @@ def test_create_string_expr_from_string_literal() -> None:
 
 
 def test_create_string_expr_with_escapes() -> None:
-    token = list(tokenize(r'"\x41\u0042C"'))[0]
+    token = next(tokenize(r'"\x41\u0042C"'))
 
     node = StringExpression.from_token(token)
 
@@ -29,7 +29,7 @@ def test_create_string_expr_with_escapes() -> None:
 
 
 def test_create_string_expr_from_identifier() -> None:
-    token = list(tokenize("hello"))[0]
+    token = next(tokenize("hello"))
 
     node = StringExpression.from_token(token)
 

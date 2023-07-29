@@ -110,7 +110,7 @@ def convert_jobs(jobs: dict[str, Any]) -> str:  # type: ignore
     assert isinstance(jobs, dict), "`jobs` field must be dict"
     assert len(jobs) == 1, "Cannot have multiple `jobs` fields"
 
-    job_name, job = list(jobs.items())[0]
+    job_name, job = next(iter(jobs.items()))
 
     assert isinstance(job, dict), f"Expected `{job_name}` to be a dict"
 

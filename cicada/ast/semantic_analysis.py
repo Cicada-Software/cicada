@@ -145,7 +145,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             self.env = cast(
                 RecordType,
-                [x for x in event.fields if x.name == "env"][0].type,
+                next(x for x in event.fields if x.name == "env").type,
             )
 
     def visit_file_node(self, node: FileNode) -> None:

@@ -83,11 +83,11 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             # TODO: make function for doing this
             env = RecordValue(
                 cast(RecordValue, event.value["env"]).value,
-                [
+                next(
                     x
                     for x in cast(RecordType, event.type).fields
                     if x.name == "env"
-                ][0].type,
+                ).type,
             )
 
             self.symbols["env"] = env

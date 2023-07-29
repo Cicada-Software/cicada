@@ -118,7 +118,9 @@ async def generate_jwt_from_github_sso(di: DiContainer, code: str) -> str:
         resp = (
             await github.rest.users.async_list_emails_for_authenticated_user()
         )
-        email = [email.email for email in resp.parsed_data if email.primary][0]
+        email = next(
+            email.email for email in resp.parsed_data if email.primary
+        )
 
     # TODO: run these in parallel
     user = await github.rest.users.async_get_authenticated()
