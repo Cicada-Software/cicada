@@ -5,10 +5,10 @@ from uuid import UUID
 
 from cicada.api.infra.db_connection import DbConnection
 from cicada.ast.nodes import FileNode
+from cicada.domain.password_hash import PasswordHash
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.runner import Runner, RunnerId
 from cicada.domain.session import Session
-from cicada.domain.user import PasswordHash
 
 
 class RunnerRepo(IRunnerRepo, DbConnection):

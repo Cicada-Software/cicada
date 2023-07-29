@@ -3,7 +3,7 @@ from typing import NewType
 from uuid import UUID
 
 from cicada.domain.installation import InstallationId
-from cicada.domain.user import PasswordHash
+from cicada.domain.password_hash import PasswordHash
 
 RunnerId = NewType("RunnerId", UUID)
 
