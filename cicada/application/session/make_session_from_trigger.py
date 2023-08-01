@@ -93,10 +93,18 @@ class MakeSessionFromTrigger:
         match filenode:
             case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
                 status = SessionStatus.BOOTING
+                run_on_self_hosted = True
+
             case _:
                 status = SessionStatus.PENDING
+                run_on_self_hosted = False
 
-        session = Session(id=session_id, trigger=trigger, status=status)
+        session = Session(
+            id=session_id,
+            trigger=trigger,
+            status=status,
+            run_on_self_hosted=run_on_self_hosted,
+        )
         self.session_repo.create(session)
 
         await self.workflow_runner(session, terminal, cloned_repo, filenode)

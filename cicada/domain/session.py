@@ -52,6 +52,8 @@ class Workflow:
     status: WorkflowStatus
     started_at: UtcDatetime = field(default_factory=UtcDatetime.now)
     finished_at: UtcDatetime | None = None
+    # TODO: make this immutable/frozen
+    run_on_self_hosted: bool = False
 
 
 @dataclass
@@ -101,6 +103,7 @@ class Session:
     started_at: UtcDatetime = field(default_factory=UtcDatetime.now)
     finished_at: UtcDatetime | None = None
     run: int = 1
+    run_on_self_hosted: bool = False
 
     def __post_init__(self) -> None:
         assert self.run >= 1

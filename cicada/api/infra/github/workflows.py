@@ -16,7 +16,7 @@ from cicada.api.infra.run_program import (
     get_execution_type,
 )
 from cicada.api.settings import DNSSettings, ExecutionSettings
-from cicada.ast.nodes import FileNode, RunType
+from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
@@ -109,7 +109,7 @@ async def run_workflow(
     session: Session,
     terminal: TerminalSession,
     cloned_repo: Path,
-    filenode: FileNode,
+    _: FileNode,  # TODO: remove this
     di: DiContainer | None = None,
 ) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
@@ -126,21 +126,7 @@ async def run_workflow(
 
     try:
         async with wrapper:
-            if not filenode.run_on or filenode.run_on.type == RunType.IMAGE:
-                executor_type = ExecutionSettings().executor
-
-                ctx = get_execution_type(executor_type)(
-                    url=url,
-                    trigger_type=session.trigger.type,
-                    trigger=session.trigger,
-                    session=session,
-                    terminal=terminal,
-                    cloned_repo=cloned_repo,
-                )
-
-            elif (
-                filenode.run_on and filenode.run_on.type == RunType.SELF_HOSTED
-            ):
+            if session.run_on_self_hosted:
                 assert di
 
                 ctx = SelfHostedExecutionContext(
@@ -157,7 +143,16 @@ async def run_workflow(
                 ctx.runner_repo = di.runner_repo()
 
             else:
-                assert False, "impossible"
+                executor_type = ExecutionSettings().executor
+
+                ctx = get_execution_type(executor_type)(  # type: ignore
+                    url=url,
+                    trigger_type=session.trigger.type,
+                    trigger=session.trigger,
+                    session=session,
+                    terminal=terminal,
+                    cloned_repo=cloned_repo,
+                )
 
             exit_code = await ctx.run()
 

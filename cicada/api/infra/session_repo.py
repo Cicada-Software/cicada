@@ -51,9 +51,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 started_at,
                 trigger,
                 trigger_id,
-                run_number
-            )
-            VALUES (?, ?, ?, ?, ?, ?);
+                run_number,
+                run_on_self_hosted
+            ) VALUES (?, ?, ?, ?, ?, ?, ?);
             """,
             [
                 session.id,
@@ -62,6 +62,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session.trigger.type,
                 trigger_id,
                 session.run,
+                int(session.run_on_self_hosted),
             ],
         )
 
@@ -76,8 +77,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 started_at,
                 finished_at,
                 run_number,
-                rerun_number
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                rerun_number,
+                run_on_self_hosted
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             [
                 uuid4(),
@@ -89,6 +91,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session.finished_at,
                 session.run,
                 1,
+                int(session.run_on_self_hosted),
             ],
         )
 
@@ -156,7 +159,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     status,
                     started_at,
                     finished_at,
-                    run_number
+                    run_number,
+                    run_on_self_hosted
                 FROM sessions
                 WHERE uuid=?
                 ORDER BY run_number DESC
@@ -172,7 +176,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     status,
                     started_at,
                     finished_at,
-                    run_number
+                    run_number,
+                    run_on_self_hosted
                 FROM sessions
                 WHERE uuid=? AND run_number=?;
                 """,
@@ -191,6 +196,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 ),
                 trigger=trigger,
                 run=row["run_number"],
+                run_on_self_hosted=bool(row["run_on_self_hosted"]),
             )
 
             if not user or self.can_user_access_session(
@@ -214,7 +220,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session_started_at,
                 session_finished_at,
                 MAX(session_run),
-                trigger_data
+                trigger_data,
+                session_run_on_self_hosted
             FROM v_user_sessions
             WHERE user_uuid=?
             GROUP BY session_uuid
@@ -237,7 +244,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     s.started_at,
                     s.finished_at,
                     MAX(s.run_number),
-                    t.data
+                    t.data,
+                    session_run_on_self_hosted
                 FROM sessions s
                 JOIN triggers t ON t.id = s.trigger_id
                 WHERE t.data->>'repository_url'=?
@@ -256,7 +264,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     session_started_at,
                     session_finished_at,
                     MAX(session_run),
-                    trigger_data
+                    trigger_data,
+                    session_run_on_self_hosted
                 FROM v_user_sessions
                 WHERE user_uuid=? AND repo_url=?
                 GROUP BY session_uuid
@@ -281,7 +290,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     s.started_at,
                     s.finished_at,
                     s.run_number,
-                    t.data
+                    t.data,
+                    run_on_self_hosted
                 FROM sessions s
                 JOIN triggers t ON t.id = s.trigger_id
                 WHERE s.uuid=?
@@ -299,7 +309,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                     session_started_at,
                     session_finished_at,
                     session_run,
-                    trigger_data
+                    trigger_data,
+                    session_run_on_self_hosted
                 FROM v_user_sessions
                 WHERE user_uuid=? AND session_uuid=?
                 ORDER BY session_started_at DESC;
@@ -318,7 +329,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 s.started_at,
                 s.finished_at,
                 MAX(s.run_number),
-                t.data
+                t.data,
+                s.run_on_self_hosted
             FROM sessions s
             JOIN triggers t ON t.id = s.trigger_id
             GROUP BY uuid
@@ -398,8 +410,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 filename,
                 started_at,
                 finished_at,
-                run_number
-            FROM workflows w
+                run_number,
+                run_on_self_hosted
+            FROM workflows
             WHERE session_id = ?;
             """,
             [uuid],
@@ -422,6 +435,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                     if row["finished_at"]
                     else None
                 ),
+                run_on_self_hosted=bool(row["run_on_self_hosted"]),
             )
 
             runs.append(Run({workflow.filename: [workflow]}))
@@ -455,4 +469,5 @@ class SessionRepo(ISessionRepo, DbConnection):
             ),
             run=row[4],
             trigger=json_to_trigger(row[5]),
+            run_on_self_hosted=bool(row[6]),
         )

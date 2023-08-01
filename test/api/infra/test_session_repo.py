@@ -45,6 +45,7 @@ class TestSessionRepo(SqliteTestWrapper):
         assert got_session.status == session.status
         assert got_session.started_at == session.started_at
         assert got_session.finished_at == session.finished_at
+        assert not got_session.run_on_self_hosted
 
         assert got_session.trigger
         assert got_session.trigger.type == "git.push"
@@ -242,6 +243,17 @@ class TestSessionRepo(SqliteTestWrapper):
         )
 
         assert not self.session_repo.get_runs_for_session2(user, session.id)
+
+    def test_create_self_hosted_session(self) -> None:
+        session = build(Session, run_on_self_hosted=True)
+
+        self.session_repo.create(session)
+
+        got_session = self.session_repo.get_session_by_session_id(session.id)
+
+        assert got_session
+        assert got_session == session
+        assert session.run_on_self_hosted
 
     def create_dummy_repo_for_user(
         self,

@@ -71,14 +71,18 @@ class RerunSession:
         match filenode:
             case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
                 status = SessionStatus.BOOTING
+                run_on_self_hosted = True
+
             case _:
                 status = SessionStatus.PENDING
+                run_on_self_hosted = False
 
         session = Session(
             id=session.id,
             status=status,
             trigger=session.trigger,
             run=session.run + 1,
+            run_on_self_hosted=run_on_self_hosted,
         )
 
         def callback(data: bytes) -> None:
