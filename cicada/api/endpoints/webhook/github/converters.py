@@ -15,7 +15,7 @@ def github_event_to_commit(  # type: ignore[misc]
 ) -> CommitTrigger:
     return CommitTrigger(
         sha=GitSha(event["after"]),
-        author=event["head_commit"]["author"]["name"],
+        author=event["head_commit"]["author"]["username"],
         message=event["head_commit"]["message"],
         committed_on=Datetime.fromisoformat(event["head_commit"]["timestamp"]),
         repository_url=event["repository"]["html_url"],
