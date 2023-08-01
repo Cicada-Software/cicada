@@ -1,3 +1,4 @@
+import re
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
@@ -754,10 +755,16 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
         run_type = RunType(run_type_token.content)
 
     except ValueError as ex:
-        raise AstError(
-            f"invalid `run_on` type `{run_type_token.content}`",
-            info=run_type_token,
-        ) from ex
+        content = run_type_token.content
+
+        if re.search("self(.*host|)", content, re.IGNORECASE):
+            suggestion = "self_hosted"
+        else:
+            suggestion = "image"
+
+        msg = f"invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"  # noqa: E501
+
+        raise AstError(msg, info=run_type_token) from ex
 
     space = next(state, None)
 

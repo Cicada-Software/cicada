@@ -948,8 +948,25 @@ def test_run_on_must_have_space_after_run_type() -> None:
 def test_run_on_must_have_valid_type() -> None:
     code = "run_on invalid"
 
-    with pytest.raises(AstError, match="invalid `run_on` type `invalid`"):
+    with pytest.raises(
+        AstError,
+        match="invalid `run_on` type `invalid`. Did you mean `image`?",
+    ):
         generate_ast_tree(tokenize(code))
+
+
+def test_run_on_suggestion_for_self_host_like_types() -> None:
+    tests = (
+        "self host",
+        "self-host",
+        "self-hosted",
+        "self_host",
+        "SELF_HOSTED",
+    )
+
+    for test in tests:
+        with pytest.raises(AstError, match="Did you mean `self_hosted`?"):
+            generate_ast_tree(tokenize(f"run_on {test}"))
 
 
 def test_parse_c_style_function_call() -> None:
