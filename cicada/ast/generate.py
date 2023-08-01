@@ -359,7 +359,16 @@ def generate_node(state: ParserState) -> Node:
     expr = generate_expr(state)
 
     if not isinstance(state.current_token, NewlineToken):
-        state.next_newline_or_eof()
+        token = state.next_non_whitespace_or_eof()  # type: ignore
+
+        if token and not isinstance(token, NewlineToken):
+            if isinstance(expr, IdentifierExpression):
+                msg = f"Unexpected identifier `{token.content}`. "
+                msg += f"Did you mean `shell {expr.name} {token.content} ...`?"
+
+                raise AstError(msg, token)
+
+            raise AstError("Expected newline", token)
 
     return expr
 

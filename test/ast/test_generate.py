@@ -530,6 +530,13 @@ def test_disallow_multiple_exprs_on_same_line() -> None:
         generate_ast_tree(tokenize("let x = 1 2"))
 
 
+def test_suggestion_is_given_when_identifier_is_used_like_a_function() -> None:
+    expected = "Unexpected identifier `install`. Did you mean `shell npm install ...`?"  # noqa: E501
+
+    with pytest.raises(AstError, match=expected):
+        generate_ast_tree(tokenize("npm install"))
+
+
 def test_no_arg_func_calls_skipping_newline() -> None:
     code = """\
 shell x
