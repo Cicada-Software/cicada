@@ -32,11 +32,8 @@ class EvalVisitor(ConstexprEvalVisitor):
             args.append(value.value)
 
         if node.name == "shell":
-            # TODO: test this
-            args = [shlex.quote(arg) for arg in args]
-
             process = subprocess.run(
-                ["/bin/sh", "-c", " ".join(args)]  # noqa: S603
+                ["/bin/sh", "-c", shlex.join(args)]  # noqa: S603
             )
 
             if process.returncode != 0:

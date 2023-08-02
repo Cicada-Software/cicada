@@ -82,8 +82,6 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             args.append(value.value)
 
         if node.name == "shell":
-            args = [shlex.quote(arg) for arg in args]
-
             exit_code = self._pod_exec(args)
 
             if exit_code != 0:
@@ -136,7 +134,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         cmd = " ; ".join(
             [
                 f'cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"',  # noqa: E501
-                " ".join(args),
+                shlex.join(args),
                 '__cicada_exit_code="$?"',
                 'echo "$PWD" > /tmp/__cicada_cwd',
                 'exit "$__cicada_exit_code"',
