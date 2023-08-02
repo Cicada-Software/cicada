@@ -3,7 +3,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from enum import Enum
 from itertools import groupby
-from typing import Self, cast
+from typing import NoReturn, Self, cast
 
 from cicada.ast.types import UnknownType
 from cicada.parse.token import (
@@ -341,6 +341,21 @@ def generate_block(
     return exprs
 
 
+def raise_identifier_suggestion(
+    expr: IdentifierExpression, token: Token
+) -> NoReturn:
+    name = expr.name
+
+    if re.search("run.*on", name, re.IGNORECASE):
+        suggestion = f"run_on {token.content} ..."
+    else:
+        suggestion = f"shell {expr.name} {token.content} ..."
+
+    msg = f"Unexpected identifier `{token.content}`. Did you mean `{suggestion}`?"  # noqa: E501
+
+    raise AstError(msg, token)
+
+
 def generate_node(state: ParserState) -> Node:
     token = state.current_token
 
@@ -363,10 +378,7 @@ def generate_node(state: ParserState) -> Node:
 
         if token and not isinstance(token, NewlineToken):
             if isinstance(expr, IdentifierExpression):
-                msg = f"Unexpected identifier `{token.content}`. "
-                msg += f"Did you mean `shell {expr.name} {token.content} ...`?"
-
-                raise AstError(msg, token)
+                raise_identifier_suggestion(expr, token)
 
             raise AstError("Expected newline", token)
 

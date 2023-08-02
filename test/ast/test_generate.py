@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from cicada.ast.generate import AstError, generate_ast_tree
@@ -533,8 +535,15 @@ def test_disallow_multiple_exprs_on_same_line() -> None:
 def test_suggestion_is_given_when_identifier_is_used_like_a_function() -> None:
     expected = "Unexpected identifier `install`. Did you mean `shell npm install ...`?"  # noqa: E501
 
-    with pytest.raises(AstError, match=expected):
+    with pytest.raises(AstError, match=re.escape(expected)):
         generate_ast_tree(tokenize("npm install"))
+
+
+def test_suggestion_is_given_when_identifier_is_similar_to_keyword() -> None:
+    expected = "Unexpected identifier `image`. Did you mean `run_on image ...`?"  # noqa: E501
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        generate_ast_tree(tokenize("runs_on image alpine"))
 
 
 def test_no_arg_func_calls_skipping_newline() -> None:
