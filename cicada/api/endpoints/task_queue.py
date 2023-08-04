@@ -9,14 +9,14 @@ class TaskQueue:
     the lifetime of the object, and once the task finishes it is discarded.
     """
 
-    tasks: set[Task[None]]
+    tasks: set[Task]  # type: ignore[type-arg]
 
     def __init__(self) -> None:
         self.tasks = set()
 
     def add(  # type: ignore[misc]
         self,
-        task: Task[None] | Coroutine[Any, Any, None],
+        task: Task | Coroutine[Any, Any, object],  # type: ignore[type-arg]
     ) -> None:
         if not isinstance(task, Task):
             task = create_task(task)

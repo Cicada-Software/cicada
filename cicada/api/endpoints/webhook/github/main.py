@@ -21,10 +21,14 @@ from cicada.api.infra.github.workflows import (
     gather_issue_workflows,
     run_workflow,
 )
+from cicada.api.infra.notifications.send_email import send_email
 from cicada.api.settings import GitHubSettings, GitProviderSettings
+from cicada.application.notifications.send_notification import SendNotification
 from cicada.application.session.make_session_from_trigger import (
     MakeSessionFromTrigger,
 )
+from cicada.domain.notification import Notification
+from cicada.domain.user import User
 
 from .converters import github_event_to_commit, github_event_to_issue
 
@@ -37,43 +41,66 @@ logger = logging.getLogger("cicada")
 
 
 def handle_github_push_event(  # type: ignore[misc]
-    di: DiContainer, event: dict[str, Any]
+    di: DiContainer, event: dict[str, Any], user: User | None
 ) -> None:
-    async def run(*args: Any) -> None:  # type: ignore[misc]
+    async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
         await run_workflow(*args, di=di)  # type: ignore
 
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_workflows_via_trigger,
-        workflow_runner=run,
+        workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
     )
 
     commit = github_event_to_commit(event)
 
-    TASK_QUEUE.add(cmd.handle(commit))
+    async def run() -> None:
+        session = await cmd.handle(commit)
+
+        if not (user and session and session.status.is_failure()):
+            return
+
+        email_cmd = SendNotification(send_email)
+
+        await email_cmd.handle(
+            Notification(type="email", user=user, session=session)
+        )
+
+    TASK_QUEUE.add(run())
 
 
 def handle_github_issue_event(  # type: ignore[misc]
-    di: DiContainer, event: dict[str, Any]
+    di: DiContainer, event: dict[str, Any], user: User | None
 ) -> None:
-    async def run(*args: Any) -> None:  # type: ignore[misc]
+    async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
         await run_workflow(*args, di=di)  # type: ignore
 
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_issue_workflows,
-        workflow_runner=run,
+        workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
     )
 
     issue = github_event_to_issue(event)
 
-    TASK_QUEUE.add(cmd.handle(issue))
+    async def run() -> None:
+        session = await cmd.handle(issue)
+
+        if not user or not session or session.status.is_failure():
+            return
+
+        email_cmd = SendNotification(send_email)
+        await email_cmd.handle(
+            Notification(type="email", user=user, session=session)
+        )
+
+    TASK_QUEUE.add(run())
 
 
 async def verify_webhook_is_signed_by_github(request: Request) -> None:
@@ -130,8 +157,8 @@ async def handle_github_event(request: Request, di: Di) -> None:
 
     elif event_type == "push":
         if event["deleted"] is not True:
-            handle_github_push_event(di, event)
+            handle_github_push_event(di, event, user)
 
     elif event_type == "issues":
         if event["action"] in ("opened", "closed"):
-            handle_github_issue_event(di, event)
+            handle_github_issue_event(di, event, user)

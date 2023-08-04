@@ -24,6 +24,13 @@ class Status(Enum):
 
         return self not in (Status.BOOTING, Status.PENDING)
 
+    def is_failure(self) -> bool:
+        """
+        A "failure" means any unsuccessful status, ie, STOPPED or FAILURE.
+        """
+
+        return self in (Status.FAILURE, Status.STOPPED)
+
 
 SessionStatus = Status
 WorkflowStatus = Status

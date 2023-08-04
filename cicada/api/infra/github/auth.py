@@ -17,9 +17,10 @@ def create_or_update_github_user(  # type: ignore[misc]
             user = User(
                 id=uuid4(), username=sender_username, provider="github"
             )
-            user.id = user_repo.create_or_update_user(user)
 
-            return user
+            user_id = user_repo.create_or_update_user(user)
+
+            return user_repo.get_user_by_id(user_id)
 
     return None
 

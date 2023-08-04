@@ -9,6 +9,10 @@ class IUserRepo(ABC):
         pass
 
     @abstractmethod
+    def get_user_by_id(self, id: UserId) -> User | None:
+        pass
+
+    @abstractmethod
     def create_or_update_user(self, user: User) -> UserId:
         pass
 

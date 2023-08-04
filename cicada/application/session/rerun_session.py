@@ -47,11 +47,13 @@ class RerunSession:
         self.env_repo = env_repo
         self.repository_repo = repository_repo
 
-    async def handle(self, session: Session) -> None:
+    async def handle(self, session: Session) -> Session | None:
         with TemporaryDirectory() as cloned_repo:
-            await self._handle(Path(cloned_repo), session)
+            return await self._handle(Path(cloned_repo), session)
 
-    async def _handle(self, cloned_repo: Path, session: Session) -> None:
+    async def _handle(
+        self, cloned_repo: Path, session: Session
+    ) -> Session | None:
         # TODO: make these required
         if self.env_repo and self.repository_repo:
             session.trigger.env = get_env_vars_for_repo(
@@ -63,7 +65,7 @@ class RerunSession:
         files = await self.gather_workflows(session.trigger, cloned_repo)
 
         if not files:
-            return
+            return None
 
         filenode = files[0]
 
@@ -102,3 +104,5 @@ class RerunSession:
         assert session.finished_at is not None
 
         self.session_repo.update(session)
+
+        return session

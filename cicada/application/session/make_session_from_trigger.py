@@ -62,11 +62,13 @@ class MakeSessionFromTrigger:
         self.env_repo = env_repo
         self.repository_repo = repository_repo
 
-    async def handle(self, trigger: Trigger) -> None:
+    async def handle(self, trigger: Trigger) -> Session | None:
         with TemporaryDirectory() as cloned_repo:
-            await self._handle(Path(cloned_repo), trigger)
+            return await self._handle(Path(cloned_repo), trigger)
 
-    async def _handle(self, cloned_repo: Path, trigger: Trigger) -> None:
+    async def _handle(
+        self, cloned_repo: Path, trigger: Trigger
+    ) -> Session | None:
         if self.env_repo and self.repository_repo:
             trigger.env = get_env_vars_for_repo(
                 self.env_repo, self.repository_repo, trigger
@@ -75,7 +77,7 @@ class MakeSessionFromTrigger:
         files = await self.gather_workflows(trigger, cloned_repo)
 
         if not files:
-            return
+            return None
 
         # TODO: allow for multiple workflows in one session
         assert len(files) == 1
@@ -112,3 +114,8 @@ class MakeSessionFromTrigger:
         assert session.finished_at is not None
 
         self.session_repo.update(session)
+
+        return self.session_repo.get_session_by_session_id(
+            session.id,
+            session.run,
+        )

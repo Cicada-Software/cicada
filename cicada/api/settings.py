@@ -204,6 +204,7 @@ class JWTSettings(DNSSettings):
             raise ValueError("JWT_TOKEN_EXPIRE_SECONDS must be defined")
 
 
+# TODO: rename
 class NotificationSettings:
     url: str
     is_enabled: bool
@@ -212,3 +213,22 @@ class NotificationSettings:
         self.url = os.getenv("NTFY_NOTIFICATION_URL", "")
 
         self.is_enabled = bool(self.url)
+
+
+class SMTPSettings:
+    domain: str
+    username: str
+    password: str
+
+    def __init__(self) -> None:
+        self.domain = os.getenv("SMTP_DOMAIN", "")
+        if not self.domain:
+            raise ValueError("SMTP_DOMAIN must be set")
+
+        self.username = os.getenv("SMTP_USERNAME", "")
+        if not self.username:
+            raise ValueError("SMTP_USERNAME must be set")
+
+        self.password = os.getenv("SMTP_PASSWORD", "")
+        if not self.password:
+            raise ValueError("SMTP_PASSWORD must be set")

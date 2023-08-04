@@ -21,12 +21,15 @@ from cicada.api.infra.gitlab.workflows import (
 from cicada.api.infra.gitlab.workflows import (
     run_workflow as run_gitlab_workflow,
 )
+from cicada.api.infra.notifications.send_email import send_email
 from cicada.application.exceptions import CicadaException
+from cicada.application.notifications.send_notification import SendNotification
 from cicada.application.session.rerun_session import RerunSession
 from cicada.application.session.stop_session import StopSession
 from cicada.application.session.stream_session import StreamSession
 from cicada.common.json import asjson
-from cicada.domain.session import SessionId, SessionStatus
+from cicada.domain.notification import Notification
+from cicada.domain.session import Session, SessionId, SessionStatus
 
 router = APIRouter()
 
@@ -65,12 +68,12 @@ async def rerun_session(
     if provider == "github":
         gather = gather_github_git_push_workflows
 
-        async def run(*args: Any) -> None:  # type: ignore[misc]
+        async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
             await run_github_workflow(*args, di=di)  # type: ignore
 
     elif provider == "gitlab":
         gather = gather_gitlab_workflows
-        run = run_gitlab_workflow  # type: ignore
+        workflow_wrapper = run_gitlab_workflow  # type: ignore
     else:
         assert False
 
@@ -78,12 +81,24 @@ async def rerun_session(
         session_repo,
         di.terminal_session_repo(),
         gather_workflows=gather,
-        workflow_runner=run,
+        workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
     )
 
-    TASK_QUEUE.add(cmd.handle(session))
+    async def run(old_session: Session) -> None:
+        session = await cmd.handle(old_session)
+
+        if not (user and session and session.status.is_failure()):
+            return
+
+        email_cmd = SendNotification(send_email)
+
+        await email_cmd.handle(
+            Notification(type="email", user=user, session=session)
+        )
+
+    TASK_QUEUE.add(run(session))
 
 
 @router.get("/api/session/{uuid}/session_info")

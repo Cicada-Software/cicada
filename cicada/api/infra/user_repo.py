@@ -42,6 +42,42 @@ class UserRepo(IUserRepo, DbConnection):
 
         return None
 
+    def get_user_by_id(self, id: UserId) -> User | None:
+        row = self.conn.execute(
+            """
+            SELECT
+                uuid,
+                username,
+                hash,
+                is_admin,
+                platform,
+                last_login,
+                email
+            FROM users WHERE uuid=?
+            """,
+            [id],
+        ).fetchone()
+
+        # TODO: move to helper method
+        if row:
+            return User(
+                id=UserId(row["uuid"]),
+                username=row["username"],
+                password_hash=(
+                    PasswordHash(row["hash"]) if row["hash"] else None
+                ),
+                is_admin=row["is_admin"],
+                provider=row["platform"],
+                last_login=(
+                    UtcDatetime.fromisoformat(row["last_login"])
+                    if row["last_login"]
+                    else None
+                ),
+                email=row["email"],
+            )
+
+        return None
+
     def create_or_update_user(self, user: User) -> UserId:
         pw_hash = str(user.password_hash) if user.password_hash else ""
 
