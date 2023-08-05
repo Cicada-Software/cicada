@@ -74,7 +74,7 @@ Open the `.env` file from before, and add update the following lines:
 * `GITHUB_APP_CLIENT_ID`: Set this to the string after "Client ID"
 
 Then, on the GitHub App settings page, click "Generate a new client secret". This will
-show a hexidecimal string which will be used to authenticate your app. Copy this to the
+show a hexadecimal string which will be used to authenticate your app. Copy this to the
 `GITHUB_APP_CLIENT_SECRET` field in your `.env` file.
 
 Click "Save Changes".

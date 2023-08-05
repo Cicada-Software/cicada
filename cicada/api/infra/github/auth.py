@@ -32,7 +32,7 @@ def update_github_repo_perms(  # type: ignore[misc]
     event_type: str,
 ) -> Repository | None:
     """
-    Determine a user's permissions for a given repository based soley on the
+    Determine a user's permissions for a given repository based solely on the
     data in the webhook. GitHub's API doesn't provide a succinct way to query
     what permissions a user has for a given repository, so this will do for
     now. Basically, if we get a webhook saying a user did a certain thing, we

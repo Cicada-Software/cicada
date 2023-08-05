@@ -87,7 +87,7 @@ def folder_get_runnable_ci_files(
 
             logger.debug("checking next file")
 
-        except IgnoreWorkflow:  # noqa: PERF203
+        except IgnoreWorkflow:
             logger.debug("ignoring workflow")
 
             pass

@@ -40,5 +40,5 @@ class IRunnerRepo(ABC):
         each session.
 
         It is assumed that the callee will handle the session after calling, so
-        the calle will not be able to recieve the same session again.
+        the callee will not be able to receive the same session again.
         """

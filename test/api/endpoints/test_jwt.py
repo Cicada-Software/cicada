@@ -154,5 +154,5 @@ class TestJwtLogic(TestEndpointWrapper):
 
             assert response.status_code == 401
 
-            # TODO: give specificy reason why JWT was rejected?
+            # TODO: give specifically reason why JWT was rejected?
             assert "JWT Invalid" in response.text

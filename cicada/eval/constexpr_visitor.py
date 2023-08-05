@@ -62,8 +62,8 @@ class CommandFailed(WorkflowFailure):
 class ConstexprEvalVisitor(NodeVisitor[Value]):
     """
     The constexpr visitor is a visitor which only evaluates expressions which
-    are constant expressions. This is primarily for effeciency and safety:
-    effeciency in that it allows for pre-evaluating semanticly sound AST trees
+    are constant expressions. This is primarily for efficiency and safety:
+    efficiency in that it allows for pre-evaluating semanticly sound AST trees
     without spinning up a sandboxed environment to run them, and safety in that
     you can evaluate an AST tree using this visitor and be sure that no bad
     things happen (arbitrary shell commands, etc).

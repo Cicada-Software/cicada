@@ -202,7 +202,7 @@ class SelfHostedExecutionContext(ExecutionContext):
 
                     await asyncio.sleep(1)
 
-            except AstError:  # noqa: PERF203
+            except AstError:
                 # Shouldn't happen, gather phase should pass without issues
 
                 logging.getLogger("cicada").exception("")

@@ -124,7 +124,7 @@ def test_binary_expr_error_message_with_multiple_allowed_types() -> None:
         parse_and_analyze("let x = true + true")
 
 
-def test_constexpr_propogation() -> None:
+def test_constexpr_propagation() -> None:
     tree = parse_and_analyze(
         """\
 # these are constexpr

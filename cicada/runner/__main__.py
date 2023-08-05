@@ -94,7 +94,7 @@ async def recv_json(  # type: ignore[misc]
     if isinstance(packet, bytes):
         packet = packet.decode()
 
-    logger.debug(f"Recieved packet: {packet}")
+    logger.debug(f"Received packet: {packet}")
 
     return json.loads(packet)  # type: ignore
 

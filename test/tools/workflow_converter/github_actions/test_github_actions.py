@@ -7,7 +7,7 @@ from cicada.ast.entry import parse_and_analyze
 from cicada.tools.workflow_converter.github_actions import convert
 
 
-def test_github_actions_workflow_convertion() -> None:
+def test_github_actions_workflow_conversion() -> None:
     """
     This will search for all files in the "data" folder, find all ".yaml"
     files, convert them, then compare the output to the file of the same name

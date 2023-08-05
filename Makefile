@@ -1,4 +1,4 @@
-.PHONY: install ruff mypy black isort test
+.PHONY: install ruff mypy black isort typos test
 
 all: ruff mypy black isort test
 
@@ -22,6 +22,9 @@ black:
 
 isort:
 	isort . --diff --check
+
+typos:
+	typos --format brief
 
 test:
 	pytest

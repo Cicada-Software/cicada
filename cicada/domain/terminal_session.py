@@ -6,7 +6,7 @@ class TerminalSession:
     """
     This class represents a terminal session object, that is, it emulates the
     ability to syncrounously write chunks to an object, while another service
-    asyncronously reads chunks as they are being appended.
+    asynchronously reads chunks as they are being appended.
 
     In addition to reading/writing chunks, there needs to be a way to stop the
     terminal session. To stop the terminal mid execution, call finish(). This

@@ -12,7 +12,7 @@ on git.push
 echo Hello world!
 ```
 
-This will run "Hello world!" whenever a push event is recieved. You might not want to respond to all
+This will run "Hello world!" whenever a push event is received. You might not want to respond to all
 git push events though. In those situations, you will need to use an `on` statement with a `where` clause:
 
 ```

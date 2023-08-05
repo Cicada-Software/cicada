@@ -36,10 +36,10 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         # TODO: this is an ugly hack, makes things harder to test
         LIVE_TERMINAL_SESSIONS.clear()
 
-        recieved_terminal_session = self.repo.get_by_session_id(session_id)
+        received_terminal_session = self.repo.get_by_session_id(session_id)
 
-        assert recieved_terminal_session
-        assert recieved_terminal_session.is_done
+        assert received_terminal_session
+        assert received_terminal_session.is_done
 
         chunks = [
             b"line 1\r\n",
@@ -48,13 +48,13 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
             b"line 4\n",
         ]
 
-        assert recieved_terminal_session.chunks == [b"".join(chunks)]
+        assert received_terminal_session.chunks == [b"".join(chunks)]
 
         # This might be an implementation detail, because if the terminal
         # session is "done", the original one should be able to be returned
         # with no issue. The fact that we recreate it from the DB (only because
         # it does not exist in memory) smells fishy to me.
-        assert recieved_terminal_session is not terminal_session
+        assert received_terminal_session is not terminal_session
 
     def test_get_terminal_session_that_doesnt_exist(self) -> None:
         assert not self.repo.get_by_session_id(uuid4())

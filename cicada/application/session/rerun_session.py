@@ -26,7 +26,7 @@ class RerunSession:
     created, except the `run` number is incremented by 1.
 
     One edge case with this service is that if no workflow files are found when
-    running the gather step, the session will not re-run. Since we know tha SHA
+    running the gather step, the session will not re-run. Since we know the SHA
     that the session was ran at, we might not need even run the gather stage,
     but for now this is how it is executing.
     """
