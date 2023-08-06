@@ -18,6 +18,8 @@ from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
 
+logger = logging.getLogger("cicada")
+
 
 async def process_killer(
     process: subprocess.Process, terminal: TerminalSession
@@ -105,6 +107,16 @@ class RemotePodmanExecutionContext(ExecutionContext):
     """
 
     async def run(self) -> int:
+        if not await self.is_podman_installed():
+            logger.error(
+                "Cannot use `remote-podman` executor because podman is not installed!"  # noqa: E501
+            )
+
+            # TODO: move terminal cleanup out of visitor
+            self.terminal.finish()
+
+            return 1
+
         files = folder_get_runnable_ci_files(self.cloned_repo, self.trigger)
 
         for file in files:
@@ -161,6 +173,17 @@ class RemotePodmanExecutionContext(ExecutionContext):
                 visitor.cleanup()
 
         return 0
+
+    async def is_podman_installed(self) -> bool:
+        proc = await asyncio.create_subprocess_shell(
+            "podman --version",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+
+        await proc.wait()
+
+        return proc.returncode == 0
 
 
 class SelfHostedExecutionContext(ExecutionContext):
