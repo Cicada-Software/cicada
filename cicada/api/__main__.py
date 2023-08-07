@@ -4,6 +4,7 @@ from pathlib import Path
 
 import uvicorn
 
+from cicada.api.settings import verify_env_vars
 from cicada.logging import setup as setup_logging
 
 setup_logging()
@@ -29,6 +30,8 @@ def run_live_site() -> None:
 
 
 if Path(".env").exists():
+    verify_env_vars()
+
     run_live_site()
 
 else:

@@ -1,4 +1,5 @@
 import os
+import re
 from unittest.mock import patch
 
 import pytest
@@ -178,6 +179,25 @@ def test_dns_settings_port_must_be_int() -> None:
 
         with (
             pytest.raises(ValueError, match="CICADA_PORT must be an integer"),
+            patch.dict(os.environ, copy, clear=True),
+        ):
+            DNSSettings()
+
+
+def test_validate_dns_settings() -> None:
+    tests = {
+        "https://example.com": re.escape('Did you mean "example.com"?'),
+        "example.com/": re.escape('Did you mean "example.com"?'),
+        "example.com/api": re.escape('Did you mean "example.com"?'),
+        "example.com?test=1": re.escape('Did you mean "example.com"?'),
+        "www.example.com": 'should not include "www" .* Did you mean "example.com"',  # noqa: E501
+    }
+
+    for url, error in tests.items():
+        copy = {**DEFAULT_ENV_VARS, "CICADA_DOMAIN": url}
+
+        with (
+            pytest.raises(ValueError, match=error),
             patch.dict(os.environ, copy, clear=True),
         ):
             DNSSettings()

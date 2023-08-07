@@ -2,6 +2,7 @@ import os
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+from urllib.parse import urlparse
 
 from cicada.domain.triggers import Trigger, json_to_trigger
 
@@ -63,9 +64,20 @@ class DNSSettings:
     def __init__(self) -> None:
         self.domain = os.getenv("CICADA_DOMAIN", "")
 
-        # TODO: also ensure this is a sane/valid domain
         if not self.domain:
             raise ValueError("CICADA_DOMAIN must be defined")
+
+        if not self.is_domain_only_url(self.domain):
+            domain = self.format_invalid_domain_url(self.domain)
+
+            raise ValueError(
+                f'CICADA_DOMAIN must be domain only. Did you mean "{domain}"?'
+            )
+
+        if self.domain.startswith("www."):
+            raise ValueError(
+                f'CICADA_DOMAIN should not include "www" sub-domains. Did you mean "{self.domain[4:]}"?'  # noqa: E501
+            )
 
         self.host = os.getenv("CICADA_HOST", "0.0.0.0")  # noqa: S104
 
@@ -80,6 +92,24 @@ class DNSSettings:
 
         if not self.port:
             raise ValueError("CICADA_PORT must be defined")
+
+    def is_domain_only_url(self, url: str) -> bool:
+        # A domain is considered valid if it is only the domain part of a URL,
+        # that is, it does not contain a schema, path, query params, etc. This
+        # could be handled more elegantly (and could also be re-written as a
+        # regex), but this works for now.
+
+        p = urlparse(url)
+
+        return not (
+            any((p.scheme, p.netloc, p.params, p.query, p.fragment))
+            or "/" in p.path
+        )
+
+    def format_invalid_domain_url(self, url: str) -> str:
+        p = urlparse(url)
+
+        return p.netloc if p.netloc else p.path.split("/")[0]
 
 
 class GitProviderSettings(DNSSettings):
@@ -232,3 +262,19 @@ class SMTPSettings:
         self.password = os.getenv("SMTP_PASSWORD", "")
         if not self.password:
             raise ValueError("SMTP_PASSWORD must be set")
+
+
+def verify_env_vars() -> None:
+    """
+    Eagerly load env vars to see if they are valid. The env vars are only valid
+    at the time this function is called: if the env vars change, they may be
+    reloaded and potentially invalid.
+    """
+
+    DBSettings()
+    ExecutionSettings()
+    GitHubSettings()
+    GitlabSettings()
+    JWTSettings()
+    MigrationSettings()
+    NotificationSettings()
