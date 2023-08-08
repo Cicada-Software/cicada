@@ -153,7 +153,10 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         assert self.trigger, "impossible"
 
-        env_vars = get_provider_default_env_vars(self.trigger)
+        env_vars = [
+            *get_provider_default_env_vars(self.trigger),
+            *get_env_vars_from_trigger(self.trigger),
+        ]
 
         # Add "-e" flag before each env var
         extra_args = chain.from_iterable(["-e", x] for x in env_vars)
@@ -205,9 +208,15 @@ def get_provider_default_env_vars(trigger: Trigger) -> list[str]:
     if isinstance(trigger, CommitTrigger):
         args.extend(
             [
-                f"GITHUB_REF={trigger.ref}",
-                f"GITHUB_REF_NAME={trigger.branch}",
+                f"GITHUB_REF={shlex.quote(trigger.ref)}",
+                f"GITHUB_REF_NAME={shlex.quote(trigger.branch)}",
             ]
         )
 
     return args
+
+
+def get_env_vars_from_trigger(trigger: Trigger) -> list[str]:
+    return [
+        f"{shlex.quote(k)}={shlex.quote(v)}" for k, v in trigger.env.items()
+    ]

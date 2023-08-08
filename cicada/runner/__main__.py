@@ -445,6 +445,7 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
                 stdout=slave,
                 stderr=subprocess.STDOUT,
                 close_fds=True,
+                env=self.trigger.env if self.trigger else None,
             )
 
             os.close(slave)
