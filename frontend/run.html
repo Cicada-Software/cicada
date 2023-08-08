@@ -171,6 +171,7 @@ let currentRun;
 let ws;
 let terminal;
 let displayTimerInterval;
+let messageRecieved = true;
 
 const BACKSPACE_REGEX = new RegExp(/\x08/g);
 const CARRIAGE_RETURN_REGEX = new RegExp(/\x0d+/g);
@@ -252,6 +253,8 @@ function updateStatus(status) {
 
 function handleWebsocketMessage(event) {
   const data = JSON.parse(event.data);
+
+  messageRecieved = true;
 
   if ("stdout" in data) {
     terminal.write(data.stdout);
@@ -410,9 +413,7 @@ function getSessionAndCommitInfo(callback) {
 function cancel(event) {
   event.preventDefault();
 
-  if (ws.readyState === 3) {
-    // websocket is closed, make direct API call
-
+  const forceStopSession = () => {
     cicadaFetch(`/api/session/${uuid}/stop`, {method: "POST"}).then(e => {
       if (!e.ok) {
         console.error(e);
@@ -424,8 +425,22 @@ function cancel(event) {
 
       clearInterval(displayTimerInterval);
     });
+  };
+
+  if (ws.readyState === 3) {
+    // websocket is closed, make direct API call
+
+    forceStopSession();
   } else {
+    messageRecieved = false;
     ws.send("STOP");
+
+    // if no message is recived in a timely manner force stop session
+    setTimeout(() => {
+      if (!messageRecieved) {
+        forceStopSession();
+      }
+    }, 2_000);
   }
 }
 
