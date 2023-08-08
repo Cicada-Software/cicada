@@ -90,8 +90,6 @@ async def run_workflow(
 
             ctx = get_execution_type(executor_type)(
                 url=url,
-                trigger_type=session.trigger.type,
-                trigger=session.trigger,
                 session=session,
                 terminal=terminal,
                 cloned_repo=cloned_repo,

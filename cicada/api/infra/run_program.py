@@ -13,7 +13,6 @@ from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
-from cicada.domain.triggers import Trigger, TriggerType
 from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
@@ -86,8 +85,6 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 class ExecutionContext:
     url: str
     # TODO: dont include these, they can be pulled from session
-    trigger_type: TriggerType
-    trigger: Trigger
     session: Session
     terminal: TerminalSession
     cloned_repo: Path
@@ -117,7 +114,9 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
             return 1
 
-        files = folder_get_runnable_ci_files(self.cloned_repo, self.trigger)
+        files = folder_get_runnable_ci_files(
+            self.cloned_repo, self.session.trigger
+        )
 
         for file in files:
             if isinstance(file, AstError):
@@ -135,7 +134,7 @@ class RemotePodmanExecutionContext(ExecutionContext):
             tokens = tokenize(file.read_text())
             tree = generate_ast_tree(tokens)
 
-            semantics = SemanticAnalysisVisitor(self.trigger)
+            semantics = SemanticAnalysisVisitor(self.session.trigger)
             tree.accept(semantics)
 
         except AstError as exc:
@@ -158,7 +157,7 @@ class RemotePodmanExecutionContext(ExecutionContext):
         try:
             visitor = RemoteContainerEvalVisitor(
                 self.cloned_repo,
-                self.trigger,
+                self.session.trigger,
                 self.terminal,
                 image=image,
             )
@@ -201,7 +200,9 @@ class SelfHostedExecutionContext(ExecutionContext):
     runner_repo: IRunnerRepo
 
     async def run(self) -> int:
-        files = folder_get_runnable_ci_files(self.cloned_repo, self.trigger)
+        files = folder_get_runnable_ci_files(
+            self.cloned_repo, self.session.trigger
+        )
 
         for file in files:
             if isinstance(file, AstError):

@@ -66,8 +66,7 @@ async def test_run_workflow() -> None:
             kwargs["url"]
             == "https://access_token:access_token@github.com/user/repo"
         )
-        assert kwargs["trigger_type"] == "git.push"
-        assert kwargs["trigger"] == session.trigger
+        assert kwargs["session"] == session
 
 
 async def test_session_fails_if_exception_occurs_in_workflow() -> None:

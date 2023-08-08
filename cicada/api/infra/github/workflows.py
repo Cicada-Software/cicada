@@ -131,8 +131,6 @@ async def run_workflow(
 
                 ctx = SelfHostedExecutionContext(
                     url=url,
-                    trigger_type=session.trigger.type,
-                    trigger=session.trigger,
                     session=session,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
@@ -147,8 +145,6 @@ async def run_workflow(
 
                 ctx = get_execution_type(executor_type)(  # type: ignore
                     url=url,
-                    trigger_type=session.trigger.type,
-                    trigger=session.trigger,
                     session=session,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
