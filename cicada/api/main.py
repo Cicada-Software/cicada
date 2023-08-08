@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from cicada.api.endpoints.di import Di
@@ -22,7 +22,11 @@ from cicada.application.exceptions import CicadaException
 from cicada.domain.installation import InstallationId
 from cicada.domain.session import SessionId
 
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app.include_router(login_router)
 app.include_router(session_router)
 app.include_router(env_router)
@@ -106,6 +110,11 @@ async def ping(_: CurrentUser) -> str:
     """
 
     return "pong"
+
+
+@app.get("/docs")
+async def github_sso_link() -> RedirectResponse:
+    return RedirectResponse("docs/index.html", status_code=302)
 
 
 @app.post("/api/join_waitlist")

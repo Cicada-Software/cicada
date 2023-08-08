@@ -1,0 +1,6 @@
+[book]
+authors = ["dosisod"]
+language = "en"
+multilingual = false
+src = "."
+title = "Cicada: CI/CD For Power Users"

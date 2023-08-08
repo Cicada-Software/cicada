@@ -1,4 +1,4 @@
-# Installing
+# Self-Hosted Installation
 
 This is an overview of how to install Cicada locally. This is only useful if you plan on self-hosting Cicada,
 otherwise, see our cloud-hosted version at [cicada.sh](https://cicada.sh).
