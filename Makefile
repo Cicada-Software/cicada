@@ -1,14 +1,10 @@
 .PHONY: install ruff mypy black isort typos test
 
-all: ruff mypy black isort test
+all: ruff mypy black isort typos test
 
 install:
-	pip install .
-	pip install -r requirements.txt
-	pip install -r dev-requirements.txt
-
-install-local:
 	pip install -e .
+	pip install -r requirements.txt -r dev-requirements.txt
 
 ruff:
 	ruff cicada test

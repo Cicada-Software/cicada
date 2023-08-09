@@ -171,7 +171,7 @@ let currentRun;
 let ws;
 let terminal;
 let displayTimerInterval;
-let messageRecieved = true;
+let messageReceived = true;
 
 const BACKSPACE_REGEX = new RegExp(/\x08/g);
 const CARRIAGE_RETURN_REGEX = new RegExp(/\x0d+/g);
@@ -254,7 +254,7 @@ function updateStatus(status) {
 function handleWebsocketMessage(event) {
   const data = JSON.parse(event.data);
 
-  messageRecieved = true;
+  messageReceived = true;
 
   if ("stdout" in data) {
     terminal.write(data.stdout);
@@ -432,12 +432,12 @@ function cancel(event) {
 
     forceStopSession();
   } else {
-    messageRecieved = false;
+    messageReceived = false;
     ws.send("STOP");
 
-    // if no message is recived in a timely manner force stop session
+    // if no message is received in a timely manner force stop session
     setTimeout(() => {
-      if (!messageRecieved) {
+      if (!messageReceived) {
         forceStopSession();
       }
     }, 2_000);
