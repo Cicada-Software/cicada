@@ -7,6 +7,8 @@ dist
 .coverage
 test
 .git
+*.egg-info
+build
 
 *Dockerfile*
 

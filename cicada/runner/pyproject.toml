@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "cicada-runner"
+version = "0.0.0"
+description = "The Next Generation of CI/CD"
+authors = ["dosisod"]
+license = "GPL-3.0-only"
+repository = "https://github.com/Cicada-Software/cicada"
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Typing :: Typed"
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -10,3 +10,4 @@
   - [The `if` Expression](./ci-lang/if-expr.md)
   - [The Block Expression](./ci-lang/block-expr.md)
 - [Self-Hosting](./installing.md)
+  - [Self-Hosted Runners](./self-hosted-runner.md)

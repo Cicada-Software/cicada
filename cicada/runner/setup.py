@@ -11,7 +11,7 @@ setup(
     packages=["cicada-runner"],
     package_dir={"cicada-runner": "runner"},
     install_requires=[
-        "cicada==0.0.0",
+        "cicada-core==0.0.0",
         "websockets==11.0.3",
         "python-dotenv==1.0.0",
     ],

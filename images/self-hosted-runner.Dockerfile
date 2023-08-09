@@ -5,16 +5,18 @@ WORKDIR /app
 COPY . .
 
 RUN pip install wheel \
-	&& python3 setup.py bdist_wheel \
+	&& python3 setup.py bdist_wheel --dist-dir /app/dist \
 	&& python3 cicada/runner/setup.py bdist_wheel
 
 
 FROM python:3.11.3-alpine3.18
 
+LABEL org.opencontainers.image.source=https://github.com/cicada-software/cicada
+
 WORKDIR /app
 
 COPY --from=build \
-	/app/dist/cicada-0.0.0-py3-none-any.whl \
+	/app/dist/cicada_core-0.0.0-py3-none-any.whl \
 	/app/cicada/dist/cicada_runner-0.0.0-py3-none-any.whl \
 	/tmp/
 

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cicada"
+name = "cicada-core"
 version = "0.0.0"
 description = "The Next Generation of CI/CD"
 authors = ["dosisod"]
