@@ -2,7 +2,12 @@ from decimal import Decimal
 
 from cicada.ast.common import json_to_record
 from cicada.ast.entry import parse_and_analyze
-from cicada.ast.nodes import BooleanValue, NumericValue, StringValue
+from cicada.ast.nodes import (
+    BooleanValue,
+    NumericValue,
+    RecordValue,
+    StringValue,
+)
 from cicada.eval.main import EvalVisitor
 from test.eval.test_eval_statements import make_dummy_commit_trigger
 
@@ -257,3 +262,33 @@ def test_eval_float_exprs() -> None:
 
     assert isinstance(x, NumericValue)
     assert x.value == Decimal("0.3")
+
+
+def test_update_existing_env_var() -> None:
+    trigger = make_dummy_commit_trigger()
+    trigger.env = {"TESTING": "abc"}
+
+    tree = parse_and_analyze('env.TESTING = "xyz"', trigger)
+
+    visitor = EvalVisitor(trigger)
+    tree.accept(visitor)
+
+    symbol = visitor.symbols["env"]
+
+    assert isinstance(symbol, RecordValue)
+    assert symbol.value["TESTING"] == StringValue("xyz")
+
+
+def test_set_new_env_var() -> None:
+    trigger = make_dummy_commit_trigger()
+    trigger.env = {}
+
+    tree = parse_and_analyze('env.TESTING = "xyz"', trigger)
+
+    visitor = EvalVisitor(trigger)
+    tree.accept(visitor)
+
+    symbol = visitor.symbols["env"]
+
+    assert isinstance(symbol, RecordValue)
+    assert symbol.value["TESTING"] == StringValue("xyz")

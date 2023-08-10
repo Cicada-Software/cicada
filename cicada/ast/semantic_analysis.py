@@ -22,6 +22,7 @@ from cicada.ast.nodes import (
     TraversalVisitor,
     UnaryExpression,
     UnaryOperator,
+    Value,
 )
 from cicada.ast.types import (
     BOOL_LIKE_TYPES,
@@ -108,7 +109,7 @@ RESERVED_NAMES = {"event", "env"}
 class SemanticAnalysisVisitor(TraversalVisitor):
     function_names: set[str]
     types: dict[str, Type]
-    symbols: ChainMap[str, LetExpression]
+    symbols: ChainMap[str, Expression | Value]
     trigger: Trigger | None
 
     # This is set when a function has been called, used to detect non-constexpr
@@ -197,7 +198,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.type = self.env
 
         elif symbol := self.symbols.get(node.name):
-            node.type = symbol.expr.type
+            node.type = symbol.type
 
         else:
             raise AstError(f"variable `{node.name}` is not defined", node.info)
@@ -232,21 +233,44 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.is_constexpr = True
 
     def visit_binary_expr(self, node: BinaryExpression) -> None:
-        super().visit_binary_expr(node)
+        node.rhs.accept(self)
 
         if node.oper == BinaryOperator.ASSIGN:
-            if not isinstance(node.lhs, IdentifierExpression):
+            if not isinstance(
+                node.lhs, IdentifierExpression | MemberExpression
+            ):
                 raise AstError(
                     "you can only assign to variables", node.lhs.info
                 )
 
-            var = self.symbols[node.lhs.name]
+            fullname = self.get_fullname(node.lhs)
 
-            if not var.is_mutable:
-                raise AstError(
-                    f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
-                    node.lhs.info,
+            if var := self.symbols.get(fullname):
+                if isinstance(var, LetExpression) and not var.is_mutable:
+                    raise AstError(
+                        f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
+                        node.lhs.info,
+                    )
+
+            if self.env and fullname.startswith("env."):
+                self.env.fields.append(
+                    RecordField(node.lhs.name, StringType())
                 )
+
+            existing_symbol = self.symbols.get(fullname)
+
+            if existing_symbol and isinstance(existing_symbol, Expression):
+                self.ensure_valid_op_types(
+                    existing_symbol,
+                    node.oper,
+                    node.rhs,
+                )
+
+            self.symbols[fullname] = node.rhs
+
+        node.lhs.accept(self)
+
+        self.ensure_valid_op_types(node.lhs, node.oper, node.rhs)
 
         if node.lhs.type != node.rhs.type:
             verb = (
@@ -408,7 +432,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def is_constexpr(self, node: Expression) -> bool:
         if isinstance(node, IdentifierExpression):
             if symbol := self.symbols.get(node.name):
-                return symbol.expr.is_constexpr
+                if isinstance(symbol, Expression):
+                    return symbol.is_constexpr
 
             if self.types.get(node.name):
                 return True
@@ -416,3 +441,30 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             return False
 
         return node.is_constexpr
+
+    def get_fullname(self, node: Expression) -> str:
+        if isinstance(node, IdentifierExpression):
+            return node.name
+
+        if isinstance(node, MemberExpression):
+            lhs = self.get_fullname(node.lhs)
+
+            return f"{lhs}.{node.name}"
+
+        assert False
+
+    def ensure_valid_op_types(
+        self,
+        lhs: Expression,
+        oper: BinaryOperator,
+        rhs: Expression,
+    ) -> None:
+        if lhs.type != rhs.type:
+            verb = (
+                "assigned to" if oper == BinaryOperator.ASSIGN else "used with"
+            )
+
+            raise AstError(
+                f"expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
+                rhs.info,
+            )

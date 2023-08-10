@@ -9,7 +9,7 @@ import termios
 from contextlib import suppress
 from itertools import chain
 from subprocess import PIPE, STDOUT
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
 
 from cicada.ast.nodes import (
@@ -155,7 +155,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         env_vars = [
             *get_provider_default_env_vars(self.trigger),
-            *get_env_vars_from_trigger(self.trigger),
+            *get_env_vars_from_env_record(
+                cast(RecordValue, self.symbols["env"])
+            ),
         ]
 
         # Add "-e" flag before each env var
@@ -216,7 +218,5 @@ def get_provider_default_env_vars(trigger: Trigger) -> list[str]:
     return args
 
 
-def get_env_vars_from_trigger(trigger: Trigger) -> list[str]:
-    return [
-        f"{shlex.quote(k)}={shlex.quote(v)}" for k, v in trigger.env.items()
-    ]
+def get_env_vars_from_env_record(env: RecordValue) -> list[str]:
+    return [f"{k}={cast(StringValue, v).value}" for k, v in env.value.items()]

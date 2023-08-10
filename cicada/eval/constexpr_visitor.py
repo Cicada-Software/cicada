@@ -11,6 +11,7 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanExpression,
     BooleanValue,
+    Expression,
     FileNode,
     IdentifierExpression,
     IfExpression,
@@ -154,8 +155,22 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
     def visit_binary_expr(self, node: BinaryExpression) -> Value:
         # TODO: simplify
 
-        lhs = node.lhs.accept(self)
         rhs = node.rhs.accept(self)
+
+        if node.oper == BinaryOperator.ASSIGN:
+            if isinstance(node.lhs, IdentifierExpression):
+                self.reassign_variable(node.lhs.name, rhs)
+
+            if isinstance(node.lhs, MemberExpression):
+                # TODO: dont re-eval
+                root = node.lhs.lhs.accept(self)
+                assert isinstance(root, RecordValue)
+
+                root.value[node.lhs.name] = rhs
+
+            return rhs
+
+        lhs = node.lhs.accept(self)
 
         if node.oper == BinaryOperator.IS:
             try:
@@ -163,13 +178,6 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             except TypeError as ex:  # pragma: no cover
                 raise NotImplementedError() from ex
-
-        if node.oper == BinaryOperator.ASSIGN:
-            assert isinstance(node.lhs, IdentifierExpression)
-
-            self.reassign_variable(node.lhs.name, rhs)
-
-            return rhs
 
         if isinstance(lhs, StringValue) and isinstance(rhs, StringValue):
             if node.oper == BinaryOperator.ADD:
@@ -296,3 +304,14 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         raise KeyError(  # pragma: no cover
             f"Cannot reassign `{name}` because it doesn't exist"
         )
+
+    def get_fullname(self, node: Expression) -> str:
+        if isinstance(node, IdentifierExpression):
+            return node.name
+
+        if isinstance(node, MemberExpression):
+            lhs = self.get_fullname(node.lhs)
+
+            return f"{lhs}.{node.name}"
+
+        assert False
