@@ -372,7 +372,13 @@ def test_environment_variable_semantics() -> None:
         case _:
             pytest.fail(f"Pattern did not match: {visitor.env}")
 
-    assert visitor.symbols["x"].expr.type == StringType()
+    symbol = visitor.symbols["x"]
+
+    match symbol:
+        case LetExpression(expr=Expression(type=StringType())):
+            return
+
+    pytest.fail(f"Tree did not match: {symbol}")
 
 
 def test_ast_error_with_filename() -> None:
