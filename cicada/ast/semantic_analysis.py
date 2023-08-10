@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import cast
 
+from cicada.ast.common import trigger_to_record
 from cicada.ast.generate import SHELL_ALIASES, AstError
 from cicada.ast.nodes import (
     BinaryExpression,
@@ -17,6 +18,7 @@ from cicada.ast.nodes import (
     MemberExpression,
     OnStatement,
     ParenthesisExpression,
+    RecordValue,
     RunOnStatement,
     ToStringExpression,
     TraversalVisitor,
@@ -35,26 +37,7 @@ from cicada.ast.types import (
     UnionType,
     UnknownType,
 )
-from cicada.common.json import asjson
 from cicada.domain.triggers import Trigger
-
-
-def json_to_record_type(j: object) -> Type:
-    if isinstance(j, dict):
-        types = RecordType()
-
-        for k, v in j.items():
-            types.fields.append(RecordField(k, json_to_record_type(v)))
-
-        return types
-
-    if isinstance(j, str):
-        return StringType()
-
-    if isinstance(j, int):
-        return NumericType()
-
-    raise NotImplementedError()
 
 
 class IgnoreWorkflow(RuntimeError):
@@ -124,30 +107,33 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     run_on: RunOnStatement | None
 
-    env: RecordType | None
-
     file_node: FileNode | None = None
 
     def __init__(self, trigger: Trigger | None = None) -> None:
         # TODO: populate symbol table with builtins
         self.function_names = {*SHELL_ALIASES, "shell", "print"}
-        self.types = {}
         self.symbols = ChainMap()
         self.trigger = trigger
         self.has_ran_function = False
         self.has_on_stmt = False
         self.run_on = None
-        self.env = None
         self.file_node = None
 
         if self.trigger:
-            event = cast(RecordType, json_to_record_type(asjson(self.trigger)))
-            self.types["event"] = event
+            event = cast(RecordValue, trigger_to_record(self.trigger))
+            self.symbols["event"] = event
 
-            self.env = cast(
-                RecordType,
-                next(x for x in event.fields if x.name == "env").type,
+            # TODO: make function for doing this
+            env = RecordValue(
+                cast(RecordValue, event.value["env"]).value,
+                next(
+                    x
+                    for x in cast(RecordType, event.type).fields
+                    if x.name == "env"
+                ).type,
             )
+
+            self.symbols["env"] = env
 
     def visit_file_node(self, node: FileNode) -> None:
         self.file_node = node
@@ -191,13 +177,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_ident_expr(self, node: IdentifierExpression) -> None:
         super().visit_ident_expr(node)
 
-        if type := self.types.get(node.name):
-            node.type = type
-
-        elif node.name == "env" and self.env:
-            node.type = self.env
-
-        elif symbol := self.symbols.get(node.name):
+        if symbol := self.symbols.get(node.name):
             node.type = symbol.type
 
         else:
@@ -236,53 +216,73 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         node.rhs.accept(self)
 
         if node.oper == BinaryOperator.ASSIGN:
-            if not isinstance(
-                node.lhs, IdentifierExpression | MemberExpression
-            ):
-                raise AstError(
-                    "you can only assign to variables", node.lhs.info
-                )
+            if isinstance(node.lhs, IdentifierExpression):
+                node.lhs.accept(self)
 
-            fullname = self.get_fullname(node.lhs)
+                var = self.get_symbol(node.lhs)
 
-            if var := self.symbols.get(fullname):
                 if isinstance(var, LetExpression) and not var.is_mutable:
                     raise AstError(
                         f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
                         node.lhs.info,
                     )
 
-            if self.env and fullname.startswith("env."):
-                self.env.fields.append(
-                    RecordField(node.lhs.name, StringType())
+            elif isinstance(node.lhs, MemberExpression):
+                member = node.lhs
+
+                member.lhs.accept(self)
+
+                rvalue = self.get_symbol(member.lhs)
+
+                assert isinstance(rvalue, RecordValue)
+                assert isinstance(rvalue.type, RecordType)
+
+                match member.lhs:
+                    case IdentifierExpression(name="event"):
+                        raise AstError(
+                            "Cannot reassign `event` because it is immutable",
+                            node.rhs.info,
+                        )
+
+                if rvalue.type.get_name(member.name):
+                    member.accept(self)
+
+                    self.ensure_valid_op_types(
+                        member,
+                        node.oper,
+                        node.rhs,
+                    )
+
+                else:
+                    # TODO: Should we be able to assign arbitrary values to
+                    # records? I feel like this shouldn't be allowed, but for
+                    # env vars it has to.
+
+                    match member.lhs:
+                        case IdentifierExpression(name="env"):
+                            if node.rhs.type != StringType():
+                                # TODO: add more info here
+                                msg = "You can only assign strings to env vars"
+
+                                raise AstError(msg, node.rhs.info)
+
+                    # TODO: RecordType's should be immutable, but it's easier
+                    # to just assign directly.
+                    rvalue.type.fields.append(
+                        RecordField(member.name, node.rhs.type)
+                    )
+
+                    member.accept(self)
+
+            else:
+                raise AstError(
+                    "you can only assign to variables", node.lhs.info
                 )
 
-            existing_symbol = self.symbols.get(fullname)
-
-            if existing_symbol and isinstance(existing_symbol, Expression):
-                self.ensure_valid_op_types(
-                    existing_symbol,
-                    node.oper,
-                    node.rhs,
-                )
-
-            self.symbols[fullname] = node.rhs
-
-        node.lhs.accept(self)
+        else:
+            node.lhs.accept(self)
 
         self.ensure_valid_op_types(node.lhs, node.oper, node.rhs)
-
-        if node.lhs.type != node.rhs.type:
-            verb = (
-                "assigned to"
-                if node.oper == BinaryOperator.ASSIGN
-                else "used with"
-            )
-
-            raise AstError(
-                f"expression of type `{node.rhs.type}` cannot be {verb} type `{node.lhs.type}`",  # noqa: E501
-                node.rhs.info,
-            )
 
         allowed_types = OPERATOR_ALLOWED_TYPES[node.oper]
 
@@ -435,23 +435,12 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 if isinstance(symbol, Expression):
                     return symbol.is_constexpr
 
-            if self.types.get(node.name):
+            if node.name in ("event", "env"):
                 return True
 
             return False
 
         return node.is_constexpr
-
-    def get_fullname(self, node: Expression) -> str:
-        if isinstance(node, IdentifierExpression):
-            return node.name
-
-        if isinstance(node, MemberExpression):
-            lhs = self.get_fullname(node.lhs)
-
-            return f"{lhs}.{node.name}"
-
-        assert False
 
     def ensure_valid_op_types(
         self,
@@ -468,3 +457,14 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 f"expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
                 rhs.info,
             )
+
+    def get_symbol(self, node: Expression) -> Expression | Value | None:
+        if isinstance(node, IdentifierExpression):
+            return self.symbols.get(node.name)
+
+        if isinstance(node, MemberExpression):
+            if lhs := self.get_symbol(node.lhs):
+                if isinstance(lhs, RecordValue):
+                    return lhs.value.get(node.name)
+
+        return None

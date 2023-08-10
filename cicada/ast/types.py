@@ -80,6 +80,13 @@ class RecordType(Type):
         # TODO: return more descriptive string type
         return "record"
 
+    def get_name(self, name: str) -> RecordField | None:
+        for field in self.fields:
+            if field.name == name:
+                return field
+
+        return None
+
 
 BOOL_LIKE_TYPES = (BooleanType(), NumericType(), StringType())
 

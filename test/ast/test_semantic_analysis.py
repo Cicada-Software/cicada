@@ -15,7 +15,9 @@ from cicada.ast.nodes import (
     NumericExpression,
     OnStatement,
     ParenthesisExpression,
+    RecordValue,
     StringExpression,
+    StringValue,
     ToStringExpression,
 )
 from cicada.ast.semantic_analysis import (
@@ -329,9 +331,10 @@ def test_type_checking_of_event_triggers() -> None:
                 ),
             )
         ]:
-            event = visitor.types["event"]
+            event = visitor.symbols["event"]
 
-            assert isinstance(event, RecordType)
+            assert isinstance(event, RecordValue)
+            assert event.value["sha"] == StringValue("deadbeef")
 
             return
 
@@ -365,12 +368,15 @@ def test_environment_variable_semantics() -> None:
     tree = generate_ast_tree(tokens)
     tree.accept(visitor)
 
-    match visitor.env:
-        case RecordType([RecordField("HELLO", StringType())]):
+    match visitor.symbols["env"]:
+        case RecordValue(
+            value={"HELLO": StringValue("world")},
+            type=RecordType([RecordField("HELLO", StringType())]),
+        ):
             pass
 
         case _:
-            pytest.fail(f"Pattern did not match: {visitor.env}")
+            pytest.fail(f"Pattern did not match: {visitor.symbols['env']}")
 
     symbol = visitor.symbols["x"]
 
@@ -513,3 +519,30 @@ def test_non_string_types_allowed_in_interpolated_strings() -> None:
             return
 
     pytest.fail(f"tree does not match: {tree.exprs[0]}")
+
+
+def test_error_message_when_assigning_non_string_value_to_env() -> None:
+    code = "env.ABC = 123"
+
+    msg = "You can only assign strings to env vars"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code, trigger=build_trigger("xyz"))
+
+
+def test_error_message_when_assigning_to_nonexistent_member_expr() -> None:
+    code = "unknown.variable = 123"
+
+    msg = "variable `unknown` is not defined"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code)
+
+
+def test_cannot_reassign_event_exprs() -> None:
+    code = "event.ABC = 123"
+
+    msg = "Cannot reassign `event` because it is immutable"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze(code, trigger=build_trigger("xyz"))
