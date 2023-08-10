@@ -190,11 +190,14 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             patch(f"{pkg}.run_workflow") as run_workflow,
             patch(f"{pkg}.gather_issue_workflows", return_value=True) as gather_issues,
             patch(f"{pkg}.gather_workflows_via_trigger", return_value=True) as gather_git_pushes,
+            patch(f"{pkg}.send_email") as send_email,
             patch(f"{pkg2}.get_env_vars_for_repo") as get_env,
+
         ):
             yield {
                 "run_workflow": run_workflow,
                 "gather_issues": gather_issues,
                 "gather_git_pushes": gather_git_pushes,
                 "repo_get_env": get_env,
+                "send_email": send_email,
             }

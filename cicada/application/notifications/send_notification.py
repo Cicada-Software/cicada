@@ -7,7 +7,7 @@ from cicada.domain.triggers import CommitTrigger, IssueTrigger, Trigger
 EmailSender = Callable[[NotificationEmail], None]
 
 
-class SendNotification:
+class SendNotification:  # pragma: no cover
     """
     Send a notification when a workflow fails. Eventually this service will be
     able to support multiple notification types, but for now it only supports

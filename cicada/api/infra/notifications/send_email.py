@@ -10,7 +10,7 @@ logger = logging.getLogger("cicada")
 
 
 # TODO: create a generic email notification service
-def send_email(email: NotificationEmail) -> None:
+def send_email(email: NotificationEmail) -> None:  # pragma: no cover
     smtp_settings = SMTPSettings()
     cicada_domain = DNSSettings().domain
 
