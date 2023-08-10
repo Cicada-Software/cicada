@@ -72,6 +72,7 @@ testpaths = ["test"]
 
 [tool.ruff]
 line-length = 79
+target-version = "py311"
 
 select = ["ALL"]
 
@@ -101,6 +102,7 @@ extend-ignore = [
   "TD002",
   "TD003",
   "TRY003", "TRY301",
+  "UP017",
 
   # Fix later
   "ANN002",
