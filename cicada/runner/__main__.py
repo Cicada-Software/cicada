@@ -9,8 +9,9 @@ import subprocess
 import sys
 import tempfile
 import termios
-from contextlib import suppress
+from contextlib import redirect_stdout, suppress
 from functools import partial
+from io import StringIO
 from pathlib import Path
 from typing import Any, NoReturn
 
@@ -31,6 +32,7 @@ from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType
 from cicada.domain.session import SessionStatus
 from cicada.domain.triggers import CommitTrigger, Trigger, json_to_trigger
+from cicada.eval.builtins.hashof import hashOf
 from cicada.eval.constexpr_visitor import (
     CommandFailed,
     ConstexprEvalVisitor,
@@ -470,7 +472,19 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
             return RecordValue({}, RecordType())
 
         if node.name == "print":
-            self.data_stream.append(" ".join(args).encode())
+            self.data_stream.append(" ".join(args).encode() + b"\r\n")
+
+        if node.name == "hashOf":
+            f = StringIO()
+
+            with redirect_stdout(f):
+                try:
+                    return hashOf(self, node)
+
+                except CommandFailed:
+                    self.data_stream.append(f.getvalue().encode())
+
+                    raise
 
         return UnitValue()
 

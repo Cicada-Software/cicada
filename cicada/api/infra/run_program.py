@@ -204,6 +204,8 @@ class SelfHostedExecutionContext(ExecutionContext):
             self.cloned_repo, self.session.trigger
         )
 
+        session_status: SessionStatus | None = None
+
         for file in files:
             if isinstance(file, AstError):
                 continue
@@ -221,7 +223,9 @@ class SelfHostedExecutionContext(ExecutionContext):
                     )
                     assert session
 
-                    if session.status.is_finished():
+                    session_status = session.status
+
+                    if session_status.is_finished():
                         break
 
                     await asyncio.sleep(1)
@@ -233,9 +237,12 @@ class SelfHostedExecutionContext(ExecutionContext):
 
                 return 1
 
-            self.terminal.finish()
+            finally:
+                self.terminal.finish()
 
-            return 0
+            # TODO: don't turn session status into int since it just gets
+            # converted back to a session status anyways
+            return 1 if not session or session_status.is_failure() else 0
 
         assert False, "Expected at least one workflow"
 

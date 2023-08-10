@@ -89,6 +89,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             return RecordValue({}, RecordType())
 
+        if node.name == "hashOf":
+            return self.hashOf(args)
+
         if node.name == "print":
             self.terminal.append(" ".join(args).encode())
 
@@ -199,6 +202,61 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     @property
     def temp_dir(self) -> str:
         return f"/tmp/{self.pod_id}"
+
+    def hashOf(self, args: list[str]) -> StringValue:  # noqa: N802
+        shell_code = f"""\
+        cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"
+
+        set -o pipefail
+
+        (
+            IFS=
+            files=()
+
+            for file in {shlex.join(args)}; do
+                files+=($file)
+            done
+
+            IFS=$'\\n'
+            sorted=($(sort <<< "${{files[*]}}"))
+            unset IFS
+
+            for file in "${{sorted[@]}}"; do
+                cat "$file"
+                [ "$?" = "1" ] && exit 1;
+            done
+        ) | sha256sum - | awk '{{print $1}}'
+        """
+
+        process = subprocess.run(
+            [
+                "podman",
+                "exec",
+                "-t",
+                # TODO: Fix GitHub Codespaces emitting warnings
+                "--log-level=error",
+                self.container_id,
+                "/bin/bash",
+                "-c",
+                shell_code,
+            ],
+            capture_output=True,
+        )
+
+        lines = process.stdout.decode().splitlines()
+
+        if process.returncode:
+            if len(lines) > 1:
+                # Strip "cat: " prefix
+                msg = lines[0][5:]
+            else:
+                msg = "One or more files could not be found"
+
+            self.terminal.append(f"hashOf(): {msg}\n".encode())
+
+            raise CommandFailed(1)
+
+        return StringValue(lines[0].strip())
 
 
 def get_provider_default_env_vars(trigger: Trigger) -> list[str]:

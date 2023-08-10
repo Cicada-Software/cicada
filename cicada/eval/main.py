@@ -16,6 +16,7 @@ from cicada.ast.nodes import (
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType
 from cicada.domain.triggers import Trigger
+from cicada.eval.builtins.hashof import hashOf
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor, value_to_string
 from cicada.eval.find_files import find_ci_files
 
@@ -31,6 +32,7 @@ class EvalVisitor(ConstexprEvalVisitor):
 
             args.append(value.value)
 
+        # TODO: move to separate function
         if node.name == "shell":
             process = subprocess.run(
                 ["/bin/sh", "-c", shlex.join(args)],  # noqa: S603
@@ -42,6 +44,9 @@ class EvalVisitor(ConstexprEvalVisitor):
 
             # TODO: return rich "command type" value
             return RecordValue({}, RecordType())
+
+        if node.name == "hashOf":
+            return hashOf(self, node)
 
         if node.name == "print":
             print(*args)  # noqa: T201

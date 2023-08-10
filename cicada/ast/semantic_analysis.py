@@ -35,6 +35,7 @@ from cicada.ast.types import (
     StringType,
     Type,
     UnionType,
+    UnitType,
     UnknownType,
 )
 from cicada.domain.triggers import Trigger
@@ -111,7 +112,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     def __init__(self, trigger: Trigger | None = None) -> None:
         # TODO: populate symbol table with builtins
-        self.function_names = {*SHELL_ALIASES, "shell", "print"}
+        self.function_names = {*SHELL_ALIASES, "shell", "print", "hashOf"}
         self.symbols = ChainMap()
         self.trigger = trigger
         self.has_ran_function = False
@@ -321,7 +322,26 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         self.has_ran_function = True
 
-        node.type = RecordType()
+        if node.name == "print":
+            node.type = UnitType()
+
+        # TODO: move to separate function
+        elif node.name == "hashOf":
+            node.type = StringType()
+
+            if not node.args:
+                msg = "hashOf() requires 1 or more arguments"
+
+                raise AstError(msg, node.info)
+
+            for arg in node.args:
+                if arg.type != StringType():
+                    msg = f"Expected `{StringType()}` type, got `{arg.type}`"
+
+                    raise AstError(msg, arg.info)
+
+        else:
+            node.type = RecordType()
 
     def visit_on_stmt(self, node: OnStatement) -> None:
         if self.has_on_stmt:

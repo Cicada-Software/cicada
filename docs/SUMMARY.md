@@ -9,5 +9,6 @@
   - [The `let` Expression](./ci-lang/let-expr.md)
   - [The `if` Expression](./ci-lang/if-expr.md)
   - [The Block Expression](./ci-lang/block-expr.md)
+  - [Built-in Functions](./ci-lang/built-in-functions.md)
 - [Self-Hosting](./installing.md)
   - [Self-Hosted Runners](./self-hosted-runner.md)

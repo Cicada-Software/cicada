@@ -30,6 +30,7 @@ from cicada.ast.types import (
     RecordField,
     RecordType,
     StringType,
+    UnitType,
 )
 from cicada.domain.datetime import Datetime
 from cicada.domain.triggers import CommitTrigger, GitSha
@@ -546,3 +547,35 @@ def test_cannot_reassign_event_exprs() -> None:
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code, trigger=build_trigger("xyz"))
+
+
+def test_check_return_types_of_builtin_funcs() -> None:
+    code = """\
+print("hello world")
+hashOf("some_file")
+"""
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs:
+        case [
+            FunctionExpression(name="print", type=UnitType()),
+            FunctionExpression(name="hashOf", type=StringType()),
+        ]:
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+def test_hash_of_requires_at_least_one_arg() -> None:
+    msg = r"hashOf\(\) requires 1 or more arguments"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze("hashOf()")
+
+
+def test_hash_of_requires_string_only_args() -> None:
+    msg = "Expected `string` type, got `number`"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze("hashOf(1)")
