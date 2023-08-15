@@ -68,13 +68,16 @@ async def wrap_in_github_check_run(
 
     github = GitHub(token)
 
+    base_url = f"https://{DNSSettings().domain}"
+    redirect_url = f"{base_url}/run/{session.id}"
+
     data = await github.rest.checks.async_create(
         username,
         repo,
         name="Cicada",
         head_sha=str(session.trigger.sha),
         external_id=str(session.id),
-        details_url=f"http://{DNSSettings().domain}/run/{session.id}",
+        details_url=f"{base_url}/api/github_sso_link?url={redirect_url}",
         status="in_progress",
         started_at=UtcDatetime.now(),
     )

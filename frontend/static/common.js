@@ -45,6 +45,8 @@ const refreshToken = () => {
         resp.json().then(j => {
           setKey("jwt", j["access_token"]);
         });
+      } else if (resp.status === 401) {
+        window.location = `/login?url=${encodeURI(window.location)}`;
       }
     })
     .catch(err => console.log({err}));

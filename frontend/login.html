@@ -26,7 +26,7 @@
 
       <p class="lightgray m-auto">or</p>
 
-      <a href="/api/github_sso_link" class="github-sso">Login with GitHub</a>
+      <a href="/api/github_sso_link" id="github-sso" onclick="handleSSO(event)">Login with GitHub</a>
 
       <span id="error-msg" style="display: none"></span>
     </div>
@@ -34,7 +34,7 @@
 </main>
 
 <style>
-a.github-sso {
+#github-sso {
   color: var(--black);
   background: var(--green);
 
@@ -108,7 +108,7 @@ button[type=submit]:disabled {
   cursor: default;
 }
 
-button[type=submit], a.github-sso, input {
+button[type=submit], #github-sso, input {
   border-radius: var(--border-radius);
 }
 
@@ -135,10 +135,11 @@ p, pre {
 </style>
 
 <script>
+main();
+
 const handleLogin = e => {
   e.preventDefault();
 
-  const errorMsg = document.getElementById("error-msg");
   errorMsg.style.display = "none";
 
   fetch("/api/login", {method: "POST", body: new FormData(e.target)})
@@ -146,7 +147,10 @@ const handleLogin = e => {
       if (resp.ok) {
         resp.json().then(j => {
           setKey("jwt", j["access_token"]);
-          window.location.href = "/dashboard";
+
+          const url = new URLSearchParams(window.location.search).get("url");
+
+          window.location.href = url ? url : "/dashboard";
         });
       }
       else {
@@ -163,6 +167,28 @@ const handleInput = () => {
 
   document.querySelector("button[type=submit]").disabled = !username || !password;
 };
+
+const handleSSO = (e) => {
+  e.preventDefault();
+
+  let url = "/api/github_sso_link";
+
+  const redirectUrl = new URLSearchParams(window.location.search).get("url");
+  if (redirectUrl) url += `?url=${redirectUrl}`;
+
+  window.location.href = url;
+};
+
+function main() {
+  const redirectUrl = new URLSearchParams(window.location.search).get("url");
+
+  if (redirectUrl) {
+    const errorMsg = document.getElementById("error-msg");
+
+    errorMsg.style.display = "block";
+    errorMsg.innerText = "Session expired, please login again";
+  }
+}
 </script>
 
 </body>

@@ -18,15 +18,21 @@ router = APIRouter()
 
 
 @cache
-def get_github_sso_link() -> str:
+def get_github_sso_link(url: str | None = None) -> str:
     settings = GitHubSettings()
+
+    url = url_escape(
+        f"{settings.sso_redirect_uri}?url={url}"
+        if url
+        else settings.sso_redirect_uri
+    )
 
     # TODO: use an actual URL constructor instead
     params = {
         "state": "state",
         "allow_signup": "false",
         "client_id": settings.client_id,
-        "redirect_uri": url_escape(settings.sso_redirect_uri),
+        "redirect_uri": url,
     }
 
     url_params = "&".join(f"{key}={value}" for key, value in params.items())
@@ -47,8 +53,8 @@ def get_github_app_install_link() -> str:
 
 
 @router.get("/api/github_sso_link")
-async def github_sso_link() -> RedirectResponse:
-    return RedirectResponse(get_github_sso_link(), status_code=302)
+async def github_sso_link(url: str | None = None) -> RedirectResponse:
+    return RedirectResponse(get_github_sso_link(url), status_code=302)
 
 
 @router.get("/api/github_app_install_link")
@@ -57,11 +63,17 @@ async def github_app_install_link() -> RedirectResponse:
 
 
 @router.get("/api/github_sso")
-async def github_sso(di: Di, code: str) -> HTMLResponse:  # pragma: no cover
+async def github_sso(
+    di: Di,
+    code: str,
+    url: str | None = None,
+) -> HTMLResponse:  # pragma: no cover
     # TODO: if "setup_action" query param is set to "install" redirect user to
     # docs/setup/onboarding info.
 
     jwt = await generate_jwt_from_github_sso(di, code)
+
+    url = url or "/dashboard"
 
     # TODO: set this via cookie instead of doing SSR?
     # TODO: add "from" field to direct user to where they came from
@@ -77,7 +89,7 @@ async def github_sso(di: Di, code: str) -> HTMLResponse:  # pragma: no cover
 <script>
 setKey("jwt", "{jwt}");
 
-window.location.href = "/dashboard";
+window.location.href = decodeURI("{url}");
 </script>
 </body>
 </html>
