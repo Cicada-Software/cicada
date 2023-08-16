@@ -10,7 +10,7 @@ from contextlib import suppress
 from itertools import chain
 from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING, cast
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from cicada.ast.nodes import (
     FunctionExpression,
@@ -39,10 +39,12 @@ class ContainerTermination(WorkflowFailure):
 
 
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
-    pod_label: UUID
     container_id: str
     terminal: TerminalSession
     cloned_repo: Path
+
+    # Program used to run container (ie, docker or podman)
+    program: str
 
     max_columns: int = 120
 
@@ -52,21 +54,23 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         trigger: Trigger,
         terminal: TerminalSession,
         image: str,
+        program: str,
     ) -> None:
         super().__init__(trigger)
 
         self.terminal = terminal
         self.cloned_repo = cloned_repo
 
-        self.pod_id = uuid4()
+        self.uuid = uuid4()
+        self.program = program
 
-        self._start_pod(image)
+        self._start_container(image)
 
     def cleanup(self) -> None:
         self.terminal.finish()
 
         subprocess.run(
-            ["podman", "kill", self.container_id],
+            [self.program, "kill", self.container_id],
             stdout=PIPE,
             stderr=STDOUT,
         )
@@ -82,7 +86,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             args.append(value.value)
 
         if node.name == "shell":
-            exit_code = self._pod_exec(args)
+            exit_code = self._container_exec(args)
 
             if exit_code != 0:
                 raise CommandFailed(exit_code)
@@ -97,19 +101,20 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return UnitValue()
 
-    def _start_pod(self, image: str) -> None:
+    def _start_container(self, image: str) -> None:
         # TODO: add timeout
         process = subprocess.run(
             [
-                "podman",
+                self.program,
                 "run",
                 "--rm",
                 "--detach",
                 "--entrypoint",
-                '["sleep","infinity"]',
+                "sleep",
                 "--mount",
                 f"type=bind,src={self.cloned_repo},dst={self.temp_dir}",
                 image,
+                "infinity",
             ],
             stdout=PIPE,
             stderr=STDOUT,
@@ -127,7 +132,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             process.stdout.strip().split(b"\n")[-1].decode().strip()
         )
 
-    def _pod_exec(self, args: list[str]) -> int:
+    def _container_exec(self, args: list[str]) -> int:
         # This command is a hack to make sure we are in cwd from the last
         # command that was ran. Because each `exec` command is executed in the
         # container WORKDIR folder the cwd is not saved after `exec` finishes.
@@ -168,14 +173,13 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         process = subprocess.Popen(
             [
-                "podman",
+                self.program,
                 "exec",
                 "-e",
                 f"COLUMNS={self.max_columns}",
                 *extra_args,
                 "-t",
-                # TODO: Fix GitHub Codespaces emitting warnings
-                "--log-level=error",
+                *self.program_specific_flags(),
                 self.container_id,
                 "/bin/sh",
                 "-c",
@@ -201,7 +205,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
     @property
     def temp_dir(self) -> str:
-        return f"/tmp/{self.pod_id}"
+        return f"/tmp/{self.uuid}"
 
     def hashOf(self, args: list[str]) -> StringValue:  # noqa: N802
         shell_code = f"""\
@@ -225,16 +229,18 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 cat "$file"
                 [ "$?" = "1" ] && exit 1;
             done
+
+            # DO NOT REMOVE :
+            :
         ) | sha256sum - | awk '{{print $1}}'
         """
 
         process = subprocess.run(
             [
-                "podman",
+                self.program,
                 "exec",
                 "-t",
-                # TODO: Fix GitHub Codespaces emitting warnings
-                "--log-level=error",
+                *self.program_specific_flags(),
                 self.container_id,
                 "/bin/bash",
                 "-c",
@@ -257,6 +263,10 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             raise CommandFailed(1)
 
         return StringValue(lines[0].strip())
+
+    def program_specific_flags(self) -> list[str]:
+        # TODO: Fix GitHub Codespaces emitting warnings
+        return ["--log-level=error"] if self.program == "podman" else []
 
 
 def get_provider_default_env_vars(trigger: Trigger) -> list[str]:

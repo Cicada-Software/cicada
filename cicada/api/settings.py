@@ -45,7 +45,10 @@ class ExecutionSettings:
     executor: str
 
     # TODO: make this dynamic
-    AVAILABLE_EXECUTORS: ClassVar[set[str]] = {"remote-podman"}
+    AVAILABLE_EXECUTORS: ClassVar[set[str]] = {
+        "remote-podman",
+        "remote-docker",
+    }
 
     def __init__(self) -> None:
         self.executor = os.getenv("CICADA_EXECUTOR", "remote-podman")

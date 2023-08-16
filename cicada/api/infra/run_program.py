@@ -93,7 +93,7 @@ class ExecutionContext:
         raise NotImplementedError()
 
 
-class RemotePodmanExecutionContext(ExecutionContext):
+class RemoteDockerLikeExecutionContext(ExecutionContext):
     """
     Inject commands into a running container as opposed to running a container
     directly. The above solutions require that Cicada is installed in the
@@ -101,13 +101,19 @@ class RemotePodmanExecutionContext(ExecutionContext):
     bring your own container. With the remote container though you can (in
     theory) specify whatever container you want, and Cicada will inject the
     commands into the container.
+
+    This is the base for both Docker and Podman remote executors since they are
+    similar.
     """
 
+    program: str
+    executor_name: str
+
     async def run(self) -> int:
-        if not await self.is_podman_installed():
-            logger.error(
-                "Cannot use `remote-podman` executor because podman is not installed!"  # noqa: E501
-            )
+        if not await self.is_program_installed():
+            msg = f"Cannot use `{self.executor_name}` executor because {self.program} is not installed!"  # noqa: E501
+
+            logger.error(msg)
 
             # TODO: move terminal cleanup out of visitor
             self.terminal.finish()
@@ -160,6 +166,7 @@ class RemotePodmanExecutionContext(ExecutionContext):
                 self.session.trigger,
                 self.terminal,
                 image=image,
+                program=self.program,
             )
 
             tree.accept(visitor)
@@ -173,9 +180,9 @@ class RemotePodmanExecutionContext(ExecutionContext):
 
         return 0
 
-    async def is_podman_installed(self) -> bool:
+    async def is_program_installed(self) -> bool:
         proc = await asyncio.create_subprocess_shell(
-            "podman --version",
+            f"{self.program} --version",
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
@@ -183,6 +190,16 @@ class RemotePodmanExecutionContext(ExecutionContext):
         await proc.wait()
 
         return proc.returncode == 0
+
+
+class RemotePodmanExecutionContext(RemoteDockerLikeExecutionContext):
+    program = "podman"
+    executor_name = "remote-podman"
+
+
+class RemoteDockerExecutionContext(RemoteDockerLikeExecutionContext):
+    program = "docker"
+    executor_name = "remote-docker"
 
 
 class SelfHostedExecutionContext(ExecutionContext):
@@ -248,7 +265,8 @@ class SelfHostedExecutionContext(ExecutionContext):
 
 
 EXECUTOR_MAPPING = {
-    "remote-podman": RemotePodmanExecutionContext,
+    RemotePodmanExecutionContext.executor_name: RemotePodmanExecutionContext,
+    RemoteDockerExecutionContext.executor_name: RemoteDockerExecutionContext,
 }
 
 

@@ -17,3 +17,7 @@ When the container for a workflow is being setup a few things will happen:
 
 When running commands in the workflow, the current directory will be at the `/tmp/{UUID}/`
 folder, unless a `cd` command is ran.
+
+## `remote-docker` Executor
+
+Similar to the `remote-podman` executor but uses `docker` instead of `podman`.
