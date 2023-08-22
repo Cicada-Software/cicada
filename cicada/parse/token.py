@@ -131,3 +131,5 @@ class OnToken(KeywordToken): pass
 class WhereToken(KeywordToken): pass
 class IsToken(KeywordToken): pass
 class RunOnToken(KeywordToken): pass
+class CacheToken(KeywordToken): pass
+class UsingToken(KeywordToken): pass

@@ -8,6 +8,7 @@ from cicada.ast.nodes import (
     BinaryOperator,
     BlockExpression,
     BooleanExpression,
+    CacheStatement,
     FileNode,
     FunctionExpression,
     IdentifierExpression,
@@ -1028,3 +1029,35 @@ def test_parse_c_style_function_call_with_many_args() -> None:
             return
 
     pytest.fail(f"Tree did not match:\n{tree}")
+
+
+def test_parse_cache_stmt() -> None:
+    code = 'cache file using "xyz"\n'
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case CacheStatement(
+            files=[StringExpression("file")],
+            using=StringExpression("xyz"),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_error_messages_for_invalid_cache_stmts() -> None:
+    invalid_cache = "Invalid `cache` statement"
+
+    tests = {
+        "cache": invalid_cache,
+        "cache ": invalid_cache,
+        "cache x ": invalid_cache,
+        "cache x x": "expected `using`",
+        "cache x using ": invalid_cache,
+    }
+
+    for code, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(code))

@@ -800,6 +800,22 @@ def migrate_v38(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=39)
+def migrate_v39(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE cache_objects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            repository_url TEXT NOT NULL,
+            key TEXT NOT NULL,
+            session_id INT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

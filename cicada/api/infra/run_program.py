@@ -84,7 +84,6 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 @dataclass
 class ExecutionContext:
     url: str
-    # TODO: dont include these, they can be pulled from session
     session: Session
     terminal: TerminalSession
     cloned_repo: Path
@@ -163,7 +162,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
         try:
             visitor = RemoteContainerEvalVisitor(
                 self.cloned_repo,
-                self.session.trigger,
+                self.session,
                 self.terminal,
                 image=image,
                 program=self.program,

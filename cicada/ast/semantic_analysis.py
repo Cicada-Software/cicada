@@ -9,6 +9,7 @@ from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
     BlockExpression,
+    CacheStatement,
     Expression,
     FileNode,
     FunctionExpression,
@@ -106,6 +107,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     # multiple on statements defined.
     has_on_stmt: bool
 
+    # Set whenever a `cache` statement is found as there cannot be multiple
+    # cache statements in a single file.
+    cache_stmt: CacheStatement | None
+
     run_on: RunOnStatement | None
 
     file_node: FileNode | None = None
@@ -119,6 +124,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         self.has_on_stmt = False
         self.run_on = None
         self.file_node = None
+        self.cache_stmt = None
 
         if self.trigger:
             event = cast(RecordValue, trigger_to_record(self.trigger))
@@ -440,6 +446,22 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             )
 
         node.type = StringType()
+
+    def visit_cache_stmt(self, node: CacheStatement) -> None:
+        super().visit_cache_stmt(node)
+
+        if self.cache_stmt:
+            msg = "Cannot have multiple `cache` statements in a single file"
+
+            raise AstError(msg, node.info)
+
+        if node.using.type != StringType():
+            raise AstError(
+                f"Expected `{StringType()}` type, got `{node.using.type}`",
+                node.using.info,
+            )
+
+        self.cache_stmt = node
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

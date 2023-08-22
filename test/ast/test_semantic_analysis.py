@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from cicada.ast.entry import parse_and_analyze
@@ -579,3 +581,26 @@ def test_hash_of_requires_string_only_args() -> None:
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("hashOf(1)")
+
+
+def test_proper_cache_stmt_is_valid() -> None:
+    parse_and_analyze('cache file using "key"')
+
+
+def test_cache_key_must_be_string() -> None:
+    msg = "Expected `string` type, got `number`"
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze("cache file using 123")
+
+
+def test_only_one_cache_stmt_allowed_per_file() -> None:
+    code = """\
+cache x using "abc"
+cache y using "xyz"
+"""
+
+    msg = "Cannot have multiple `cache` statements"
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)

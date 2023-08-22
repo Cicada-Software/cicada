@@ -121,6 +121,8 @@ extend-ignore = [
 "cicada/tools/workflow_converter/github_actions.py" = ["E501"]
 "test/api/webhook/github/test_github_webhook_entry.py" = ["ANN003"]
 "test/ast/test_generate.py" = ["W293"]
+"test/api/application/cache/test_cache_files.py" = ["S108"]
+"test/api/application/cache/test_restore_cache.py" = ["S108"]
 
 [build-system]
 requires = ["setuptools"]

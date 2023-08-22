@@ -642,6 +642,26 @@ class RunOnStatement(Statement):
         )
 
 
+@dataclass
+class CacheStatement(Statement):
+    files: list[Expression]
+    using: Expression
+
+    __match_args__ = ("files", "using")
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_cache_stmt(self)
+
+    def __str__(self) -> str:
+        files = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.files))
+        files = indent(files, "  ")
+
+        body = f"files=\n{files}\nusing={self.using}"
+        body = indent(body, "  ")
+
+        return f"{type(self).__name__}(): # {self.info}\n{body}"
+
+
 class NodeVisitor(Generic[T]):
     def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError()
@@ -692,6 +712,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError()
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> T:
+        raise NotImplementedError()
+
+    def visit_cache_stmt(self, node: CacheStatement) -> T:
         raise NotImplementedError()
 
 
@@ -753,3 +776,9 @@ class TraversalVisitor(NodeVisitor[None]):
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> None:
         pass
+
+    def visit_cache_stmt(self, node: CacheStatement) -> None:
+        for file in node.files:
+            file.accept(self)
+
+        node.using.accept(self)

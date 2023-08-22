@@ -7,6 +7,7 @@ from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import (
+    CacheStatement,
     FunctionExpression,
     RecordValue,
     StringValue,
@@ -22,6 +23,15 @@ from cicada.eval.find_files import find_ci_files
 
 
 class EvalVisitor(ConstexprEvalVisitor):
+    cached_files: list[Path] | None
+    cache_key: str | None
+
+    def __init__(self, trigger: Trigger | None = None) -> None:
+        super().__init__(trigger)
+
+        self.cached_files = None
+        self.cache_key = None
+
     def visit_func_expr(self, node: FunctionExpression) -> Value:
         args: list[str] = []
 
@@ -50,6 +60,13 @@ class EvalVisitor(ConstexprEvalVisitor):
 
         if node.name == "print":
             print(*args)  # noqa: T201
+
+        return UnitValue()
+
+    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+        print(  # noqa: T201
+            "Caching is not yet supported for locally ran workflows"
+        )
 
         return UnitValue()
 

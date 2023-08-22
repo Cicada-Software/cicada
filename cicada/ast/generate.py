@@ -8,6 +8,7 @@ from typing import NoReturn, Self, cast
 from cicada.ast.types import UnknownType
 from cicada.parse.token import (
     BooleanLiteralToken,
+    CacheToken,
     CloseParenToken,
     ColonToken,
     CommaToken,
@@ -30,6 +31,7 @@ from cicada.parse.token import (
     SlashToken,
     StringLiteralToken,
     Token,
+    UsingToken,
     WhereToken,
     WhiteSpaceToken,
 )
@@ -40,6 +42,7 @@ from .nodes import (
     BinaryOperator,
     BlockExpression,
     BooleanExpression,
+    CacheStatement,
     Expression,
     FileNode,
     FunctionExpression,
@@ -365,6 +368,9 @@ def generate_node(state: ParserState) -> Node:
     if isinstance(token, RunOnToken):
         return generate_run_on_stmt(state)
 
+    if isinstance(token, CacheToken):
+        return generate_cache_stmt(state)
+
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
         "shell",
@@ -476,44 +482,13 @@ def generate_interpolated_string(
 def generate_function_expr(state: ParserState) -> FunctionExpression:
     name = state.current_token
 
-    arg: list[Token] = []
-    args: list[Expression] = []
-
     next_token = next(state, None)
 
     if next_token and not isinstance(next_token, NewlineToken):
-        for token in state:
-            if isinstance(token, NewlineToken):
-                break
+        args = generate_string_list(state)
 
-            if arg and isinstance(token, WhiteSpaceToken):
-                args.append(StringExpression.from_token(Token.meld(arg)))
-
-                token = state.next_non_whitespace()
-                arg = []
-
-            if isinstance(token, WhiteSpaceToken):
-                continue
-
-            if isinstance(token, OpenParenToken):
-                leading_tokens = arg
-
-                if arg:
-                    arg = []
-
-                args.append(
-                    generate_interpolated_string(state, leading_tokens)
-                )
-
-                if isinstance(state.current_token, NewlineToken):
-                    state.rewind(-1)
-                    break
-
-            else:
-                arg.append(token)
-
-        if arg:
-            args.append(StringExpression.from_token(Token.meld(arg)))
+    else:
+        args = []
 
     if name.content in SHELL_ALIASES:
         function_name = "shell"
@@ -529,6 +504,49 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
         type=UnknownType(),
         is_constexpr=False,
     )
+
+
+def generate_string_list(
+    state: ParserState, *, stop_at: type[Token] = NewlineToken
+) -> list[Expression]:
+    arg: list[Token] = []
+    args: list[Expression] = []
+
+    for token in state:
+        if isinstance(token, stop_at):
+            break
+
+        if arg and isinstance(token, WhiteSpaceToken):
+            args.append(StringExpression.from_token(Token.meld(arg)))
+
+            token = state.next_non_whitespace()
+            arg = []
+
+        if isinstance(token, stop_at):
+            break
+
+        if isinstance(token, WhiteSpaceToken):
+            continue
+
+        if isinstance(token, OpenParenToken):
+            leading_tokens = arg
+
+            if arg:
+                arg = []
+
+            args.append(generate_interpolated_string(state, leading_tokens))
+
+            if isinstance(state.current_token, stop_at):
+                state.rewind(-1)
+                break
+
+        else:
+            arg.append(token)
+
+    if arg:
+        args.append(StringExpression.from_token(Token.meld(arg)))
+
+    return args
 
 
 def generate_let_expr(state: ParserState) -> LetExpression:
@@ -820,3 +838,36 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
         type=run_type,
         value=value,
     )
+
+
+def generate_cache_stmt(state: ParserState) -> CacheStatement:
+    start = state.current_token
+
+    msg = "Invalid `cache` statement. Did you mean `cache file using ...`?"
+
+    try:
+        # skip "cache" token
+        next(state)
+
+        files = generate_string_list(state, stop_at=UsingToken)
+
+        if not files:
+            raise AstError(msg, start)
+
+        using = state.current_token
+
+        if not isinstance(using, UsingToken):
+            raise AstError.unexpected_token(using, expected="using")
+
+        state.next_non_whitespace()
+
+        cache_key = generate_expr(state)
+
+        return CacheStatement(
+            info=LineInfo.from_token(start),
+            files=files,
+            using=cache_key,
+        )
+
+    except StopIteration as ex:
+        raise AstError(msg, start) from ex

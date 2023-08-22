@@ -10,5 +10,6 @@
   - [The `if` Expression](./ci-lang/if-expr.md)
   - [The Block Expression](./ci-lang/block-expr.md)
   - [Built-in Functions](./ci-lang/built-in-functions.md)
+  - [Caching](./ci-lang/caching.md)
 - [Self-Hosting](./installing.md)
   - [Self-Hosted Runners](./self-hosted-runner.md)

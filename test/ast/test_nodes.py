@@ -63,6 +63,8 @@ if true:
 let mut f = 0
 
 run_on image xyz
+
+cache abc using "123"
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -110,6 +112,11 @@ FileNode:
   LetExpression(mutable): # 19:1..19:3
     name=f
     expr=NumericExpression(0) # 19:13..19:13
-  RunOnStatement(image:xyz) # 21:1..21:6"""
+  RunOnStatement(image:xyz) # 21:1..21:6
+  CacheStatement(): # 23:1..23:5
+    files=
+      0=StringExpression('abc') # 23:7..23:9
+    using=StringExpression('123') # 23:17..23:21\
+"""
 
     assert str(tree) == expected

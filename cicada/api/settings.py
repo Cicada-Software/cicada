@@ -267,6 +267,31 @@ class SMTPSettings:
             raise ValueError("SMTP_PASSWORD must be set")
 
 
+# TODO: test this
+class S3CacheSettings:
+    access_key: str
+    secret_key: str
+    url: str
+    bucket: str
+
+    def __init__(self) -> None:
+        self.access_key = os.getenv("S3_CACHE_ACCESS_KEY", "")
+        if not self.access_key:
+            raise ValueError("S3_CACHE_ACCESS_KEY must be set")
+
+        self.secret_key = os.getenv("S3_CACHE_SECRET_KEY", "")
+        if not self.secret_key:
+            raise ValueError("S3_CACHE_SECRET_KEY must be set")
+
+        self.url = os.getenv("S3_CACHE_URL", "")
+        if not self.url:
+            raise ValueError("S3_CACHE_URL must be set")
+
+        self.bucket = os.getenv("S3_CACHE_BUCKET", "")
+        if not self.bucket:
+            raise ValueError("S3_CACHE_BUCKET must be set")
+
+
 def verify_env_vars() -> None:
     """
     Eagerly load env vars to see if they are valid. The env vars are only valid

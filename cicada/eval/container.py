@@ -8,11 +8,17 @@ import sys
 import termios
 from contextlib import suppress
 from itertools import chain
+from pathlib import Path
 from subprocess import PIPE, STDOUT
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
+from cicada.api.infra.cache_repo import CacheRepo
+from cicada.application.cache.cache_files import CacheFilesForSession
+from cicada.application.cache.restore_cache import RestoreCache
 from cicada.ast.nodes import (
+    CacheStatement,
+    FileNode,
     FunctionExpression,
     RecordValue,
     StringValue,
@@ -20,6 +26,7 @@ from cicada.ast.nodes import (
     Value,
 )
 from cicada.ast.types import RecordType
+from cicada.domain.cache import CacheKey
 from cicada.domain.triggers import CommitTrigger
 from cicada.eval.constexpr_visitor import (
     CommandFailed,
@@ -28,8 +35,7 @@ from cicada.eval.constexpr_visitor import (
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
+    from cicada.domain.session import Session
     from cicada.domain.terminal_session import TerminalSession
     from cicada.domain.triggers import Trigger
 
@@ -39,6 +45,8 @@ class ContainerTermination(WorkflowFailure):
 
 
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
+    session: Session
+
     container_id: str
     terminal: TerminalSession
     cloned_repo: Path
@@ -48,21 +56,31 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
     max_columns: int = 120
 
+    # TODO: isolate this logic in consteval visitor (or a visitor that estends
+    # from it.
+    cached_files: list[Path] | None
+    cache_key: str | None
+
     def __init__(
         self,
         cloned_repo: Path,
-        trigger: Trigger,
+        session: Session,
         terminal: TerminalSession,
         image: str,
         program: str,
     ) -> None:
-        super().__init__(trigger)
+        super().__init__(session.trigger)
+
+        self.session = session
 
         self.terminal = terminal
         self.cloned_repo = cloned_repo
 
         self.uuid = uuid4()
         self.program = program
+
+        self.cached_files = None
+        self.cache_key = None
 
         self._start_container(image)
 
@@ -74,6 +92,25 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             stdout=PIPE,
             stderr=STDOUT,
         )
+
+    def visit_file_node(self, node: FileNode) -> Value:
+        output = super().visit_file_node(node)
+
+        if (
+            isinstance(output, UnitValue)
+            and self.cached_files
+            and self.cache_key
+            and self.trigger
+        ):
+            cmd = CacheFilesForSession(CacheRepo())
+            cmd.handle(
+                self.cached_files,
+                CacheKey(self.cache_key),
+                self.session,
+                self.cloned_repo,
+            )
+
+        return output
 
     def visit_func_expr(self, node: FunctionExpression) -> Value:
         args: list[str] = []
@@ -98,6 +135,36 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         if node.name == "print":
             self.terminal.append(" ".join(args).encode())
+
+        return UnitValue()
+
+    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+        assert self.trigger
+
+        files = [file.accept(self) for file in node.files]
+        cache_key = node.using.accept(self)
+
+        assert isinstance(cache_key, StringValue)
+
+        cache_repo = CacheRepo()
+
+        if cache_repo.key_exists(self.trigger.repository_url, cache_key.value):
+            cmd = RestoreCache(cache_repo)
+            cmd.handle(
+                self.trigger.repository_url,
+                cache_key.value,
+                self.cloned_repo,
+            )
+
+            return UnitValue()
+
+        self.cache_key = cache_key.value
+        self.cached_files = []
+
+        for filename in files:
+            assert isinstance(filename, StringValue)
+
+            self.cached_files.append(Path(filename.value))
 
         return UnitValue()
 

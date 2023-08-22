@@ -97,7 +97,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         for expr in node.exprs:
             match expr.accept(self):
                 case UnreachableValue():
-                    break
+                    return UnreachableValue()
 
         return UnitValue()
 

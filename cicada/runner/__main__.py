@@ -22,6 +22,7 @@ from websockets.exceptions import ConnectionClosed
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import (
+    CacheStatement,
     FunctionExpression,
     RecordValue,
     StringValue,
@@ -485,6 +486,13 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
                     self.data_stream.append(f.getvalue().encode())
 
                     raise
+
+        return UnitValue()
+
+    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+        self.data_stream.append(
+            b"Caching is not yet supported for self-hosted runners"
+        )
 
         return UnitValue()
 
