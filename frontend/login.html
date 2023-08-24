@@ -140,6 +140,8 @@ main();
 const handleLogin = e => {
   e.preventDefault();
 
+  const errorMsg = document.getElementById("error-msg");
+
   errorMsg.style.display = "none";
 
   fetch("/api/login", {method: "POST", body: new FormData(e.target)})
