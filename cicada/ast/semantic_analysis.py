@@ -88,7 +88,7 @@ STRING_COERCIBLE_TYPES: tuple[Type, ...] = (
 )
 
 
-RESERVED_NAMES = {"event", "env"}
+RESERVED_NAMES = {"event", "env", "secret"}
 
 
 class SemanticAnalysisVisitor(TraversalVisitor):
@@ -128,19 +128,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if self.trigger:
             event = cast(RecordValue, trigger_to_record(self.trigger))
+
             self.symbols["event"] = event
-
-            # TODO: make function for doing this
-            env = RecordValue(
-                cast(RecordValue, event.value["env"]).value,
-                next(
-                    x
-                    for x in cast(RecordType, event.type).fields
-                    if x.name == "env"
-                ).type,
-            )
-
-            self.symbols["env"] = env
+            self.symbols["env"] = event.value["env"]
+            self.symbols["secret"] = event.value["secret"]
 
     def visit_file_node(self, node: FileNode) -> None:
         self.file_node = node
@@ -477,7 +468,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 if isinstance(symbol, Expression):
                     return symbol.is_constexpr
 
-            if node.name in ("event", "env"):
+            if node.name in RESERVED_NAMES:
                 return True
 
             return False

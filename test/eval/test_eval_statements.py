@@ -103,6 +103,7 @@ def test_on_statement_converts_trigger_data_to_record() -> None:
     match event:
         case RecordValue(
             value={
+                "env": RecordValue(),
                 "type": StringValue("git.push"),
                 "provider": StringValue("github"),
                 "repository_url": StringValue(""),
@@ -110,6 +111,7 @@ def test_on_statement_converts_trigger_data_to_record() -> None:
                 "author": StringValue("dosisod"),
                 "message": StringValue(""),
                 "committed_on": StringValue(),
+                "secret": RecordValue(),
             },
             type=RecordType(
                 fields=[
@@ -121,6 +123,7 @@ def test_on_statement_converts_trigger_data_to_record() -> None:
                     RecordField("provider", StringType()),
                     RecordField("ref", StringType()),
                     RecordField("repository_url", StringType()),
+                    RecordField("secret", RecordType()),
                     RecordField("sha", StringType()),
                     RecordField("type", StringType()),
                 ]
