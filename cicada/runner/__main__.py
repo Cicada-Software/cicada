@@ -107,7 +107,7 @@ def add_control_c_handler() -> None:
 
     def close(*_) -> NoReturn:  # type: ignore
         logger.fatal("Shutting down")
-        os._exit(0)  # noqa: SLF001
+        os._exit(0)
 
     signal.signal(signal.SIGINT, close)
     signal.signal(signal.SIGTERM, close)
@@ -147,7 +147,7 @@ async def websocket_lifecycle(ws: WebSocketClientProtocol) -> None:
     async def close(*_) -> NoReturn:  # type: ignore
         logger.fatal("Shutting down")
         await ws.close()
-        os._exit(0)  # noqa: SLF001
+        os._exit(0)
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGINT, lambda: loop.create_task(close()))

@@ -1,13 +1,12 @@
 import logging
 import time
 
-from fastapi import Request
+from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from cicada.api.settings import NotificationSettings
 from cicada.application.exceptions import (
-    CicadaException,
     Forbidden,
     InvalidRequest,
     NotFound,
@@ -43,9 +42,7 @@ class SlowRequestMiddleware:  # pragma: no cover
             await self.app(scope, receive, send)
 
 
-async def cicada_exception_handler(
-    _: Request, exc: CicadaException
-) -> JSONResponse:
+async def cicada_exception_handler(_: Request, exc: Exception) -> Response:
     if isinstance(exc, InvalidRequest):
         code = 400
     elif isinstance(exc, Unauthorized):

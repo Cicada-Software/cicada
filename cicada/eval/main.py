@@ -44,7 +44,7 @@ class EvalVisitor(ConstexprEvalVisitor):
 
         # TODO: move to separate function
         if node.name == "shell":
-            process = subprocess.run(
+            process = subprocess.run(  # noqa: PLW1510
                 ["/bin/sh", "-c", shlex.join(args)],  # noqa: S603
                 env=self.trigger.env if self.trigger else None,
             )

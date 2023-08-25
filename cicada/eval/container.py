@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import pty
 import shlex
@@ -87,11 +88,16 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     def cleanup(self) -> None:
         self.terminal.finish()
 
-        subprocess.run(
+        process = subprocess.run(  # noqa: PLW1510
             [self.program, "kill", self.container_id],
             stdout=PIPE,
             stderr=STDOUT,
         )
+
+        if process.returncode != 0:
+            logging.getLogger("cicada").error(
+                f"Could not kill container id: {self.container_id}"
+            )
 
     def visit_file_node(self, node: FileNode) -> Value:
         output = super().visit_file_node(node)
@@ -170,7 +176,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
     def _start_container(self, image: str) -> None:
         # TODO: add timeout
-        process = subprocess.run(
+        process = subprocess.run(  # noqa: PLW1510
             [
                 self.program,
                 "run",
@@ -302,7 +308,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         ) | sha256sum - | awk '{{print $1}}'
         """
 
-        process = subprocess.run(
+        process = subprocess.run(  # noqa: PLW1510
             [
                 self.program,
                 "exec",
