@@ -25,10 +25,10 @@ class SessionRepo(ISessionRepo, DbConnection):
     def create(self, session: Session) -> None:
         trigger = asjson(session.trigger)
 
-        # Remove env vars from the trigger because they will bloat the trigger
-        # size, will be replaced with new values (if there are any) when reran,
-        # and if there is a secret committed, it will be harder to remove.
+        # Remove env vars and secrets from trigger since they contain sensitive
+        # information, and will bloat the size of the trigger.
         del trigger["env"]
+        del trigger["secret"]
 
         cursor = self.conn.cursor()
 

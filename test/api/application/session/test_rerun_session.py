@@ -34,6 +34,7 @@ async def test_reran_session_is_created_and_ran() -> None:
         workflow_runner=dummy_check_runner,
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
+        secret_repo=MagicMock(),
     )
 
     session = Session(
@@ -85,6 +86,7 @@ async def test_session_not_reran_if_gather_fails() -> None:
         gather_workflows=AsyncMock(return_value=[]),
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
+        secret_repo=MagicMock(),
     )
 
     session = Session(

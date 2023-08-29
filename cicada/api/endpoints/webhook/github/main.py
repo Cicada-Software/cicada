@@ -53,6 +53,7 @@ def handle_github_push_event(  # type: ignore[misc]
         workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
+        secret_repo=di.secret_repo(),
     )
 
     commit = github_event_to_commit(event)
@@ -85,6 +86,7 @@ def handle_github_issue_event(  # type: ignore[misc]
         workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
+        secret_repo=di.secret_repo(),
     )
 
     issue = github_event_to_issue(event)

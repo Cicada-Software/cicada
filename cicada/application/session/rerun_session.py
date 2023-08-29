@@ -1,6 +1,9 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from cicada.application.secret.gather_secrets_from_trigger import (
+    GatherSecretsFromTrigger,
+)
 from cicada.application.session.common import (
     IWorkflowGatherer,
     IWorkflowRunner,
@@ -8,10 +11,12 @@ from cicada.application.session.common import (
 from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
 from cicada.domain.session import Session, SessionStatus
+from cicada.domain.triggers import Trigger
 
 
 class RerunSession:
@@ -39,6 +44,7 @@ class RerunSession:
         gather_workflows: IWorkflowGatherer,
         env_repo: IEnvironmentRepo,
         repository_repo: IRepositoryRepo,
+        secret_repo: ISecretRepo,
     ) -> None:
         self.session_repo = session_repo
         self.terminal_session_repo = terminal_session_repo
@@ -46,6 +52,7 @@ class RerunSession:
         self.gather_workflows = gather_workflows
         self.env_repo = env_repo
         self.repository_repo = repository_repo
+        self.secret_repo = secret_repo
 
     async def handle(self, session: Session) -> Session | None:
         with TemporaryDirectory() as cloned_repo:
@@ -54,9 +61,8 @@ class RerunSession:
     async def _handle(
         self, cloned_repo: Path, session: Session
     ) -> Session | None:
-        session.trigger.env = get_env_vars_for_repo(
-            self.env_repo, self.repository_repo, session.trigger
-        )
+        session.trigger.env = self.get_env_vars(session.trigger)
+        session.trigger.secret = self.get_secrets(session.trigger)
 
         # TODO: assert previous session(s) arent pending
         files = await self.gather_workflows(session.trigger, cloned_repo)
@@ -103,3 +109,13 @@ class RerunSession:
         self.session_repo.update(session)
 
         return session
+
+    def get_env_vars(self, trigger: Trigger) -> dict[str, str]:
+        return get_env_vars_for_repo(
+            self.env_repo, self.repository_repo, trigger
+        )
+
+    def get_secrets(self, trigger: Trigger) -> dict[str, str]:
+        cmd = GatherSecretsFromTrigger(self.repository_repo, self.secret_repo)
+
+        return cmd.handle(trigger)

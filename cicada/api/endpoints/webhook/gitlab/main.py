@@ -48,6 +48,7 @@ def handle_gitlab_push_event(  # type: ignore[misc]
         gather_workflows=gather_workflows,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
+        secret_repo=di.secret_repo(),
     )
 
     commit = gitlab_event_to_commit(event)
@@ -65,6 +66,7 @@ def handle_gitlab_issue_event(  # type: ignore[misc]
         gather_workflows=gather_issue_workflows,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
+        secret_repo=di.secret_repo(),
     )
 
     issue = gitlab_event_to_issue(event)

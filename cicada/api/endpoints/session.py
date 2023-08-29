@@ -84,6 +84,7 @@ async def rerun_session(
         workflow_runner=workflow_wrapper,
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
+        secret_repo=di.secret_repo(),
     )
 
     async def run(old_session: Session) -> None:

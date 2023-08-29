@@ -3,6 +3,7 @@ from cicada.api.infra.github.stop_session import github_session_terminator
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.runner_repo import RunnerRepo
+from cicada.api.infra.secret_repo import SecretRepo
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
@@ -12,6 +13,7 @@ from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.runner_repo import IRunnerRepo
+from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.repo.user_repo import IUserRepo
@@ -52,6 +54,10 @@ class DiContainer:  # pragma: no cover
     @classmethod
     def runner_repo(cls) -> IRunnerRepo:
         return RunnerRepo()
+
+    @classmethod
+    def secret_repo(cls) -> ISecretRepo:
+        return SecretRepo()
 
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:

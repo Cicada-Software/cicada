@@ -2,6 +2,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
+from cicada.application.secret.gather_secrets_from_trigger import (
+    GatherSecretsFromTrigger,
+)
 from cicada.application.session.common import (
     IWorkflowGatherer,
     IWorkflowRunner,
@@ -9,6 +12,7 @@ from cicada.application.session.common import (
 from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
+from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
@@ -54,6 +58,7 @@ class MakeSessionFromTrigger:
         gather_workflows: IWorkflowGatherer,
         env_repo: IEnvironmentRepo,
         repository_repo: IRepositoryRepo,
+        secret_repo: ISecretRepo,
     ) -> None:
         self.session_repo = session_repo
         self.terminal_session_repo = terminal_session_repo
@@ -61,6 +66,7 @@ class MakeSessionFromTrigger:
         self.gather_workflows = gather_workflows
         self.env_repo = env_repo
         self.repository_repo = repository_repo
+        self.secret_repo = secret_repo
 
     async def handle(self, trigger: Trigger) -> Session | None:
         with TemporaryDirectory() as cloned_repo:
@@ -69,9 +75,8 @@ class MakeSessionFromTrigger:
     async def _handle(
         self, cloned_repo: Path, trigger: Trigger
     ) -> Session | None:
-        trigger.env = get_env_vars_for_repo(
-            self.env_repo, self.repository_repo, trigger
-        )
+        trigger.env = self.get_env_vars(trigger)
+        trigger.secret = self.get_secrets(trigger)
 
         files = await self.gather_workflows(trigger, cloned_repo)
 
@@ -118,3 +123,13 @@ class MakeSessionFromTrigger:
             session.id,
             session.run,
         )
+
+    def get_env_vars(self, trigger: Trigger) -> dict[str, str]:
+        return get_env_vars_for_repo(
+            self.env_repo, self.repository_repo, trigger
+        )
+
+    def get_secrets(self, trigger: Trigger) -> dict[str, str]:
+        cmd = GatherSecretsFromTrigger(self.repository_repo, self.secret_repo)
+
+        return cmd.handle(trigger)
