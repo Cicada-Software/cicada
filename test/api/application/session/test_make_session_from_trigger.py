@@ -1,13 +1,11 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from cicada.application.session.make_session_from_trigger import (
     MakeSessionFromTrigger,
 )
-from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
@@ -39,15 +37,17 @@ class AsyncTap:
         self.test.set()
 
 
+def make_fake_repository_repo() -> MagicMock:
+    mock = MagicMock()
+    mock.get_repository_by_url_and_provider.return_value = None
+
+    return mock
+
+
 async def test_session_is_created() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(
-        session: Session,
-        _: TerminalSession,
-        __: Path,
-        ___: FileNode,
-    ) -> None:
+    async def dummy_check_runner(session: Session, *_) -> None:  # type: ignore
         await tap.wait_for_close()
 
         session.finish(SessionStatus.SUCCESS)
@@ -63,6 +63,8 @@ async def test_session_is_created() -> None:
         terminal_session_repo,
         dummy_check_runner,
         gather_workflows=AsyncMock(return_value=[1]),
+        env_repo=MagicMock(),
+        repository_repo=make_fake_repository_repo(),
     )
 
     commit = CommitTrigger(
@@ -104,6 +106,8 @@ async def test_session_not_created_if_workflow_gather_fails() -> None:
         terminal_session_repo,
         workflow_runner=AsyncMock(),
         gather_workflows=AsyncMock(return_value=[]),
+        env_repo=MagicMock(),
+        repository_repo=make_fake_repository_repo(),
     )
 
     commit = CommitTrigger(

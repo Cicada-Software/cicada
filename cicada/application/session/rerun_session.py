@@ -37,8 +37,8 @@ class RerunSession:
         terminal_session_repo: ITerminalSessionRepo,
         workflow_runner: IWorkflowRunner,
         gather_workflows: IWorkflowGatherer,
-        env_repo: IEnvironmentRepo | None = None,
-        repository_repo: IRepositoryRepo | None = None,
+        env_repo: IEnvironmentRepo,
+        repository_repo: IRepositoryRepo,
     ) -> None:
         self.session_repo = session_repo
         self.terminal_session_repo = terminal_session_repo
@@ -54,14 +54,11 @@ class RerunSession:
     async def _handle(
         self, cloned_repo: Path, session: Session
     ) -> Session | None:
-        # TODO: make these required
-        if self.env_repo and self.repository_repo:
-            session.trigger.env = get_env_vars_for_repo(
-                self.env_repo, self.repository_repo, session.trigger
-            )
+        session.trigger.env = get_env_vars_for_repo(
+            self.env_repo, self.repository_repo, session.trigger
+        )
 
         # TODO: assert previous session(s) arent pending
-
         files = await self.gather_workflows(session.trigger, cloned_repo)
 
         if not files:

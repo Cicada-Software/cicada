@@ -1,28 +1,22 @@
 import asyncio
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from cicada.application.session.rerun_session import RerunSession
-from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha
 from test.api.application.session.test_make_session_from_trigger import (
     AsyncTap,
+    make_fake_repository_repo,
 )
 
 
 async def test_reran_session_is_created_and_ran() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(
-        session: Session,
-        _: TerminalSession,
-        __: Path,
-        ___: FileNode,
-    ) -> None:
+    async def dummy_check_runner(session: Session, *_) -> None:  # type: ignore
         await tap.wait_for_close()
 
         session.finish(SessionStatus.SUCCESS)
@@ -38,6 +32,8 @@ async def test_reran_session_is_created_and_ran() -> None:
         terminal_session_repo,
         gather_workflows=AsyncMock(return_value=[1]),
         workflow_runner=dummy_check_runner,
+        env_repo=MagicMock(),
+        repository_repo=make_fake_repository_repo(),
     )
 
     session = Session(
@@ -87,6 +83,8 @@ async def test_session_not_reran_if_gather_fails() -> None:
         terminal_session_repo,
         workflow_runner=AsyncMock(),
         gather_workflows=AsyncMock(return_value=[]),
+        env_repo=MagicMock(),
+        repository_repo=make_fake_repository_repo(),
     )
 
     session = Session(
