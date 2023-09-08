@@ -33,7 +33,6 @@ from cicada.ast.nodes import (
     UnreachableValue,
     Value,
 )
-from cicada.ast.types import RecordType
 from cicada.domain.triggers import Trigger
 
 
@@ -79,19 +78,10 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         if trigger:
             event = cast(RecordValue, trigger_to_record(trigger))
+
             self.symbols["event"] = event
-
-            # TODO: make function for doing this
-            env = RecordValue(
-                cast(RecordValue, event.value["env"]).value,
-                next(
-                    x
-                    for x in cast(RecordType, event.type).fields
-                    if x.name == "env"
-                ).type,
-            )
-
-            self.symbols["env"] = env
+            self.symbols["env"] = event.value["env"]
+            self.symbols["secret"] = event.value["secret"]
 
     def visit_file_node(self, node: FileNode) -> Value:
         for expr in node.exprs:

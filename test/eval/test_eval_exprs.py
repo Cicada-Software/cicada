@@ -292,3 +292,23 @@ def test_set_new_env_var() -> None:
 
     assert isinstance(symbol, RecordValue)
     assert symbol.value["TESTING"] == StringValue("xyz")
+
+
+def test_get_secret() -> None:
+    trigger = make_dummy_commit_trigger()
+    trigger.secret = {"API_KEY": "abc123"}
+
+    tree = parse_and_analyze("let x = secret.API_KEY", trigger)
+
+    visitor = EvalVisitor(trigger)
+    tree.accept(visitor)
+
+    symbol = visitor.symbols["secret"]
+
+    assert isinstance(symbol, RecordValue)
+    assert symbol.value["API_KEY"] == StringValue("abc123")
+
+    symbol = visitor.symbols["x"]
+
+    assert isinstance(symbol, StringValue)
+    assert symbol.value == "abc123"
