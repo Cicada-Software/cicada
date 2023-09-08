@@ -23,11 +23,13 @@ from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.runner_repo import IRunnerRepo
+from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.repo.user_repo import IUserRepo
 from cicada.domain.repo.waitlist_repo import IWaitlistRepo
 from test.api.common import SqliteTestWrapper
+from test.api.endpoints.dummy_secret_repo import DummySecretRepo
 
 
 class TestDiContainer(SqliteTestWrapper, DiContainer):
@@ -80,6 +82,10 @@ class TestDiContainer(SqliteTestWrapper, DiContainer):
         return RunnerRepo(cls.connection)
 
     @classmethod
+    def secret_repo(cls) -> ISecretRepo:
+        return DummySecretRepo()
+
+    @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:
         return {}
 
@@ -101,6 +107,9 @@ class TestEndpointWrapper:
         "GITLAB_ACCESS_TOKEN": "access-token",
         "JWT_TOKEN_SECRET": "jwt secret",
         "JWT_TOKEN_EXPIRE_SECONDS": "60",
+        "VAULT_ADDR": "vault_addr",
+        "VAULT_TOKEN": "vault_token",
+        "VAULT_USER_PASSWORD": "placeholder",
     }
 
     @classmethod

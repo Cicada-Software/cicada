@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cicada.domain.installation import Installation, InstallationId
-from cicada.domain.repository import Repository
+from cicada.domain.repository import Repository, RepositoryId
 from cicada.domain.user import User
 
 
@@ -26,4 +26,10 @@ class IInstallationRepo(ABC):
     def add_repository_to_installation(
         self, repo: Repository, installation: Installation
     ) -> None:
+        ...
+
+    @abstractmethod
+    def get_installation_id_by_repository_id(
+        self, id: RepositoryId
+    ) -> InstallationId | None:
         ...

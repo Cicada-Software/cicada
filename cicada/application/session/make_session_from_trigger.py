@@ -11,6 +11,7 @@ from cicada.application.session.common import (
 )
 from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
@@ -58,6 +59,7 @@ class MakeSessionFromTrigger:
         gather_workflows: IWorkflowGatherer,
         env_repo: IEnvironmentRepo,
         repository_repo: IRepositoryRepo,
+        installation_repo: IInstallationRepo,
         secret_repo: ISecretRepo,
     ) -> None:
         self.session_repo = session_repo
@@ -66,6 +68,7 @@ class MakeSessionFromTrigger:
         self.gather_workflows = gather_workflows
         self.env_repo = env_repo
         self.repository_repo = repository_repo
+        self.installation_repo = installation_repo
         self.secret_repo = secret_repo
 
     async def handle(self, trigger: Trigger) -> Session | None:
@@ -130,6 +133,8 @@ class MakeSessionFromTrigger:
         )
 
     def get_secrets(self, trigger: Trigger) -> dict[str, str]:
-        cmd = GatherSecretsFromTrigger(self.repository_repo, self.secret_repo)
+        cmd = GatherSecretsFromTrigger(
+            self.repository_repo, self.installation_repo, self.secret_repo
+        )
 
         return cmd.handle(trigger)

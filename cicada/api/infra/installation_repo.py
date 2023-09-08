@@ -7,7 +7,7 @@ from cicada.domain.installation import (
     InstallationScope,
 )
 from cicada.domain.repo.installation_repo import IInstallationRepo
-from cicada.domain.repository import Repository
+from cicada.domain.repository import Repository, RepositoryId
 from cicada.domain.user import User, UserId
 
 
@@ -114,6 +114,21 @@ class InstallationRepo(IInstallationRepo, DbConnection):
         )
 
         self.conn.commit()
+
+    def get_installation_id_by_repository_id(
+        self, id: RepositoryId
+    ) -> InstallationId | None:
+        installation_id = self.conn.execute(
+            """
+            SELECT i.uuid
+            FROM _installation_repos ir
+            JOIN installations i ON i.id = ir.installation_id
+            WHERE ir.repo_id=?
+            """,
+            [id],
+        ).fetchone()
+
+        return InstallationId(installation_id[0]) if installation_id else None
 
     def _convert(self, row: sqlite3.Row) -> Installation:
         return Installation(

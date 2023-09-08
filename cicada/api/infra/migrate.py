@@ -816,6 +816,31 @@ def migrate_v39(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=40)
+def migrate_v40(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE secrets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scope TEXT NOT NULL,
+            repo_id INTEGER NULL,
+            installation_uuid NULL,
+            updated_at TEXT NOT NULL,
+            key TEXT NOT NULL,
+            ciphertext TEXT NOT NULL
+        );
+
+        CREATE UNIQUE INDEX ux_secrets
+        ON secrets (
+            scope,
+            IFNULL(repo_id, -1),
+            IFNULL(installation_uuid, ''),
+            key
+        );
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

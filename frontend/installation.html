@@ -3,7 +3,10 @@
 
 <head>
 <link rel="stylesheet" href="/static/common.css">
+<link rel="stylesheet" href="/static/secret.css">
+<script src="/static/vendor/vanjs/vanjs.min.js"></script>
 <script src="/static/common.js"></script>
+<script src="/static/secret.js"></script>
 <title>Manage Installation</title>
 </head>
 
@@ -35,6 +38,20 @@
 
     <a href="#" id="billing" disabled>Manage billing (coming soon)</a>
     <br>
+
+    <h3>Secrets</h3>
+
+    <p class="note" style="padding-bottom: 1em">
+      Store sensitive information in a secure, encrypted vault. For example, API tokens.
+    </p>
+
+    <table id="secrets">
+      <tr><th>Key</th><th>Value</th></tr>
+    </table>
+
+    <p id="no-secrets" class="note">Nothing yet!</p>
+
+    <button id="add-secret" class="add">+ Add</button>
 
     <h3>Users</h3>
     <span class="lightgray">
@@ -75,26 +92,37 @@ h3 {
 </style>
 
 <script>
+let uuid;
+
 refreshTokenLoop();
+main();
 
-const uuid = new URL(window.location.href).pathname.split("/").pop();
+function main() {
+  uuid = new URL(window.location.href).pathname.split("/").pop();
 
-cicadaFetch(`/api/installation/${uuid}`)
-  .then(resp => {
-    if (!resp.ok) return;
+  secretEnvContext = {scope: "i", installation_id: uuid};
 
-    resp.json().then(j => {
-      const { name, provider, scope, provider_url } = j;
+  cicadaFetch(`/api/installation/${uuid}`)
+    .then(resp => {
+      if (!resp.ok) return;
 
-      document.getElementById("installation-type").innerText = scope === "USER" ? "user" : "organization";
-      document.getElementById("installation-name").innerText = `@${name}`;
-      document.getElementById("manage").href = provider_url;
+      resp.json().then(j => {
+        const { name, provider, scope, provider_url } = j;
 
-      for (const element of document.querySelectorAll(".installation-provider")) {
-        element.innerText = normalizeProvider(provider);
-      }
+        document.getElementById("installation-type").innerText = scope === "USER" ? "user" : "organization";
+        document.getElementById("installation-name").innerText = `@${name}`;
+        document.getElementById("manage").href = provider_url;
+
+        for (const element of document.querySelectorAll(".installation-provider")) {
+          element.innerText = normalizeProvider(provider);
+        }
+      });
     });
-  });
+
+  document.getElementById("add-secret").addEventListener("click", onClickSecret);
+
+  getSecretsForInstallation(uuid);
+}
 </script>
 
 </body>

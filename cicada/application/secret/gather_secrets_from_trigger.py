@@ -1,5 +1,6 @@
 import logging
 
+from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.triggers import Trigger
@@ -21,9 +22,11 @@ class GatherSecretsFromTrigger:
     def __init__(
         self,
         repository_repo: IRepositoryRepo,
+        installation_repo: IInstallationRepo,
         secret_repo: ISecretRepo,
     ) -> None:
         self.repository_repo = repository_repo
+        self.installation_repo = installation_repo
         self.secret_repo = secret_repo
         self.logger = logging.getLogger("cicada")
 
@@ -36,6 +39,31 @@ class GatherSecretsFromTrigger:
         if not repo:
             return {}
 
+        # TODO: should installation always be required?
+        installation_id = (
+            self.installation_repo.get_installation_id_by_repository_id(
+                repo.id
+            )
+        )
+
+        output: dict[str, str] = {}
+
+        if installation_id:
+            # TODO: isolate shared logging logic
+            installation_info = f"installation id {installation_id}"
+            self.logger.info(f"Pulling secrets for {installation_info}")
+
+            secrets = self.secret_repo.get_secrets_for_installation(
+                installation_id
+            )
+
+            count = len(secrets) or "No"
+            self.logger.info(
+                f"{count} secrets accessed for {installation_info}"
+            )
+
+            output = {secret.key: secret.value for secret in secrets}
+
         repo_info = f"repository id {repo.id}"
         self.logger.info(f"Pulling secrets for {repo_info}")
 
@@ -44,4 +72,8 @@ class GatherSecretsFromTrigger:
         count = len(secrets) or "No"
         self.logger.info(f"{count} secrets accessed for {repo_info}")
 
-        return {secret.key: secret.value for secret in secrets}
+        # Override installation secrets (if any) with repository secrets
+        for secret in secrets:
+            output[secret.key] = secret.value
+
+        return output

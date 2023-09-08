@@ -65,6 +65,7 @@ async def test_session_is_created() -> None:
         gather_workflows=AsyncMock(return_value=[1]),
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
+        installation_repo=MagicMock(),
         secret_repo=MagicMock(),
     )
 
@@ -109,6 +110,7 @@ async def test_session_not_created_if_workflow_gather_fails() -> None:
         gather_workflows=AsyncMock(return_value=[]),
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
+        installation_repo=MagicMock(),
         secret_repo=MagicMock(),
     )
 

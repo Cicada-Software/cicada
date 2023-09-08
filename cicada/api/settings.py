@@ -292,6 +292,34 @@ class S3CacheSettings:
             raise ValueError("S3_CACHE_BUCKET must be set")
 
 
+# TODO: test this
+class VaultSettings:
+    address: str
+    user_password: str
+
+    server_cert: str
+    client_key: str
+    client_cert: str
+
+    def __init__(self) -> None:
+        self.address = os.getenv("VAULT_ADDR", "")
+        if not self.address:
+            raise ValueError("VAULT_ADDR must be set")
+
+        self.username = os.getenv("VAULT_USER_USERNAME", "cicada")
+        if not self.username:
+            raise ValueError("VAULT_USER_USERNAME must be set")
+
+        self.user_password = os.getenv("VAULT_USER_PASSWORD", "")
+        if not self.user_password:
+            raise ValueError("VAULT_USER_PASSWORD must be set")
+
+        # TODO: verify these files exist
+        self.server_cert = os.getenv("VAULT_SERVER_CERT_PATH", "")
+        self.client_key = os.getenv("VAULT_CLIENT_KEY_PATH", "")
+        self.client_cert = os.getenv("VAULT_CLIENT_CERT_PATH", "")
+
+
 def verify_env_vars() -> None:
     """
     Eagerly load env vars to see if they are valid. The env vars are only valid
