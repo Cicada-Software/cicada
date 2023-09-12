@@ -1,0 +1,7 @@
+on git.push where event.branch is "master"
+
+env.ENV_VAR = "hello"
+
+run_on image ubuntu:22.04
+
+echo hello world

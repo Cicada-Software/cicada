@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from ruamel.yaml import YAML
@@ -20,6 +21,10 @@ GITHUB_ISSUE_TYPE_MAPPINGS = {
     "opened": "open",
     "closed": "close",
 }
+
+
+# TODO: use same regex as identifiers
+ENV_VAR_REGEX = re.compile("[A-Za-z_][A-Za-z0-9_]+")
 
 
 def is_supported_glob(glob: str) -> bool:
@@ -104,6 +109,21 @@ def convert_steps(steps: list[Any]) -> str:  # type: ignore
     return commands
 
 
+def convert_env_vars(env: dict[str, str]) -> str:
+    assert isinstance(env, dict), "`env` must be a dict"
+
+    output = ""
+
+    for k, v in env.items():
+        assert ENV_VAR_REGEX.match(k), f"Invalid variable name `{k}`"
+
+        v = str(v).replace('"', '\\"')
+
+        output += f'env.{k} = "{v}"\n'
+
+    return f"{output}\n"
+
+
 def convert_jobs(jobs: dict[str, Any]) -> str:  # type: ignore
     workflow = ""
 
@@ -121,6 +141,9 @@ def convert_jobs(jobs: dict[str, Any]) -> str:  # type: ignore
             raise AssertionError(f"Unexpected runner `{runs_on}`")
 
         workflow += f"run_on image {image}\n\n"
+
+    if env := job.get("env"):
+        workflow += convert_env_vars(env)
 
     if steps := job.get("steps"):
         assert isinstance(steps, list), "`steps` must be a list"
@@ -170,6 +193,9 @@ def convert(contents: str) -> str:
             on = [on]
 
         workflow += convert_on(on)
+
+    if env := data.get("env"):
+        workflow += convert_env_vars(env)
 
     if jobs := data.get("jobs"):
         workflow += convert_jobs(jobs)

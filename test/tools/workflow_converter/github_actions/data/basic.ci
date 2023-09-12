@@ -3,6 +3,12 @@ on git.push where event.branch is "master"
 
 run_on image ubuntu:22.04
 
+env.FORCE_COLOR = "1"
+env.TERM = "xterm-color"
+env.MYPY_FORCE_COLOR = "1"
+env.MYPY_FORCE_TERMINAL_WIDTH = "200"
+env.PYTEST_ADDOPTS = "--color=yes"
+
 # ERR: GitHub Action `actions/setup-python@v4` not supported
 
 # Pip Install
