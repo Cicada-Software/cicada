@@ -22,6 +22,8 @@ async def repo_get_ci_files(
     trigger: Trigger,
     cloned_repo: Path,
 ) -> list[FileNode | AstError]:  # pragma: no cover
+    logger = logging.getLogger("cicada")
+
     try:
         # TODO: use python git library instead
         cmds = [
@@ -30,8 +32,6 @@ async def repo_get_ci_files(
             ["git", "fetch", "--depth", "1", "origin", shlex.quote(ref)],
             ["git", "checkout", "FETCH_HEAD"],
         ]
-
-        logger = logging.getLogger("cicada")
 
         for args in cmds:
             process = await create_subprocess_exec(
@@ -44,18 +44,15 @@ async def repo_get_ci_files(
 
             await process.wait()
 
-            logger.debug(f"{args} -> {process.returncode}")
-
-            if process.stdout and (data := await process.stdout.read()):
-                logger.debug(data.decode())
-
             if process.returncode != 0:
+                logger.error(
+                    f"Could not clone repository {trigger.repository_url}"
+                )
                 return []
 
         return folder_get_runnable_ci_files(cloned_repo, trigger)
 
     except Exception:
-        logger = logging.getLogger("cicada")
         logger.exception("Issue gathering workflows")
 
     return []
@@ -66,11 +63,7 @@ def folder_get_runnable_ci_files(
 ) -> list[FileNode | AstError]:  # pragma: no cover
     files_or_errors: list[FileNode | AstError] = []
 
-    logger = logging.getLogger("cicada")
-
     for file in find_ci_files(folder):
-        logger.debug(f"checking {file}")
-
         try:
             tree = parse_and_analyze(file.read_text(), trigger)
 
@@ -80,21 +73,14 @@ def folder_get_runnable_ci_files(
                 tree.accept(visitor)
 
             except ShouldRunWorkflow as ex:
-                logger.debug(f"on statement reached: {ex.should_run}")
                 if ex.should_run:
                     tree.file = file
                     files_or_errors.append(tree)
 
-            logger.debug("checking next file")
-
         except IgnoreWorkflow:
-            logger.debug("ignoring workflow")
-
             pass
 
         except AstError as err:
-            logger.debug("file contains errors")
-
             err.filename = str(file.relative_to(folder))
 
             files_or_errors.append(err)
