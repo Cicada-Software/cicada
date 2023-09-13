@@ -25,4 +25,4 @@ types-requests==2.31.0.2
 types-s3transfer==0.6.2
 types-urllib3==1.26.25.14
 typing_extensions==4.7.1
-typos==1.16.8
+typos==1.16.11

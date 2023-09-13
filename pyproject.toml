@@ -127,6 +127,10 @@ extend-ignore = [
 "test/api/application/cache/test_cache_files.py" = ["S108"]
 "test/api/application/cache/test_restore_cache.py" = ["S108"]
 
+[tool.typos.default.extend-words]
+Hashi = "Hashi"
+iif = "iif"
+
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"

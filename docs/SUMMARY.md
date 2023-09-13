@@ -8,6 +8,7 @@
   - [The `run_on` Statement](./ci-lang/run-on-statement.md)
   - [The `let` Expression](./ci-lang/let-expr.md)
   - [The `if` Expression](./ci-lang/if-expr.md)
+  - [Secrets](./ci-lang/secrets.md)
   - [The Block Expression](./ci-lang/block-expr.md)
   - [Built-in Functions](./ci-lang/built-in-functions.md)
   - [Caching](./ci-lang/caching.md)
