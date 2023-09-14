@@ -48,7 +48,7 @@ async def test_terminal_session_can_be_replayed_after_closing() -> None:
     sent_lines = [b"line 1\n", b"line 2\n", b"line 3\n"]
 
     for line in sent_lines:
-        session.append(line)  # noqa: PERF402
+        session.append(line)
 
     session.finish()
 
