@@ -57,8 +57,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             mocks["run_workflow"].side_effect = f
             mocks["repo_get_env"].return_value = {}
 
-            # could be anything, will fail once value is actually used
-            mocks["gather_issue_workflows"].return_value = [1]
+            mocks["gather_issue_workflows"].return_value = [FileNode([])]
 
             response = self.client.post(
                 "/api/gitlab_webhook",
@@ -105,8 +104,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             mocks["run_workflow"].side_effect = f
             mocks["repo_get_env"].return_value = {}
 
-            # could be anything, will fail once value is actually used
-            mocks["gather_workflows"].return_value = [1]
+            mocks["gather_workflows"].return_value = [FileNode([])]
 
             response = self.client.post(
                 "/api/gitlab_webhook",

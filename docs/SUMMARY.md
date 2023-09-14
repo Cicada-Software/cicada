@@ -6,6 +6,7 @@
   - [The `on` Statement](./ci-lang/on-statement.md)
     - [Event Types](./ci-lang/event-types.md)
   - [The `run_on` Statement](./ci-lang/run-on-statement.md)
+  - [The `title` Statement](./ci-lang/title-statement.md)
   - [The `let` Expression](./ci-lang/let-expr.md)
   - [The `if` Expression](./ci-lang/if-expr.md)
   - [Secrets](./ci-lang/secrets.md)

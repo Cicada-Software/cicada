@@ -21,6 +21,7 @@ from cicada.ast.nodes import (
     ParenthesisExpression,
     RecordValue,
     RunOnStatement,
+    TitleStatement,
     ToStringExpression,
     TraversalVisitor,
     UnaryExpression,
@@ -453,6 +454,25 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             )
 
         self.cache_stmt = node
+
+    def visit_title_stmt(self, node: TitleStatement) -> None:
+        super().visit_title_stmt(node)
+
+        if self.file_node and self.file_node.title:
+            raise AstError(
+                "Cannot have multiple `title` statements in a single file",
+                node.info,
+            )
+
+        for part in node.parts:
+            if not part.is_constexpr:
+                raise AstError(  # pragma: no cover
+                    "Only constant values allowed in `title`",
+                    part.info,
+                )
+
+        if self.file_node:
+            self.file_node.title = node
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

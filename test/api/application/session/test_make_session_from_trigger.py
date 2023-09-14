@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from cicada.application.session.make_session_from_trigger import (
     MakeSessionFromTrigger,
 )
+from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
@@ -62,7 +63,7 @@ async def test_session_is_created() -> None:
         session_repo,
         terminal_session_repo,
         dummy_check_runner,
-        gather_workflows=AsyncMock(return_value=[1]),
+        gather_workflows=AsyncMock(return_value=[FileNode([])]),
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
         installation_repo=MagicMock(),

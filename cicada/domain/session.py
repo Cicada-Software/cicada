@@ -61,6 +61,7 @@ class Workflow:
     finished_at: UtcDatetime | None = None
     # TODO: make this immutable/frozen
     run_on_self_hosted: bool = False
+    title: str | None = None
 
 
 @dataclass
@@ -111,6 +112,7 @@ class Session:
     finished_at: UtcDatetime | None = None
     run: int = 1
     run_on_self_hosted: bool = False
+    title: str | None = None
 
     def __post_init__(self) -> None:
         assert self.run >= 1

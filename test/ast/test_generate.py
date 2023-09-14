@@ -22,6 +22,7 @@ from cicada.ast.nodes import (
     RunOnStatement,
     RunType,
     StringExpression,
+    TitleStatement,
     ToStringExpression,
 )
 from cicada.ast.types import NumericType, StringType, UnknownType
@@ -1061,3 +1062,26 @@ def test_error_messages_for_invalid_cache_stmts() -> None:
     for code, expected in tests.items():
         with pytest.raises(AstError, match=re.escape(expected)):
             generate_ast_tree(tokenize(code))
+
+
+def test_generate_title() -> None:
+    code = "title Hello world!"
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case TitleStatement(
+            parts=[StringExpression("Hello"), StringExpression("world!")]
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_title_cannot_be_empty() -> None:
+    code = "title "
+
+    msg = "Expected expression after `title`"
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        generate_ast_tree(tokenize(code))

@@ -64,6 +64,7 @@ KEYWORD_NAMES = {
     "run_on": RunOnToken,
     "cache": CacheToken,
     "using": UsingToken,
+    "title": TitleToken,
 }
 
 

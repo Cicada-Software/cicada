@@ -74,7 +74,7 @@ async def wrap_in_github_check_run(
     data = await github.rest.checks.async_create(
         username,
         repo,
-        name="Cicada",
+        name=session.title or "Cicada",
         head_sha=str(session.trigger.sha),
         external_id=str(session.id),
         details_url=f"{base_url}/api/github_sso_link?url={redirect_url}",

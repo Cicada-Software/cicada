@@ -20,6 +20,7 @@ from cicada.ast.nodes import (
     RecordValue,
     StringExpression,
     StringValue,
+    TitleStatement,
     ToStringExpression,
 )
 from cicada.ast.semantic_analysis import (
@@ -604,3 +605,27 @@ cache y using "xyz"
 
     with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
+
+
+def test_only_one_title_stmt_allowed_per_file() -> None:
+    code = """\
+title A
+title B
+"""
+
+    msg = "Cannot have multiple `title` statements in a single file"
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_parse_valid_title_stmt() -> None:
+    tree = parse_and_analyze("title Hello world")
+
+    match tree.exprs[0]:
+        case TitleStatement(
+            parts=[StringExpression("Hello"), StringExpression("world")]
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")

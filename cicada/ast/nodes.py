@@ -186,6 +186,7 @@ class FileNode:
     exprs: list[Node]
     file: Path | None = None
     run_on: RunOnStatement | None = None
+    title: TitleStatement | None = None
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
         return visitor.visit_file_node(self)
@@ -662,6 +663,20 @@ class CacheStatement(Statement):
         return f"{type(self).__name__}(): # {self.info}\n{body}"
 
 
+@dataclass
+class TitleStatement(Statement):
+    parts: list[Expression]
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_title_stmt(self)
+
+    def __str__(self) -> str:
+        parts = "\n".join(str(x) for x in self.parts)
+        parts = indent(parts, "  ")
+
+        return f"{type(self).__name__}(): # {self.info}\n{parts}"
+
+
 class NodeVisitor(Generic[T]):
     def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError()
@@ -715,6 +730,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError()
 
     def visit_cache_stmt(self, node: CacheStatement) -> T:
+        raise NotImplementedError()
+
+    def visit_title_stmt(self, node: TitleStatement) -> T:
         raise NotImplementedError()
 
 
@@ -782,3 +800,7 @@ class TraversalVisitor(NodeVisitor[None]):
             file.accept(self)
 
         node.using.accept(self)
+
+    def visit_title_stmt(self, node: TitleStatement) -> None:
+        for part in node.parts:
+            part.accept(self)

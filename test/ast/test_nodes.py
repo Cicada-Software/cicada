@@ -65,6 +65,8 @@ let mut f = 0
 run_on image xyz
 
 cache abc using "123"
+
+title hello world
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -116,7 +118,10 @@ FileNode:
   CacheStatement(): # 23:1..23:5
     files=
       0=StringExpression('abc') # 23:7..23:9
-    using=StringExpression('123') # 23:17..23:21\
+    using=StringExpression('123') # 23:17..23:21
+  TitleStatement(): # 25:1..25:5
+    StringExpression('hello') # 25:7..25:11
+    StringExpression('world') # 25:13..25:17\
 """
 
     assert str(tree) == expected

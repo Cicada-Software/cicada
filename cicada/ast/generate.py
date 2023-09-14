@@ -30,6 +30,7 @@ from cicada.parse.token import (
     RunOnToken,
     SlashToken,
     StringLiteralToken,
+    TitleToken,
     Token,
     UsingToken,
     WhereToken,
@@ -58,6 +59,7 @@ from .nodes import (
     RunOnStatement,
     RunType,
     StringExpression,
+    TitleStatement,
     ToStringExpression,
     UnaryExpression,
     UnaryOperator,
@@ -370,6 +372,9 @@ def generate_node(state: ParserState) -> Node:
 
     if isinstance(token, CacheToken):
         return generate_cache_stmt(state)
+
+    if isinstance(token, TitleToken):
+        return generate_title_stmt(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
@@ -871,3 +876,23 @@ def generate_cache_stmt(state: ParserState) -> CacheStatement:
 
     except StopIteration as ex:
         raise AstError(msg, start) from ex
+
+
+def generate_title_stmt(state: ParserState) -> TitleStatement:
+    start = state.current_token
+
+    error_msg = "Expected expression after `title`"
+
+    try:
+        # skip "title" token
+        next(state)
+
+        parts = generate_string_list(state)
+
+        if not parts:
+            raise AstError(error_msg, start)
+
+        return TitleStatement(info=LineInfo.from_token(start), parts=parts)
+
+    except StopIteration as ex:
+        raise AstError(error_msg, start) from ex

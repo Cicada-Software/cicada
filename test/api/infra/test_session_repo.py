@@ -255,6 +255,17 @@ class TestSessionRepo(SqliteTestWrapper):
         assert got_session == session
         assert session.run_on_self_hosted
 
+    def test_create_session_with_title(self) -> None:
+        session = build(Session, title="Hello from Cicada")
+
+        self.session_repo.create(session)
+
+        got_session = self.session_repo.get_session_by_session_id(session.id)
+
+        assert got_session
+        assert got_session == session
+        assert session.title == "Hello from Cicada"
+
     def test_session_doesnt_store_env_and_secret_data(self) -> None:
         session = build(Session)
         session.trigger.env = {"env": "value"}

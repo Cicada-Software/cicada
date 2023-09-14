@@ -12,6 +12,7 @@ from cicada.api.endpoints.webhook.github.converters import (
 )
 from cicada.api.endpoints.webhook.github.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.github.main import router as github_webhook
+from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
 from test.api.endpoints.common import TestEndpointWrapper
 
@@ -51,7 +52,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
-            mocks["gather_issues"].return_value = [1]
+            mocks["gather_issues"].return_value = [FileNode([])]
 
             response = self.client.post(
                 "/api/github_webhook",
@@ -94,7 +95,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
-            mocks["gather_git_pushes"].return_value = [1]
+            mocks["gather_git_pushes"].return_value = [FileNode([])]
 
             response = self.client.post(
                 "/api/github_webhook",

@@ -91,6 +91,7 @@ class RerunSession:
             trigger=session.trigger,
             run=session.run + 1,
             run_on_self_hosted=run_on_self_hosted,
+            title=session.title,
         )
 
         def callback(data: bytes) -> None:

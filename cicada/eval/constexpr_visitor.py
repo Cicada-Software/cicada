@@ -26,6 +26,7 @@ from cicada.ast.nodes import (
     RunOnStatement,
     StringExpression,
     StringValue,
+    TitleStatement,
     ToStringExpression,
     UnaryExpression,
     UnaryOperator,
@@ -269,6 +270,12 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
     def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()
 
+    def visit_title_stmt(self, node: TitleStatement) -> Value:
+        # TitleStatement is special in that it is used for display purposes and
+        # is computed after semantic analysis, but before the actual evaluation
+        # of the workflow.
+        return UnitValue()
+
     @contextmanager
     def new_scope(self) -> Iterator[None]:
         self.symbols = self.symbols.new_child()
@@ -305,3 +312,16 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             return f"{lhs}.{node.name}"
 
         assert False
+
+
+def eval_title(title: TitleStatement | None) -> str | None:
+    if not title:
+        return None
+
+    visitor = ConstexprEvalVisitor()
+
+    parts = [value_to_string(x.accept(visitor)) for x in title.parts]
+
+    assert all(isinstance(x, StringValue) for x in parts)
+
+    return " ".join(x.value for x in parts)  # type: ignore

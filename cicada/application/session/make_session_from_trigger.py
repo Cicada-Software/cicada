@@ -19,6 +19,7 @@ from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.triggers import Trigger
+from cicada.eval.constexpr_visitor import eval_title
 
 
 class MakeSessionFromTrigger:
@@ -99,6 +100,8 @@ class MakeSessionFromTrigger:
 
         filenode = files[0]
 
+        title = eval_title(filenode.title)
+
         match filenode:
             case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
                 status = SessionStatus.BOOTING
@@ -113,6 +116,8 @@ class MakeSessionFromTrigger:
             trigger=trigger,
             status=status,
             run_on_self_hosted=run_on_self_hosted,
+            # TODO: move to workflow object
+            title=title,
         )
         self.session_repo.create(session)
 
