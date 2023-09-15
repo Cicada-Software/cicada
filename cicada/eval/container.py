@@ -21,6 +21,7 @@ from cicada.ast.nodes import (
     CacheStatement,
     FileNode,
     FunctionExpression,
+    IdentifierExpression,
     RecordValue,
     StringValue,
     UnitValue,
@@ -119,6 +120,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         return output
 
     def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+            return expr
+
         args: list[str] = []
 
         for arg in node.args:
@@ -128,7 +132,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             args.append(value.value)
 
-        if node.name == "shell":
+        assert isinstance(node.callee, IdentifierExpression)
+
+        if node.callee.name == "shell":
             exit_code = self._container_exec(args)
 
             if exit_code != 0:
@@ -136,10 +142,10 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             return RecordValue({}, RecordType())
 
-        if node.name == "hashOf":
+        if node.callee.name == "hashOf":
             return self.hashOf(args)
 
-        if node.name == "print":
+        if node.callee.name == "print":
             self.terminal.append(" ".join(args).encode())
 
         return UnitValue()

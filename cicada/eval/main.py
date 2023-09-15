@@ -9,6 +9,7 @@ from cicada.ast.generate import AstError
 from cicada.ast.nodes import (
     CacheStatement,
     FunctionExpression,
+    IdentifierExpression,
     RecordValue,
     StringValue,
     UnitValue,
@@ -33,6 +34,9 @@ class EvalVisitor(ConstexprEvalVisitor):
         self.cache_key = None
 
     def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+            return expr
+
         args: list[str] = []
 
         for arg in node.args:
@@ -42,8 +46,10 @@ class EvalVisitor(ConstexprEvalVisitor):
 
             args.append(value.value)
 
+        assert isinstance(node.callee, IdentifierExpression)
+
         # TODO: move to separate function
-        if node.name == "shell":
+        if node.callee.name == "shell":
             process = subprocess.run(  # noqa: PLW1510
                 ["/bin/sh", "-c", shlex.join(args)],  # noqa: S603
                 env=self.trigger.env if self.trigger else None,
@@ -55,10 +61,10 @@ class EvalVisitor(ConstexprEvalVisitor):
             # TODO: return rich "command type" value
             return RecordValue({}, RecordType())
 
-        if node.name == "hashOf":
+        if node.callee.name == "hashOf":
             return hashOf(self, node)
 
-        if node.name == "print":
+        if node.callee.name == "print":
             print(*args)  # noqa: T201
 
         return UnitValue()

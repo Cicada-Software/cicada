@@ -210,11 +210,11 @@ class FunctionExpression(Expression):
     f x y z
     """
 
-    name: str
+    callee: Expression
     args: list[Expression]
     is_shell_mode: bool = True
 
-    __match_args__ = ("name", "args", "is_shell_mode")
+    __match_args__ = ("callee", "args", "is_shell_mode")
 
     def accept(self, visitor: NodeVisitor[T]) -> T:
         return visitor.visit_func_expr(self)
@@ -222,10 +222,18 @@ class FunctionExpression(Expression):
     def __str__(self) -> str:
         shell = self.is_shell_mode
 
+        callee = indent(f"callee={self.callee}", "  ")
+
         args = "\n".join(f"{i}={arg}" for i, arg in enumerate(self.args))
         args = indent(args, "  ")
 
-        return f"{type(self).__name__}(shell={shell}): # {self.info}\n{args}"
+        return "\n".join(
+            (
+                f"{type(self).__name__}(shell={shell}): # {self.info}",
+                callee,
+                args,
+            )
+        )
 
 
 @dataclass
@@ -742,6 +750,8 @@ class TraversalVisitor(NodeVisitor[None]):
             expr.accept(self)
 
     def visit_func_expr(self, node: FunctionExpression) -> None:
+        node.callee.accept(self)
+
         for arg in node.args:
             arg.accept(self)
 

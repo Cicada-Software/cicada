@@ -155,29 +155,46 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_member_expr(self, node: MemberExpression) -> None:
         super().visit_member_expr(node)
 
-        if not (
-            isinstance(node.lhs.type, RecordType)
-            and node.name in {field.name for field in node.lhs.type.fields}
-        ):
-            # TODO: turn this into a function
+        if isinstance(node.lhs.type, RecordType):
+            for field in node.lhs.type.fields:
+                if field.name == node.name:
+                    node.type = field.type
+                    break
+
+            else:
+                name = cast(IdentifierExpression, node.lhs).name
+
+                raise AstError(
+                    f"member `{node.name}` does not exist on `{name}`",
+                    node.info,
+                )
+
+        elif isinstance(
+            node.lhs, IdentifierExpression | MemberExpression
+        ) and node.name in ("starts_with", "ends_with"):
+            # TODO: turn this into a function type
+            node.type = BooleanType()
+
+        else:
             name = cast(IdentifierExpression, node.lhs).name
 
             raise AstError(
-                f"member `{node.name}` does not exist on `{name}`", node.info
+                f"member `{node.name}` does not exist on `{name}`",
+                node.info,
             )
 
         if self.is_constexpr(node.lhs):
             node.is_constexpr = True
-
-        for field in node.lhs.type.fields:
-            if field.name == node.name:
-                node.type = field.type
 
     def visit_ident_expr(self, node: IdentifierExpression) -> None:
         super().visit_ident_expr(node)
 
         if symbol := self.symbols.get(node.name):
             node.type = symbol.type
+
+        elif node.name in self.function_names:
+            # TODO: pull function types from symbol table
+            pass
 
         else:
             raise AstError(f"variable `{node.name}` is not defined", node.info)
@@ -315,16 +332,47 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     def visit_func_expr(self, node: FunctionExpression) -> None:
         super().visit_func_expr(node)
 
-        if node.name not in self.function_names:
-            raise AstError(f"function `{node.name}` is not defined", node.info)
+        if not isinstance(node.callee, IdentifierExpression):
+            if not isinstance(node.callee, MemberExpression):
+                raise NotImplementedError()
+
+            assert node.callee.name in ("starts_with", "ends_with")
+
+            if len(node.args) != 1:
+                raise AstError(
+                    f"`{node.callee.name}` takes exactly one argument",
+                    node.info,
+                )
+
+            arg = node.args[0]
+
+            if arg.type != StringType():
+                raise AstError(
+                    f"expected type `{StringType()}`, got type `{arg.type}` instead",  # noqa: E501
+                    arg.info,
+                )
+
+            # TODO: callee should be function type, not rtype
+            node.type = node.callee.type
+
+            node.is_constexpr = self.is_constexpr(node.callee) and all(
+                self.is_constexpr(x) for x in node.args
+            )
+
+            return
+
+        if node.callee.name not in self.function_names:
+            raise AstError(
+                f"function `{node.callee.name}` is not defined", node.info
+            )
 
         self.has_ran_function = True
 
-        if node.name == "print":
+        if node.callee.name == "print":
             node.type = UnitType()
 
         # TODO: move to separate function
-        elif node.name == "hashOf":
+        elif node.callee.name == "hashOf":
             node.type = StringType()
 
             if not node.args:

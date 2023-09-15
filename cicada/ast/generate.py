@@ -1,6 +1,7 @@
 import re
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import replace
 from enum import Enum
 from itertools import groupby
 from typing import NoReturn, Self, cast
@@ -496,18 +497,21 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
         args = []
 
     if name.content in SHELL_ALIASES:
-        function_name = "shell"
+        shell = replace(name, content="shell")
+        callee: Expression = IdentifierExpression.from_token(shell)
+
         args.insert(0, StringExpression.from_token(name))
 
     else:
-        function_name = name.content
+        callee = IdentifierExpression.from_token(name)
 
     return FunctionExpression(
         info=LineInfo.from_token(name),
-        name=function_name,
+        callee=callee,
         args=args,
         type=UnknownType(),
         is_constexpr=False,
+        is_shell_mode=True,
     )
 
 
@@ -703,8 +707,8 @@ def generate_expr(state: ParserState) -> Expression:  # noqa: PLR0915
         oper = state.next_non_whitespace_or_eof()
 
         if isinstance(oper, OpenParenToken):
-            # TODO: allow non-identifier to be function expressions
-            assert isinstance(expr, IdentifierExpression)
+            # TODO: allow non-identifier-like exprs to be callees
+            assert isinstance(expr, IdentifierExpression | MemberExpression)
 
             state.next_non_whitespace()
 
@@ -729,7 +733,7 @@ def generate_expr(state: ParserState) -> Expression:  # noqa: PLR0915
 
             return FunctionExpression(
                 info=LineInfo.from_token(token),
-                name=expr.name,
+                callee=expr,
                 args=args,
                 type=UnknownType(),
                 is_constexpr=False,

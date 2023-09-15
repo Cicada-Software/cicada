@@ -48,10 +48,10 @@ def test_basic_function_call_is_valid() -> None:
 
     match tree.exprs[0]:
         case FunctionExpression(
-            name="shell",
+            callee=IdentifierExpression("shell"),
             args=[
-                StringExpression(value="echo"),
-                StringExpression(value="hi"),
+                StringExpression("echo"),
+                StringExpression("hi"),
             ],
         ):
             return
@@ -102,11 +102,20 @@ def test_on_statement_where_clause_must_be_bool() -> None:
         parse_and_analyze("on abc where 123", build_trigger("abc"))
 
 
-def test_lhs_of_member_expr_must_be_a_record() -> None:
+def test_lhs_of_member_expr_cannot_be_identifier() -> None:
     msg = "member `a` does not exist on `x`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = 123\nlet y = x.a")
+
+
+def test_record_lhs_of_member_expr_must_exist() -> None:
+    msg = "member `doesnt_exist` does not exist on `event`"
+
+    trigger = build_trigger("a")
+
+    with pytest.raises(AstError, match=msg):
+        parse_and_analyze("let x = event.doesnt_exist", trigger)
 
 
 def test_binary_exprs_must_be_of_same_type() -> None:
@@ -504,7 +513,7 @@ def test_non_string_types_allowed_in_interpolated_strings() -> None:
 
     match tree.exprs[0]:
         case FunctionExpression(
-            name="shell",
+            callee=IdentifierExpression("shell"),
             args=[
                 StringExpression("echo"),
                 BinaryExpression(
@@ -562,8 +571,12 @@ hashOf("some_file")
 
     match tree.exprs:
         case [
-            FunctionExpression(name="print", type=UnitType()),
-            FunctionExpression(name="hashOf", type=StringType()),
+            FunctionExpression(
+                callee=IdentifierExpression("print"), type=UnitType()
+            ),
+            FunctionExpression(
+                callee=IdentifierExpression("hashOf"), type=StringType()
+            ),
         ]:
             return
 
@@ -629,3 +642,95 @@ def test_parse_valid_title_stmt() -> None:
             return
 
     pytest.fail(f"tree does not match: {tree}")
+
+
+def test_basic_member_functions() -> None:
+    code = """\
+let x = "abc"
+let y = x.starts_with("abc")
+"""
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs[1]:
+        case LetExpression(
+            "y",
+            FunctionExpression(
+                callee=MemberExpression(
+                    lhs=IdentifierExpression("x"),
+                    name="starts_with",
+                    # TODO: should be function type
+                    type=BooleanType(),
+                ),
+                args=[StringExpression("abc")],
+                type=BooleanType(),
+                is_constexpr=True,
+            ),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+def test_member_functions_on_member_exprs() -> None:
+    trigger = build_trigger("x")
+
+    code = """\
+let x = event.type.starts_with("x")
+"""
+
+    tree = parse_and_analyze(code, trigger)
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "x",
+            FunctionExpression(
+                callee=MemberExpression(
+                    lhs=MemberExpression(
+                        lhs=IdentifierExpression("event"),
+                        name="type",
+                    ),
+                    name="starts_with",
+                    # TODO: should be function type
+                    type=BooleanType(),
+                ),
+                args=[StringExpression("x")],
+                type=BooleanType(),
+                is_constexpr=True,
+            ),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+def test_starts_with_must_have_one_arg() -> None:
+    msg = "`starts_with` takes exactly one argument"
+
+    code = """\
+let x = ""
+let x = x.starts_with()
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+    code = """\
+let x = ""
+let x = x.starts_with("y", "z")
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_starts_with_must_have_string_arg() -> None:
+    msg = "expected type `string`, got type `number` instead"
+
+    code = """\
+let x = ""
+let x = x.starts_with(1)
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)

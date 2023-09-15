@@ -40,7 +40,7 @@ def test_generate_function_expression() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         StringExpression("x"),
                         StringExpression("y"),
@@ -63,13 +63,13 @@ def test_generate_function_expression_splits_on_newlines() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [StringExpression("x")],
                     info=LineInfo(line=1, column_start=1),
                     type=UnknownType(),
                 ),
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [StringExpression("y")],
                     info=LineInfo(line=2, column_start=1),
                     type=UnknownType(),
@@ -88,7 +88,7 @@ def test_generate_shell_alias_function_expression_using() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         StringExpression("echo"),
                         StringExpression("hi"),
@@ -331,7 +331,7 @@ def test_generate_function_expression_group_contiguous_chars() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         StringExpression("x"),
                         StringExpression("--help"),
@@ -354,7 +354,7 @@ def test_generate_func_expr_with_parens() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         ToStringExpression(
                             ParenthesisExpression(IdentifierExpression()),
@@ -389,7 +389,7 @@ def test_generate_func_expr_with_parens2() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         StringExpression("arg1"),
                         ToStringExpression(
@@ -560,9 +560,13 @@ shell y
     match tree:
         case FileNode(
             [
-                FunctionExpression("shell", [StringExpression("x")]),
-                FunctionExpression("shell", []),
-                FunctionExpression("shell", [StringExpression("y")]),
+                FunctionExpression(
+                    IdentifierExpression("shell"), [StringExpression("x")]
+                ),
+                FunctionExpression(IdentifierExpression("shell"), []),
+                FunctionExpression(
+                    IdentifierExpression("shell"), [StringExpression("y")]
+                ),
             ]
         ):
             return
@@ -657,7 +661,7 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
         case FileNode(
             [
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         ToStringExpression(
                             ParenthesisExpression(IdentifierExpression("x")),
@@ -665,7 +669,7 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
                     ],
                 ),
                 FunctionExpression(
-                    "shell",
+                    IdentifierExpression("shell"),
                     [
                         ToStringExpression(
                             ParenthesisExpression(IdentifierExpression("y"))
@@ -702,7 +706,7 @@ shell
                         body=BlockExpression([NumericExpression(1)]),
                     ),
                 ),
-                FunctionExpression("shell", []),
+                FunctionExpression(IdentifierExpression("shell"), []),
             ]
         ):
             return
@@ -754,7 +758,7 @@ shell
                         ],
                     ),
                 ),
-                FunctionExpression("shell", []),
+                FunctionExpression(IdentifierExpression("shell"), []),
             ]
         ):
             return
@@ -993,7 +997,7 @@ def test_parse_c_style_function_call() -> None:
 
     match tree.exprs[0]:
         case FunctionExpression(
-            name="print",
+            callee=IdentifierExpression("print"),
             args=[NumericExpression()],
             is_shell_mode=False,
         ):
@@ -1008,7 +1012,7 @@ def test_parse_c_style_function_call_with_no_args() -> None:
 
     match tree.exprs[0]:
         case FunctionExpression(
-            name="print",
+            callee=IdentifierExpression("print"),
             args=[],
             is_shell_mode=False,
         ):
@@ -1023,7 +1027,7 @@ def test_parse_c_style_function_call_with_many_args() -> None:
 
     match tree.exprs[0]:
         case FunctionExpression(
-            name="print",
+            callee=IdentifierExpression("print"),
             args=[StringExpression("hello"), StringExpression("world")],
             is_shell_mode=False,
         ):

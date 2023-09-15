@@ -24,6 +24,7 @@ from cicada.ast.generate import AstError
 from cicada.ast.nodes import (
     CacheStatement,
     FunctionExpression,
+    IdentifierExpression,
     RecordValue,
     StringValue,
     UnitValue,
@@ -419,6 +420,9 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
     def visit_func_expr(self, node: FunctionExpression) -> Value:
         self.terminate_if_needed()
 
+        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+            return expr
+
         args: list[str] = []
 
         for arg in node.args:
@@ -428,7 +432,9 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
 
             args.append(value.value)
 
-        if node.name == "shell":
+        assert isinstance(node.callee, IdentifierExpression)
+
+        if node.callee.name == "shell":
             # Hacky tty magic from: https://stackoverflow.com/a/28925318
             master, slave = pty.openpty()
 
@@ -472,10 +478,10 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
             # TODO: return rich "command type" value
             return RecordValue({}, RecordType())
 
-        if node.name == "print":
+        if node.callee.name == "print":
             self.data_stream.append(" ".join(args).encode() + b"\r\n")
 
-        if node.name == "hashOf":
+        if node.callee.name == "hashOf":
             f = StringIO()
 
             with redirect_stdout(f):

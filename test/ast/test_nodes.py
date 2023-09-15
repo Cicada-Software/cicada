@@ -75,6 +75,7 @@ title hello world
 FileNode:
   OnStatement('git.push') # 1:1..1:2
   FunctionExpression(shell=True): # 3:1..3:4
+    callee=IdentifierExpression('shell') # 3:1..3:4
     0=StringExpression('echo') # 3:1..3:4
     1=StringExpression('hello') # 3:6..3:10
     2=StringExpression('world') # 3:12..3:16

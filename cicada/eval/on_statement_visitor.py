@@ -34,5 +34,8 @@ class OnStatementEvalVisitor(ConstexprEvalVisitor):
 
         raise ShouldRunWorkflow(True)
 
-    def visit_func_expr(self, _: FunctionExpression) -> Value:
+    def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if node.is_constexpr:
+            return super().visit_func_expr(node)
+
         raise ShouldRunWorkflow(False)

@@ -13,6 +13,7 @@ from cicada.ast.nodes import (
     BooleanValue,
     Expression,
     FileNode,
+    FunctionExpression,
     IdentifierExpression,
     IfExpression,
     LetExpression,
@@ -269,6 +270,21 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()
+
+    def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if not isinstance(node.callee, MemberExpression):
+            return NotImplemented
+
+        # TODO: move to separate function
+        assert node.callee.name in ("starts_with", "ends_with")
+
+        expr = cast(StringValue, node.callee.lhs.accept(self))
+        val = cast(StringValue, node.args[0].accept(self))
+
+        if node.callee.name == "starts_with":
+            return BooleanValue(expr.value.startswith(val.value))
+
+        return BooleanValue(expr.value.endswith(val.value))
 
     def visit_title_stmt(self, node: TitleStatement) -> Value:
         # TitleStatement is special in that it is used for display purposes and

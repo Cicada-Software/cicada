@@ -15,15 +15,16 @@ def test_on_statement_run_conditions() -> None:
         "on git.push where true": True,
         "on git.push where false": False,
         "echo hi": False,
-        "on git.push where 123": False,
+        'on git.push where event.type.starts_with("git")': True,
+        'on git.push where event.type.starts_with("xyz")': False,
     }
 
-    for test, should_run in tests.items():
-        tree = parse_and_analyze(
-            test, make_dummy_commit_trigger(), validate=False
-        )
+    trigger = make_dummy_commit_trigger()
 
-        visitor = OnStatementEvalVisitor()
+    for test, should_run in tests.items():
+        tree = parse_and_analyze(test, trigger)
+
+        visitor = OnStatementEvalVisitor(trigger)
 
         with pytest.raises(ShouldRunWorkflow) as ex:
             tree.accept(visitor)
