@@ -1,4 +1,5 @@
 import re
+import shlex
 from typing import Any
 
 from ruamel.yaml import YAML
@@ -25,6 +26,7 @@ GITHUB_ISSUE_TYPE_MAPPINGS = {
 
 # TODO: use same regex as identifiers
 ENV_VAR_REGEX = re.compile("[A-Za-z_][A-Za-z0-9_]+")
+GITHUB_EXPR = re.compile(r"^\$\{\{(.*)\}\}$")
 
 
 def is_supported_glob(glob: str) -> bool:
@@ -84,6 +86,22 @@ def convert_issues_event(issues: dict[str, Any]) -> str:  # type: ignore
     return f"on issue.{issue_type}\n"
 
 
+def convert_github_expr(expr: str) -> tuple[str, bool]:
+    """
+    Convert a GitHub expression in the form ${{ expr }} into a Cicada expr.
+
+    This function returns 2 values: One contains the resulting expression, and
+    the other is a boolean indicating whether the returned expression is a
+    Cicada expression: If no expression is detected or it cannot be converted,
+    the original expr is returned.
+    """
+
+    if match := GITHUB_EXPR.match(expr.strip('"')):
+        return f"({match.group(1).strip()})", True
+
+    return expr, False
+
+
 def convert_steps(steps: list[Any]) -> str:  # type: ignore
     commands = ""
 
@@ -111,10 +129,19 @@ def convert_steps(steps: list[Any]) -> str:  # type: ignore
             cmd = cmd.strip()
 
             for line in cmd.split("\n"):
-                if line.split()[0] in SHELL_ALIASES:
-                    commands += f"{line}\n"
+                exprs = [convert_github_expr(x) for x in shlex.split(line)]
+
+                parts = [
+                    expr if is_safe else shlex.quote(expr)
+                    for expr, is_safe in exprs
+                ]
+
+                cmd = " ".join(parts)
+
+                if parts[0] in SHELL_ALIASES:
+                    commands += f"{cmd}\n"
                 else:
-                    commands += f"shell {line}\n"
+                    commands += f"shell {cmd}\n"
 
             commands += "\n"
 
@@ -213,3 +240,14 @@ def convert(contents: str) -> str:
         workflow += convert_jobs(jobs)
 
     return workflow.strip()
+
+
+if __name__ == "__main__":  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    for filename in sys.argv[1:]:
+        file = Path(filename)
+
+        ci = convert(file.read_text())
+        file.with_suffix(".ci").write_text(ci)
