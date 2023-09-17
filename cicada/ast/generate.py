@@ -381,7 +381,7 @@ def generate_node(state: ParserState) -> Node:
         *SHELL_ALIASES,
         "shell",
     }:
-        return generate_function_expr(state)
+        return generate_shell_function_expr(state)
 
     expr = generate_expr(state)
 
@@ -485,7 +485,7 @@ def generate_interpolated_string(
     return stack
 
 
-def generate_function_expr(state: ParserState) -> FunctionExpression:
+def generate_shell_function_expr(state: ParserState) -> FunctionExpression:
     name = state.current_token
 
     next_token = next(state, None)
@@ -512,6 +512,61 @@ def generate_function_expr(state: ParserState) -> FunctionExpression:
         type=UnknownType(),
         is_constexpr=False,
         is_shell_mode=True,
+    )
+
+
+def promote_expr_to_func_expr(
+    state: ParserState,
+    start: Token,
+    expr: Expression,
+) -> Expression | None:
+    with state.peek() as peek:
+        oper = state.next_non_whitespace_or_eof()
+
+        if isinstance(oper, OpenParenToken):
+            func = generate_c_function_expr(state, start, expr)
+
+            peek.drop_peeked_tokens()
+
+            return func
+
+    return None
+
+
+def generate_c_function_expr(
+    state: ParserState,
+    start: Token,
+    callee: Expression,
+) -> FunctionExpression:
+    # TODO: allow non-identifier-like exprs to be callees
+    assert isinstance(callee, IdentifierExpression | MemberExpression)
+
+    state.next_non_whitespace()
+
+    args: list[Expression] = []
+
+    if not isinstance(state.current_token, CloseParenToken):
+        while True:
+            args.append(generate_expr(state))
+            state.next_non_whitespace()
+
+            if isinstance(state.current_token, CloseParenToken):
+                break
+
+            if not isinstance(state.current_token, CommaToken):
+                raise AstError.unexpected_token(
+                    state.current_token, expected=","
+                )
+
+            state.next_non_whitespace()
+
+    return FunctionExpression(
+        info=LineInfo.from_token(start),
+        callee=callee,
+        args=args,
+        type=UnknownType(),
+        is_constexpr=False,
+        is_shell_mode=False,
     )
 
 
@@ -652,7 +707,37 @@ def regroup_binary_expr(expr: BinaryExpression) -> None:
             expr.rhs = rhs2
 
 
-def generate_expr(state: ParserState) -> Expression:  # noqa: PLR0915
+def generate_binary_expr(
+    state: ParserState,
+    start: Token,
+    expr: Expression,
+) -> Expression | None:
+    with state.peek() as peek:
+        oper = state.next_non_whitespace_or_eof()
+
+        # TODO: allow for more oper tokens
+        if isinstance(oper, tuple(TOKEN_TO_BINARY_OPER.keys())):
+            # TODO: bug in mypy
+            assert oper
+
+            lhs = expr
+            state.next_non_whitespace()
+            rhs = generate_expr(state)
+
+            peek.drop_peeked_tokens()
+
+            bin_expr = BinaryExpression.from_exprs(
+                lhs, BinaryOperator.from_token(oper), rhs, start
+            )
+
+            regroup_binary_expr(bin_expr)
+
+            return bin_expr
+
+    return None
+
+
+def generate_expr(state: ParserState) -> Expression:
     token = state.current_token
 
     expr: Expression | None = None
@@ -703,61 +788,11 @@ def generate_expr(state: ParserState) -> Expression:  # noqa: PLR0915
     else:
         raise AstError(f"expected an expression, got `{token.content}`", token)
 
-    with state.peek() as peek:
-        oper = state.next_non_whitespace_or_eof()
+    if func_expr := promote_expr_to_func_expr(state, token, expr):
+        expr = func_expr
 
-        if isinstance(oper, OpenParenToken):
-            # TODO: allow non-identifier-like exprs to be callees
-            assert isinstance(expr, IdentifierExpression | MemberExpression)
-
-            state.next_non_whitespace()
-
-            args: list[Expression] = []
-
-            if not isinstance(state.current_token, CloseParenToken):
-                while True:
-                    args.append(generate_expr(state))
-                    state.next_non_whitespace()
-
-                    if isinstance(state.current_token, CloseParenToken):
-                        break
-
-                    if not isinstance(state.current_token, CommaToken):
-                        raise AstError.unexpected_token(
-                            state.current_token, expected=","
-                        )
-
-                    state.next_non_whitespace()
-
-            peek.drop_peeked_tokens()
-
-            return FunctionExpression(
-                info=LineInfo.from_token(token),
-                callee=expr,
-                args=args,
-                type=UnknownType(),
-                is_constexpr=False,
-                is_shell_mode=False,
-            )
-
-        # TODO: allow for more oper tokens
-        if isinstance(oper, tuple(TOKEN_TO_BINARY_OPER.keys())):
-            # TODO: bug in mypy
-            assert oper
-
-            lhs = expr
-            state.next_non_whitespace()
-            rhs = generate_expr(state)
-
-            peek.drop_peeked_tokens()
-
-            bin_expr = BinaryExpression.from_exprs(
-                lhs, BinaryOperator.from_token(oper), rhs, token
-            )
-
-            regroup_binary_expr(bin_expr)
-
-            return bin_expr
+    if binary_expr := generate_binary_expr(state, token, expr):
+        return binary_expr
 
     return expr
 

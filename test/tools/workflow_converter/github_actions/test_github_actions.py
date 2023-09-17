@@ -34,8 +34,6 @@ def test_branch_globs_not_allowed() -> None:
         "abc*",
         "abc*xyz",
         # double star glob (0 or more characters)
-        "**abc",
-        "abc**",
         "abc**xyz",
         # repeat globs
         "abc?",

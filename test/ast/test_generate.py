@@ -1089,3 +1089,23 @@ def test_title_cannot_be_empty() -> None:
 
     with pytest.raises(AstError, match=re.escape(msg)):
         generate_ast_tree(tokenize(code))
+
+
+def test_parse_c_func_expr_in_binary_expr() -> None:
+    code = "let x = f() or g()"
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "x",
+            BinaryExpression(
+                lhs=FunctionExpression(IdentifierExpression("f")),
+                oper=BinaryOperator.OR,
+                rhs=FunctionExpression(IdentifierExpression("g")),
+            ),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

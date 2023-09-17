@@ -28,12 +28,20 @@ ENV_VAR_REGEX = re.compile("[A-Za-z_][A-Za-z0-9_]+")
 
 
 def is_supported_glob(glob: str) -> bool:
-    return not set(glob).intersection("*?+[]!")
+    if not set(glob).intersection("*?+[]!"):
+        return True
+
+    star_count = glob.count("*")
+
+    if (glob.startswith("**") or glob.endswith("**")) and star_count == 2:
+        return True
+
+    return False
 
 
 def convert_push_event(push: dict[str, Any] | str) -> str:  # type: ignore
     event_type = "git.push"
-    condition: None | str = None
+    conditions: list[str] = []
 
     if isinstance(push, dict) and (branches := push.get("branches")):
         assert isinstance(branches, list), "expected `branches` to be a list"
@@ -48,13 +56,17 @@ def convert_push_event(push: dict[str, Any] | str) -> str:  # type: ignore
                     f"Branch glob `{branch}` not supported yet"
                 )
 
-        if branches:
-            condition = " or ".join(f'event.branch is "{b}"' for b in branches)
+            if branch.startswith("**"):
+                conditions.append(f'event.branch.ends_with("{branch[2:]}")')
+            elif branch.endswith("**"):
+                conditions.append(f'event.branch.starts_with("{branch[:-2]}")')
+            else:
+                conditions.append(f'event.branch is "{branch}"')
 
     line = f"on {event_type}"
 
-    if condition:
-        line += f" where {condition}"
+    if conditions:
+        line += f" where {' or '.join(conditions)}"
 
     return f"{line}\n"
 

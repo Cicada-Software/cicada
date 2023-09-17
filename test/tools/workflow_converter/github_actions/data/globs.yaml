@@ -5,6 +5,12 @@ on:
       # so basically just ignore it.
       - "**"
 
+      # Converted to a starts_with() call
+      - "v**"
+
+      # Converted to an ends_with() call
+      - "**-dev"
+
 jobs:
   test:
     steps:

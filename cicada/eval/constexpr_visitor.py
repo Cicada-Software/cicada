@@ -94,16 +94,11 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         return UnitValue()
 
     def visit_member_expr(self, node: MemberExpression) -> Value:
-        match node:
-            case MemberExpression(
-                lhs=IdentifierExpression(name=lhs_name), name=name
-            ):
-                lhs = self.symbols[lhs_name]
+        lhs = node.lhs.accept(self)
 
-                if isinstance(lhs, RecordValue):
-                    return lhs.value[name]
+        assert isinstance(lhs, RecordValue)
 
-        raise NotImplementedError()
+        return lhs.value[node.name]
 
     def visit_let_expr(self, node: LetExpression) -> Value:
         expr = node.expr.accept(self)
