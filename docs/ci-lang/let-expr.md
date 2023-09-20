@@ -47,6 +47,8 @@ You can use the `mut` keyword to make a variable mutable:
 
 ```
 let mut num = 123
-```
 
-While there currently is no way to reassign `num`, when there is you will be allowed to!
+num = 456
+
+echo Your number is (num)
+```
