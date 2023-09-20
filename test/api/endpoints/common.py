@@ -12,6 +12,7 @@ from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.runner_repo import RunnerRepo
+from cicada.api.infra.secret_repo_shim import SecretRepoShim
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
@@ -29,7 +30,6 @@ from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.repo.user_repo import IUserRepo
 from cicada.domain.repo.waitlist_repo import IWaitlistRepo
 from test.api.common import SqliteTestWrapper
-from test.api.endpoints.dummy_secret_repo import DummySecretRepo
 
 
 class TestDiContainer(SqliteTestWrapper, DiContainer):
@@ -83,7 +83,7 @@ class TestDiContainer(SqliteTestWrapper, DiContainer):
 
     @classmethod
     def secret_repo(cls) -> ISecretRepo:
-        return DummySecretRepo()
+        return SecretRepoShim()
 
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:

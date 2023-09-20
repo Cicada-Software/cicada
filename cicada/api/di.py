@@ -1,13 +1,17 @@
+import logging
+
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.github.stop_session import github_session_terminator
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.runner_repo import RunnerRepo
 from cicada.api.infra.secret_repo import SecretRepo
+from cicada.api.infra.secret_repo_shim import SecretRepoShim
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import TerminalSessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.api.infra.waitlist_repo import WaitlistRepo
+from cicada.api.settings import VaultSettings
 from cicada.application.session.stop_session import SessionTerminator
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
@@ -18,6 +22,8 @@ from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.repo.user_repo import IUserRepo
 from cicada.domain.repo.waitlist_repo import IWaitlistRepo
+
+logger = logging.getLogger("cicada")
 
 
 class DiContainer:  # pragma: no cover
@@ -57,7 +63,15 @@ class DiContainer:  # pragma: no cover
 
     @classmethod
     def secret_repo(cls) -> ISecretRepo:
-        return SecretRepo()
+        try:
+            VaultSettings()
+            return SecretRepo()
+
+        except ValueError:
+            logger.warning(
+                "Vault is not installed, secret support will be disabled"
+            )
+            return SecretRepoShim()
 
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:

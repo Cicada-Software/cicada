@@ -4,8 +4,7 @@ from cicada.domain.repository import RepositoryId
 from cicada.domain.secret import Secret
 
 
-# TODO: relocate
-class DummySecretRepo(ISecretRepo):
+class SecretRepoShim(ISecretRepo):
     def list_secrets_for_repo(self, id: RepositoryId) -> list[str]:
         return []
 
