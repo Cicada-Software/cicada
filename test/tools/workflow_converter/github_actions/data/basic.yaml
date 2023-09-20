@@ -1,6 +1,5 @@
 # Stolen from https://github.com/dosisod/cal9000/blob/f17fdbb579af1628efb1b1979a7503aa9dbfbf10/.github/workflows/test.yml
 
-# TODO: allow for naming workflows in Cicada
 name: tests
 
 on:

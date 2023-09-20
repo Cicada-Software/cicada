@@ -41,6 +41,11 @@ def is_supported_glob(glob: str) -> bool:
     return False
 
 
+def convert_name(title: str) -> str:
+    assert isinstance(title, str)
+    return f"title {title}\n\n"
+
+
 def convert_push_event(push: dict[str, Any] | str) -> str:  # type: ignore
     event_type = "git.push"
     conditions: list[str] = []
@@ -224,6 +229,9 @@ def convert(contents: str) -> str:
     data = YAML(typ="safe").load(contents)
 
     workflow = ""
+
+    if name := data.get("name"):
+        workflow += convert_name(name)
 
     if on := data.get("on"):
         assert isinstance(on, dict | list | str)

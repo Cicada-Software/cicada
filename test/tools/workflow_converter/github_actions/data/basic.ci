@@ -1,3 +1,5 @@
+title tests
+
 on git.push where event.branch is "master"
 # ERR: `pull_request` events are currently unsupported
 
