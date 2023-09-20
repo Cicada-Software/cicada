@@ -134,3 +134,4 @@ class RunOnToken(KeywordToken): pass
 class CacheToken(KeywordToken): pass
 class UsingToken(KeywordToken): pass
 class TitleToken(KeywordToken): pass
+class InToken(KeywordToken): pass

@@ -65,6 +65,7 @@ KEYWORD_NAMES = {
     "cache": CacheToken,
     "using": UsingToken,
     "title": TitleToken,
+    "in": InToken,
 }
 
 

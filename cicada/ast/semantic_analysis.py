@@ -67,6 +67,8 @@ OPERATOR_ALLOWED_TYPES: dict[BinaryOperator, list[type[Type]]] = {
     BinaryOperator.GREATER_THAN_OR_EQUAL: [NumericType],
     BinaryOperator.IS: [Type],
     BinaryOperator.ASSIGN: [Type],
+    BinaryOperator.IN: [StringType],
+    BinaryOperator.NOT_IN: [StringType],
 }
 
 
@@ -79,6 +81,8 @@ OPERATOR_RESULT_TYPES: dict[BinaryOperator, type[Type]] = {
     BinaryOperator.LESS_THAN_OR_EQUAL: BooleanType,
     BinaryOperator.GREATER_THAN_OR_EQUAL: BooleanType,
     BinaryOperator.IS: BooleanType,
+    BinaryOperator.IN: BooleanType,
+    BinaryOperator.NOT_IN: BooleanType,
 }
 
 

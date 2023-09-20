@@ -170,6 +170,12 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             if node.oper == BinaryOperator.ADD:
                 return StringValue(lhs.value + rhs.value)
 
+            if node.oper == BinaryOperator.IN:
+                return BooleanValue(lhs.value in rhs.value)
+
+            if node.oper == BinaryOperator.NOT_IN:
+                return BooleanValue(lhs.value not in rhs.value)
+
         elif isinstance(lhs, NumericValue) and isinstance(rhs, NumericValue):
             if node.oper == BinaryOperator.EXPONENT:
                 return NumericValue(lhs.value**rhs.value)

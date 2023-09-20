@@ -1109,3 +1109,50 @@ def test_parse_c_func_expr_in_binary_expr() -> None:
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_in_binary_oper() -> None:
+    code = 'let x = "a" in "abc"'
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "x",
+            BinaryExpression(
+                lhs=StringExpression("a"),
+                oper=BinaryOperator.IN,
+                rhs=StringExpression("abc"),
+            ),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_not_in_binary_oper() -> None:
+    code = 'let x = "a" not in "abc"'
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "x",
+            BinaryExpression(
+                lhs=StringExpression("a"),
+                oper=BinaryOperator.NOT_IN,
+                rhs=StringExpression("abc"),
+            ),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_in_must_follow_not_in_binary_expr_context() -> None:
+    code = 'let x = "a" not + "abc"'
+
+    with pytest.raises(AstError, match="expected `in`"):
+        generate_ast_tree(tokenize(code))

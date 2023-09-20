@@ -20,6 +20,7 @@ from cicada.parse.token import (
     IdentifierToken,
     IfToken,
     IntegerLiteralToken,
+    InToken,
     KeywordToken,
     LetToken,
     MinusToken,
@@ -713,28 +714,37 @@ def generate_binary_expr(
     expr: Expression,
 ) -> Expression | None:
     with state.peek() as peek:
-        oper = state.next_non_whitespace_or_eof()
+        oper_token = state.next_non_whitespace_or_eof()
+
+        if isinstance(oper_token, NotToken):
+            _in = state.next_non_whitespace()
+
+            if not isinstance(_in, InToken):
+                raise AstError.unexpected_token(_in, expected="in")
+
+            oper = BinaryOperator.NOT_IN
 
         # TODO: allow for more oper tokens
-        if isinstance(oper, tuple(TOKEN_TO_BINARY_OPER.keys())):
+        elif isinstance(oper_token, tuple(TOKEN_TO_BINARY_OPER.keys())):
             # TODO: bug in mypy
-            assert oper
+            assert oper_token
 
-            lhs = expr
-            state.next_non_whitespace()
-            rhs = generate_expr(state)
+            oper = BinaryOperator.from_token(oper_token)
 
-            peek.drop_peeked_tokens()
+        else:
+            return None
 
-            bin_expr = BinaryExpression.from_exprs(
-                lhs, BinaryOperator.from_token(oper), rhs, start
-            )
+        lhs = expr
+        state.next_non_whitespace()
+        rhs = generate_expr(state)
 
-            regroup_binary_expr(bin_expr)
+        peek.drop_peeked_tokens()
 
-            return bin_expr
+        bin_expr = BinaryExpression.from_exprs(lhs, oper, rhs, start)
 
-    return None
+        regroup_binary_expr(bin_expr)
+
+        return bin_expr
 
 
 def generate_expr(state: ParserState) -> Expression:

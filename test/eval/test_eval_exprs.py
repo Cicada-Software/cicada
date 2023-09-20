@@ -109,6 +109,8 @@ let gtr_than = 3 > 10
 let less_than_eq = 3 <= 10
 let gtr_than_eq = 3 >= 10
 let _is = 123 is 123
+let _in = "a" in "abc"
+let not_in = "a" not in "abc"
 """
     )
 
@@ -124,6 +126,8 @@ let _is = 123 is 123
         "less_than_eq": True,
         "gtr_than_eq": False,
         "_is": True,
+        "_in": "a" in "abc",
+        "not_in": "a" not in "abc",
     }
 
     for name, value in expected.items():

@@ -19,6 +19,7 @@ from cicada.parse.token import (
     EqualToken,
     GreaterThanOrEqualToken,
     GreaterThanToken,
+    InToken,
     IsToken,
     LessThanOrEqualToken,
     LessThanToken,
@@ -477,6 +478,8 @@ class BinaryOperator(Enum):
     GREATER_THAN_OR_EQUAL = 5.3
     IS = 6.0
     IS_NOT = 6.1
+    IN = 6.2
+    NOT_IN = 6.3
 
     @classmethod
     def from_token(cls, token: Token) -> Self:
@@ -506,6 +509,7 @@ TOKEN_TO_BINARY_OPER: Final[dict[type[Token], BinaryOperator]] = {
     IsToken: BinaryOperator.IS,
     # IsNotToken: BinaryOperator.IS_NOT,
     EqualToken: BinaryOperator.ASSIGN,
+    InToken: BinaryOperator.IN,
 }
 
 

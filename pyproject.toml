@@ -126,6 +126,7 @@ extend-ignore = [
 "test/ast/test_generate.py" = ["W293"]
 "test/api/application/cache/test_cache_files.py" = ["S108"]
 "test/api/application/cache/test_restore_cache.py" = ["S108"]
+"test/eval/test_eval_exprs.py" = ["PLR0133"]
 
 [tool.typos.default.extend-words]
 Hashi = "Hashi"
