@@ -1156,3 +1156,24 @@ def test_in_must_follow_not_in_binary_expr_context() -> None:
 
     with pytest.raises(AstError, match="expected `in`"):
         generate_ast_tree(tokenize(code))
+
+
+def test_is_not_binary_oper() -> None:
+    code = "let x = 1 is not 2"
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "x",
+            BinaryExpression(
+                lhs=NumericExpression(1),
+                oper=BinaryOperator.IS_NOT,
+                rhs=NumericExpression(2),
+            ),
+        ):
+            # TODO: bug in mypy
+            return  # type: ignore[unreachable]
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

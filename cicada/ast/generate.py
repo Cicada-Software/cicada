@@ -731,6 +731,14 @@ def generate_binary_expr(
 
             oper = BinaryOperator.from_token(oper_token)
 
+            if oper == BinaryOperator.IS:
+                with state.peek() as peek_is_not:
+                    _not = state.next_non_whitespace()
+
+                    if isinstance(_not, NotToken):
+                        oper = BinaryOperator.IS_NOT
+                        peek_is_not.drop_peeked_tokens()
+
         else:
             return None
 

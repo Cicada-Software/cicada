@@ -159,9 +159,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         lhs = node.lhs.accept(self)
 
-        if node.oper == BinaryOperator.IS:
+        if node.oper in (BinaryOperator.IS, BinaryOperator.IS_NOT):
             try:
-                return BooleanValue(lhs.value == rhs.value)  # type: ignore
+                return BooleanValue(
+                    lhs.value == rhs.value  # type: ignore
+                    if node.oper == BinaryOperator.IS
+                    else lhs.value != rhs.value  # type: ignore
+                )
 
             except TypeError as ex:  # pragma: no cover
                 raise NotImplementedError() from ex
