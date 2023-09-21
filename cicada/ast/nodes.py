@@ -35,6 +35,7 @@ from cicada.parse.token import (
 
 from .types import (
     BooleanType,
+    FunctionType,
     NumericType,
     StringType,
     Type,
@@ -100,6 +101,11 @@ class BooleanValue(Value):
 class RecordValue(Value):
     value: dict[str, Value]
     type: Type
+
+
+@dataclass
+class FunctionValue(Value):
+    type: FunctionType
 
 
 T = TypeVar("T")

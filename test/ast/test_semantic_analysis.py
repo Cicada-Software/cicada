@@ -29,6 +29,7 @@ from cicada.ast.semantic_analysis import (
 )
 from cicada.ast.types import (
     BooleanType,
+    FunctionType,
     NumericType,
     RecordField,
     RecordType,
@@ -659,8 +660,7 @@ let y = x.starts_with("abc")
                 callee=MemberExpression(
                     lhs=IdentifierExpression("x"),
                     name="starts_with",
-                    # TODO: should be function type
-                    type=BooleanType(),
+                    type=FunctionType(rtype=BooleanType()),
                 ),
                 args=[StringExpression("abc")],
                 type=BooleanType(),
@@ -691,8 +691,7 @@ let x = event.type.starts_with("x")
                         name="type",
                     ),
                     name="starts_with",
-                    # TODO: should be function type
-                    type=BooleanType(),
+                    type=FunctionType(rtype=BooleanType()),
                 ),
                 args=[StringExpression("x")],
                 type=BooleanType(),

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from types import EllipsisType
 
 
 class Type:
@@ -130,3 +131,33 @@ class UnionType(Type):
 
     def __str__(self) -> str:
         return " | ".join(str(ty) for ty in self.types)
+
+
+class FunctionType(Type):
+    """
+    A function type is used to represent the arguments/return types of a
+    function definition or function call.
+    """
+
+    arg_types: list[Type | EllipsisType]
+    rtype: Type
+
+    def __init__(
+        self,
+        arg_types: list[Type | EllipsisType],
+        rtype: Type,
+    ) -> None:
+        self.arg_types = arg_types
+        self.rtype = rtype
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, FunctionType)
+            and other.arg_types == self.arg_types
+            and other.rtype == self.rtype
+        )
+
+    def __str__(self) -> str:
+        args = ", ".join(str(ty) for ty in self.arg_types)
+
+        return f"({args}) -> {self.rtype}"

@@ -13,6 +13,7 @@ from cicada.ast.nodes import (
     Expression,
     FileNode,
     FunctionExpression,
+    FunctionValue,
     IdentifierExpression,
     IfExpression,
     LetExpression,
@@ -31,6 +32,7 @@ from cicada.ast.nodes import (
 from cicada.ast.types import (
     BOOL_LIKE_TYPES,
     BooleanType,
+    FunctionType,
     NumericType,
     RecordField,
     RecordType,
@@ -88,6 +90,7 @@ OPERATOR_RESULT_TYPES: dict[BinaryOperator, type[Type]] = {
 }
 
 
+# TODO: combine with bool like types in types.py
 STRING_COERCIBLE_TYPES: tuple[Type, ...] = (
     StringType(),
     BooleanType(),
@@ -98,10 +101,26 @@ STRING_COERCIBLE_TYPES: tuple[Type, ...] = (
 RESERVED_NAMES = {"event", "env", "secret"}
 
 
+Symbol = Value | Expression
+
+
+# TODO: make sure this immutable
+BUILT_IN_SYMBOLS: dict[str, Symbol] = {
+    "shell": FunctionValue(
+        FunctionType([StringType(), ...], rtype=RecordType())
+    ),
+    "print": FunctionValue(FunctionType([...], rtype=UnitType())),
+    "hashOf": FunctionValue(FunctionType([...], rtype=StringType())),
+    **{
+        alias: FunctionValue(FunctionType([...], rtype=RecordType()))
+        for alias in SHELL_ALIASES
+    },
+}
+
+
 class SemanticAnalysisVisitor(TraversalVisitor):
-    function_names: set[str]
     types: dict[str, Type]
-    symbols: ChainMap[str, Expression | Value]
+    symbols: ChainMap[str, Symbol]
     trigger: Trigger | None
 
     # This is set when a function has been called, used to detect non-constexpr
@@ -123,9 +142,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     file_node: FileNode | None = None
 
     def __init__(self, trigger: Trigger | None = None) -> None:
-        # TODO: populate symbol table with builtins
-        self.function_names = {*SHELL_ALIASES, "shell", "print", "hashOf"}
-        self.symbols = ChainMap()
+        self.symbols = ChainMap(BUILT_IN_SYMBOLS.copy())
         self.trigger = trigger
         self.has_ran_function = False
         self.has_on_stmt = False
@@ -178,8 +195,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         elif isinstance(
             node.lhs, IdentifierExpression | MemberExpression
         ) and node.name in ("starts_with", "ends_with"):
-            # TODO: turn this into a function type
-            node.type = BooleanType()
+            node.type = FunctionType([StringType()], rtype=BooleanType())
 
         else:
             name = cast(IdentifierExpression, node.lhs).name
@@ -197,10 +213,6 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if symbol := self.symbols.get(node.name):
             node.type = symbol.type
-
-        elif node.name in self.function_names:
-            # TODO: pull function types from symbol table
-            pass
 
         else:
             raise AstError(f"variable `{node.name}` is not defined", node.info)
@@ -343,7 +355,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 raise NotImplementedError()
 
             assert node.callee.name in ("starts_with", "ends_with")
+            assert isinstance(node.callee.type, FunctionType)
 
+            # TODO: validate against function type itself
             if len(node.args) != 1:
                 raise AstError(
                     f"`{node.callee.name}` takes exactly one argument",
@@ -358,8 +372,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     arg.info,
                 )
 
-            # TODO: callee should be function type, not rtype
-            node.type = node.callee.type
+            node.type = node.callee.type.rtype
 
             node.is_constexpr = self.is_constexpr(node.callee) and all(
                 self.is_constexpr(x) for x in node.args
@@ -367,18 +380,19 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             return
 
-        if node.callee.name not in self.function_names:
+        symbol = self.symbols.get(node.callee.name)
+
+        if not symbol:
             raise AstError(
                 f"function `{node.callee.name}` is not defined", node.info
             )
 
+        assert isinstance(symbol, FunctionValue)
+
         self.has_ran_function = True
 
-        if node.callee.name == "print":
-            node.type = UnitType()
-
         # TODO: move to separate function
-        elif node.callee.name == "hashOf":
+        if node.callee.name == "hashOf":
             node.type = StringType()
 
             if not node.args:
@@ -392,8 +406,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
                     raise AstError(msg, arg.info)
 
-        else:
-            node.type = RecordType()
+        node.type = symbol.type.rtype
 
     def visit_on_stmt(self, node: OnStatement) -> None:
         if self.has_on_stmt:
