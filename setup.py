@@ -23,7 +23,6 @@ with TemporaryDirectory() as tmp:
             "cicada.domain",
             "cicada.common",
             "cicada.eval",
-            "cicada.eval.builtins",
             "cicada.parse",
         ],
     )
