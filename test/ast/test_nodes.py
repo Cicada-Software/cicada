@@ -67,6 +67,9 @@ run_on image xyz
 cache abc using "123"
 
 title hello world
+
+fn f(x):
+  echo hi
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -122,7 +125,15 @@ FileNode:
     using=StringExpression('123') # 23:17..23:21
   TitleStatement(): # 25:1..25:5
     StringExpression('hello') # 25:7..25:11
-    StringExpression('world') # 25:13..25:17\
+    StringExpression('world') # 25:13..25:17
+  FunctionDefStatement(name=f): # 27:1..27:2
+    0=x
+    type=(string) -> ()
+    body=BlockExpression: # 28:3..28:3
+      0=FunctionExpression(shell=True): # 28:3..28:6
+        callee=IdentifierExpression('shell') # 28:3..28:6
+        0=StringExpression('echo') # 28:3..28:6
+        1=StringExpression('hi') # 28:8..28:9\
 """
 
     assert str(tree) == expected

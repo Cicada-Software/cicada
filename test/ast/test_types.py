@@ -1,6 +1,14 @@
 import pytest
 
-from cicada.ast.types import BooleanType, NumericType, StringType, UnionType
+from cicada.ast.types import (
+    BooleanType,
+    FunctionType,
+    NumericType,
+    StringType,
+    UnionType,
+    UnitType,
+    VariadicTypeArg,
+)
 
 
 def test_non_unique_fields_removed() -> None:
@@ -40,3 +48,14 @@ def test_single_type_unions_throw_error() -> None:
 
 def test_stringify_union_type() -> None:
     assert str(UnionType((BooleanType(), NumericType()))) == "bool | number"
+
+
+def test_stringify_variadic_type() -> None:
+    assert str(VariadicTypeArg(StringType())) == "string"
+
+
+def test_stringify_function_type() -> None:
+    ty = FunctionType([StringType()], rtype=UnitType())
+    expected = "(string) -> ()"
+
+    assert str(ty) == expected

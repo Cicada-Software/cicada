@@ -17,17 +17,28 @@ from uuid import uuid4
 from cicada.api.infra.cache_repo import CacheRepo
 from cicada.application.cache.cache_files import CacheFilesForSession
 from cicada.application.cache.restore_cache import RestoreCache
+from cicada.ast.generate import SHELL_ALIASES
 from cicada.ast.nodes import (
     CacheStatement,
     FileNode,
+    FunctionDefStatement,
     FunctionExpression,
+    FunctionValue,
     IdentifierExpression,
     RecordValue,
     StringValue,
     UnitValue,
+    UnreachableValue,
     Value,
 )
-from cicada.ast.types import RecordType
+from cicada.ast.semantic_analysis import StringCoercibleType
+from cicada.ast.types import (
+    FunctionType,
+    RecordType,
+    StringType,
+    UnitType,
+    VariadicTypeArg,
+)
 from cicada.domain.cache import CacheKey
 from cicada.domain.triggers import CommitTrigger
 from cicada.eval.constexpr_visitor import (
@@ -84,6 +95,39 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         self.cached_files = None
         self.cache_key = None
 
+        # TODO: deduplicate this monstrosity
+        built_in_symbols = {
+            "shell": FunctionValue(
+                type=FunctionType(
+                    [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
+                ),
+                func=self.builtin_shell,
+            ),
+            "print": FunctionValue(
+                FunctionType(
+                    [VariadicTypeArg(StringCoercibleType)],
+                    rtype=UnitType(),
+                ),
+                func=self.builtin_print,
+            ),
+            "hashOf": FunctionValue(
+                FunctionType(
+                    [StringType(), VariadicTypeArg(StringType())],
+                    rtype=StringType(),
+                ),
+                func=self.hashOf,
+            ),
+            **{
+                alias: FunctionValue(
+                    FunctionType([StringCoercibleType], rtype=RecordType()),
+                    func=self.builtin_shell,
+                )
+                for alias in SHELL_ALIASES
+            },
+        }
+
+        self.symbols.update(built_in_symbols)
+
         self._start_container(image)
 
     def cleanup(self) -> None:
@@ -123,32 +167,31 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         if (expr := super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
-        args: list[str] = []
-
-        for arg in node.args:
-            value = arg.accept(self)
-
-            assert isinstance(value, StringValue)
-
-            args.append(value.value)
-
         assert isinstance(node.callee, IdentifierExpression)
 
-        if node.callee.name == "shell":
-            exit_code = self._container_exec(args)
+        symbol = self.symbols.get(node.callee.name)
 
-            if exit_code != 0:
-                raise CommandFailed(exit_code)
+        if not symbol:
+            return UnreachableValue()
 
-            return RecordValue({}, RecordType())
+        assert isinstance(symbol, FunctionValue)
 
-        if node.callee.name == "hashOf":
-            return self.hashOf(args)
+        if isinstance(symbol.func, FunctionDefStatement):
+            func = symbol.func
 
-        if node.callee.name == "print":
-            self.terminal.append(" ".join(args).encode())
+            with self.new_scope():
+                args = [arg.accept(self) for arg in node.args]
 
-        return UnitValue()
+                for name, arg in zip(func.arg_names, args, strict=True):
+                    self.symbols[name] = arg
+
+                return func.body.accept(self)
+
+        if callable(symbol.func):
+            # TODO: make this type-safe
+            return symbol.func(node)
+
+        return UnreachableValue()
 
     def visit_cache_stmt(self, node: CacheStatement) -> Value:
         assert self.trigger
@@ -286,7 +329,16 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     def temp_dir(self) -> str:
         return f"/tmp/{self.uuid}"
 
-    def hashOf(self, args: list[str]) -> StringValue:  # noqa: N802
+    def hashOf(self, node: FunctionExpression) -> StringValue:  # noqa: N802
+        args: list[str] = []
+
+        for arg in node.args:
+            value = arg.accept(self)
+
+            assert isinstance(value, StringValue)
+
+            args.append(value.value)
+
         shell_code = f"""\
         cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"
 
@@ -337,11 +389,43 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             else:
                 msg = "One or more files could not be found"
 
-            self.terminal.append(f"hashOf(): {msg}\n".encode())
+            self.terminal.append(f"hashOf(): {msg}\r\n".encode())
 
             raise CommandFailed(1)
 
         return StringValue(lines[0].strip())
+
+    def builtin_shell(self, node: FunctionExpression) -> Value:
+        # TODO: turn this into a function
+        args: list[str] = []
+
+        for arg in node.args:
+            value = arg.accept(self)
+
+            assert isinstance(value, StringValue)
+
+            args.append(value.value)
+
+        exit_code = self._container_exec(args)
+
+        if exit_code != 0:
+            raise CommandFailed(exit_code)
+
+        return RecordValue({}, RecordType())
+
+    def builtin_print(self, node: FunctionExpression) -> Value:
+        args: list[str] = []
+
+        for arg in node.args:
+            value = arg.accept(self)
+
+            assert isinstance(value, StringValue)
+
+            args.append(value.value)
+
+        self.terminal.append(" ".join(args).encode() + b"\r\n")
+
+        return UnitValue()
 
     def program_specific_flags(self) -> list[str]:
         # TODO: Fix GitHub Codespaces emitting warnings

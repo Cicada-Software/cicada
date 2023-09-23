@@ -10,6 +10,7 @@ from cicada.ast.nodes import (
     BooleanExpression,
     CacheStatement,
     FileNode,
+    FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
     IfExpression,
@@ -25,7 +26,13 @@ from cicada.ast.nodes import (
     TitleStatement,
     ToStringExpression,
 )
-from cicada.ast.types import NumericType, StringType, UnknownType
+from cicada.ast.types import (
+    FunctionType,
+    NumericType,
+    StringType,
+    UnitType,
+    UnknownType,
+)
 from cicada.parse.tokenize import tokenize
 
 
@@ -1177,3 +1184,105 @@ def test_is_not_binary_oper() -> None:
             return  # type: ignore[unreachable]
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_void_no_arg_function() -> None:
+    code = """\
+fn f():
+  echo hi
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="f",
+            arg_names=[],
+            type=FunctionType([], rtype=UnitType()),
+            body=BlockExpression(
+                [
+                    FunctionExpression(
+                        callee=IdentifierExpression("shell"),
+                        args=[
+                            StringExpression("echo"),
+                            StringExpression("hi"),
+                        ],
+                    ),
+                ],
+            ),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_void_single_arg_function() -> None:
+    code = """\
+fn say_hi(x):
+  echo hi
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="say_hi",
+            arg_names=["x"],
+            type=FunctionType([StringType()], rtype=UnitType()),
+            body=BlockExpression([FunctionExpression()]),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_void_multi_arg_function() -> None:
+    code = """\
+fn f(x, y):
+  echo hi
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="f",
+            arg_names=["x", "y"],
+            type=FunctionType(
+                [StringType(), StringType()],
+                rtype=UnitType(),
+            ),
+            body=BlockExpression([FunctionExpression()]),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_invalid_function_defs_are_caught() -> None:
+    tests = {
+        "fn": "expected token after `fn`",
+        "fn fn": "Cannot use keyword `fn` as function name",
+        "fn 1": "Expected identifier, got `1` instead",
+        "fn f": "expected `(`",
+        "fn f+": "expected `(`",
+        "fn f(": "expected `)`",
+        "fn f(+": "expected `)`",
+        "fn f()": "expected `:`",
+        "fn f()x": "expected `:`",
+        "fn f():": "expected `\\n`",
+        "fn f():\n": "Expected whitespace after function definition",
+        "fn f():\nx": "Expected whitespace after function definition",
+        "fn f(x": "Expected `,` or `)`",
+        "fn f(x,": "Expected argument",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))

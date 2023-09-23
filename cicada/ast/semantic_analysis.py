@@ -12,6 +12,7 @@ from cicada.ast.nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    FunctionDefStatement,
     FunctionExpression,
     FunctionValue,
     IdentifierExpression,
@@ -22,6 +23,7 @@ from cicada.ast.nodes import (
     ParenthesisExpression,
     RecordValue,
     RunOnStatement,
+    StringValue,
     TitleStatement,
     ToStringExpression,
     TraversalVisitor,
@@ -41,6 +43,7 @@ from cicada.ast.types import (
     UnionType,
     UnitType,
     UnknownType,
+    VariadicTypeArg,
 )
 from cicada.domain.triggers import Trigger
 
@@ -97,6 +100,8 @@ STRING_COERCIBLE_TYPES: tuple[Type, ...] = (
     NumericType(),
 )
 
+StringCoercibleType = UnionType(STRING_COERCIBLE_TYPES)
+
 
 RESERVED_NAMES = {"event", "env", "secret"}
 
@@ -107,12 +112,25 @@ Symbol = Value | Expression
 # TODO: make sure this immutable
 BUILT_IN_SYMBOLS: dict[str, Symbol] = {
     "shell": FunctionValue(
-        FunctionType([StringType(), ...], rtype=RecordType())
+        FunctionType(
+            [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
+        ),
     ),
-    "print": FunctionValue(FunctionType([...], rtype=UnitType())),
-    "hashOf": FunctionValue(FunctionType([...], rtype=StringType())),
+    "print": FunctionValue(
+        FunctionType(
+            [VariadicTypeArg(StringCoercibleType)],
+            rtype=UnitType(),
+        ),
+    ),
+    "hashOf": FunctionValue(
+        FunctionType(
+            [StringType(), VariadicTypeArg(StringType())], rtype=StringType()
+        ),
+    ),
     **{
-        alias: FunctionValue(FunctionType([...], rtype=RecordType()))
+        alias: FunctionValue(
+            FunctionType([StringCoercibleType], rtype=RecordType())
+        )
         for alias in SHELL_ALIASES
     },
 }
@@ -382,31 +400,92 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         symbol = self.symbols.get(node.callee.name)
 
+        # TODO: this is never hit because callee is always checked
         if not symbol:
             raise AstError(
-                f"function `{node.callee.name}` is not defined", node.info
+                f"Function `{node.callee.name}` is not defined", node.info
             )
 
         assert isinstance(symbol, FunctionValue)
 
+        func_arg_types = symbol.type.arg_types
+
+        is_variadic = func_arg_types and isinstance(
+            func_arg_types[-1], VariadicTypeArg
+        )
+
+        # Ensure only the last func arg is variadic. This should always be true
+        assert not any(
+            isinstance(arg, VariadicTypeArg) for arg in func_arg_types[:-1]
+        )
+
+        if is_variadic:
+            self.type_check_variadic_func_expr(node, symbol)
+
+        else:
+            self.type_check_normal_func_expr(node, symbol)
+
         self.has_ran_function = True
-
-        # TODO: move to separate function
-        if node.callee.name == "hashOf":
-            node.type = StringType()
-
-            if not node.args:
-                msg = "hashOf() requires 1 or more arguments"
-
-                raise AstError(msg, node.info)
-
-            for arg in node.args:
-                if arg.type != StringType():
-                    msg = f"Expected `{StringType()}` type, got `{arg.type}`"
-
-                    raise AstError(msg, arg.info)
-
         node.type = symbol.type.rtype
+
+    def type_check_variadic_func_expr(
+        self,
+        node: FunctionExpression,
+        symbol: FunctionValue,
+    ) -> None:
+        assert isinstance(node.callee, IdentifierExpression)
+
+        required_args = len(symbol.type.arg_types) - 1
+
+        positionals = node.args[:required_args]
+        variadics = node.args[required_args:]
+
+        if len(positionals) < required_args:
+            expected = f"{required_args} {pluralize('argument', required_args)}"  # noqa: E501
+            got = f"{len(positionals)} {pluralize('argument', len(positionals))}"  # noqa: E501
+
+            msg = f"Function `{node.callee.name}` takes at least {expected} but was called with {got}"  # noqa: E501
+
+            raise AstError(msg, node.info)
+
+        for arg, ty in zip(positionals, symbol.type.arg_types, strict=False):
+            if not self.is_type_compatible(arg.type, ty):
+                raise AstError(
+                    f"Expected type `{ty}`, got type `{arg.type}` instead",
+                    arg.info,
+                )
+
+        for arg in variadics:
+            var_arg = symbol.type.arg_types[-1]
+            assert isinstance(var_arg, VariadicTypeArg)
+
+            if not self.is_type_compatible(arg.type, var_arg.type):
+                msg = f"Expected type `{var_arg.type}`, got type `{arg.type}` instead"  # noqa: E501
+
+                raise AstError(msg, arg.info)
+
+    def type_check_normal_func_expr(
+        self, node: FunctionExpression, symbol: FunctionValue
+    ) -> None:
+        assert isinstance(node.callee, IdentifierExpression)
+
+        expected_args = len(symbol.type.arg_types)
+        got_args = len(node.args)
+
+        if expected_args != got_args:
+            expected = f"{expected_args} {pluralize('argument', expected_args)}"  # noqa: E501
+            got = f"{got_args} {pluralize('argument', got_args)}"
+
+            msg = f"Function `{node.callee.name}` takes {expected} but was called with {got}"  # noqa: E501
+
+            raise AstError(msg, node.info)
+
+        for arg, ty in zip(node.args, symbol.type.arg_types, strict=True):
+            if not self.is_type_compatible(arg.type, ty):
+                raise AstError(
+                    f"Expected type `{ty}`, got type `{arg.type}` instead",
+                    arg.info,
+                )
 
     def visit_on_stmt(self, node: OnStatement) -> None:
         if self.has_on_stmt:
@@ -516,7 +595,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if node.using.type != StringType():
             raise AstError(
-                f"Expected `{StringType()}` type, got `{node.using.type}`",
+                f"Expected `{StringType()}` type, got type `{node.using.type}`",  # noqa: E501
                 node.using.info,
             )
 
@@ -540,6 +619,41 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if self.file_node:
             self.file_node.title = node
+
+    def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
+        # TODO: only allow funcs at top level for now?
+        # TODO: allow calling user defined functions via shell format
+
+        self.symbols[node.name] = FunctionValue(
+            type=cast(FunctionType, node.type),
+            func=node,
+        )
+
+        self.check_for_duplicate_arg_names(node)
+
+        with self.new_scope():
+            for arg in node.arg_names:
+                # TODO: this should be just a type since the value is unknown
+                self.symbols[arg] = StringValue("")
+
+            super().visit_func_def_stmt(node)
+
+    def check_for_duplicate_arg_names(
+        self,
+        node: FunctionDefStatement,
+    ) -> None:
+        seen = set[str]()
+
+        for arg_name in node.arg_names:
+            if arg_name in seen:
+                # TODO: use identifier exprs as arg names so we can have line
+                # and column info
+                raise AstError(
+                    f"Argument `{arg_name}` already exists",
+                    node.info,
+                )
+
+            seen.add(arg_name)
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:
@@ -588,3 +702,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     return lhs.value.get(node.name)
 
         return None
+
+    def is_type_compatible(self, compare: Type, to: Type) -> bool:
+        if isinstance(to, UnionType):
+            return compare in to.types
+
+        return compare == to
+
+
+def pluralize(noun: str, count: int) -> str:
+    return noun if count == 1 else f"{noun}s"

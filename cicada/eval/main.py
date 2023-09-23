@@ -1,26 +1,62 @@
-import shlex
-import subprocess
 import sys
 from pathlib import Path
 
 from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
-from cicada.ast.generate import AstError
+from cicada.ast.generate import SHELL_ALIASES, AstError
 from cicada.ast.nodes import (
     CacheStatement,
+    FunctionDefStatement,
     FunctionExpression,
+    FunctionValue,
     IdentifierExpression,
-    RecordValue,
-    StringValue,
     UnitValue,
+    UnreachableValue,
     Value,
 )
-from cicada.ast.semantic_analysis import IgnoreWorkflow
-from cicada.ast.types import RecordType
+from cicada.ast.semantic_analysis import IgnoreWorkflow, StringCoercibleType
+from cicada.ast.types import (
+    FunctionType,
+    RecordType,
+    StringType,
+    UnitType,
+    VariadicTypeArg,
+)
 from cicada.domain.triggers import Trigger
-from cicada.eval.builtins.hashof import hashOf
-from cicada.eval.constexpr_visitor import ConstexprEvalVisitor, value_to_string
+from cicada.eval.builtins import builtin_print, builtin_shell, hashOf
+from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
 from cicada.eval.find_files import find_ci_files
+
+# TODO: deduplicate this
+BUILT_IN_SYMBOLS: dict[str, Value] = {
+    "shell": FunctionValue(
+        type=FunctionType(
+            [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
+        ),
+        func=builtin_shell,
+    ),
+    "print": FunctionValue(
+        FunctionType(
+            [VariadicTypeArg(StringCoercibleType)],
+            rtype=UnitType(),
+        ),
+        func=builtin_print,
+    ),
+    "hashOf": FunctionValue(
+        FunctionType(
+            [StringType(), VariadicTypeArg(StringType())],
+            rtype=StringType(),
+        ),
+        func=hashOf,
+    ),
+    **{
+        alias: FunctionValue(
+            FunctionType([StringCoercibleType], rtype=RecordType()),
+            func=builtin_shell,
+        )
+        for alias in SHELL_ALIASES
+    },
+}
 
 
 class EvalVisitor(ConstexprEvalVisitor):
@@ -29,6 +65,7 @@ class EvalVisitor(ConstexprEvalVisitor):
 
     def __init__(self, trigger: Trigger | None = None) -> None:
         super().__init__(trigger)
+        self.symbols.update(BUILT_IN_SYMBOLS.copy())
 
         self.cached_files = None
         self.cache_key = None
@@ -37,37 +74,31 @@ class EvalVisitor(ConstexprEvalVisitor):
         if (expr := super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
-        args: list[str] = []
-
-        for arg in node.args:
-            value = value_to_string(arg.accept(self))
-
-            assert isinstance(value, StringValue)
-
-            args.append(value.value)
-
         assert isinstance(node.callee, IdentifierExpression)
 
-        # TODO: move to separate function
-        if node.callee.name == "shell":
-            process = subprocess.run(  # noqa: PLW1510
-                ["/bin/sh", "-c", shlex.join(args)],  # noqa: S603
-                env=self.trigger.env if self.trigger else None,
-            )
+        symbol = self.symbols.get(node.callee.name)
 
-            if process.returncode != 0:
-                sys.exit(process.returncode)
+        if not symbol:
+            return UnreachableValue()
 
-            # TODO: return rich "command type" value
-            return RecordValue({}, RecordType())
+        assert isinstance(symbol, FunctionValue)
 
-        if node.callee.name == "hashOf":
-            return hashOf(self, node)
+        if isinstance(symbol.func, FunctionDefStatement):
+            func = symbol.func
 
-        if node.callee.name == "print":
-            print(*args)  # noqa: T201
+            with self.new_scope():
+                args = [arg.accept(self) for arg in node.args]
 
-        return UnitValue()
+                for name, arg in zip(func.arg_names, args, strict=True):
+                    self.symbols[name] = arg
+
+                return func.body.accept(self)
+
+        if callable(symbol.func):
+            # TODO: make this type-safe
+            return symbol.func(self, node)
+
+        return UnreachableValue()
 
     def visit_cache_stmt(self, node: CacheStatement) -> Value:
         print(  # noqa: T201

@@ -7,8 +7,10 @@ from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
+    BlockExpression,
     BooleanExpression,
     Expression,
+    FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
     LetExpression,
@@ -585,14 +587,14 @@ hashOf("some_file")
 
 
 def test_hash_of_requires_at_least_one_arg() -> None:
-    msg = r"hashOf\(\) requires 1 or more arguments"
+    msg = "Function `hashOf` takes at least 1 argument but was called with 0 arguments"  # noqa: E501
 
-    with pytest.raises(AstError, match=msg):
+    with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze("hashOf()")
 
 
 def test_hash_of_requires_string_only_args() -> None:
-    msg = "Expected `string` type, got `number`"
+    msg = "Expected type `string`, got type `number` instead"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("hashOf(1)")
@@ -603,7 +605,7 @@ def test_proper_cache_stmt_is_valid() -> None:
 
 
 def test_cache_key_must_be_string() -> None:
-    msg = "Expected `string` type, got `number`"
+    msg = "Expected `string` type, got type `number`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("cache file using 123")
@@ -729,6 +731,78 @@ def test_starts_with_must_have_string_arg() -> None:
     code = """\
 let x = ""
 let x = x.starts_with(1)
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_func_def_is_typed_correctly() -> None:
+    code = """\
+fn f():
+  echo hi
+"""
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            body=BlockExpression(exprs=[FunctionExpression()]),
+            type=FunctionType(arg_types=[], rtype=UnitType()),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+def test_cannot_call_no_arg_func_with_args() -> None:
+    msg = "Function `f` takes 0 arguments but was called with 1 argument"
+
+    code = """\
+fn f():
+    echo hi
+
+f(123)
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_cannot_call_single_arg_func_with_no_args() -> None:
+    msg = "Function `f` takes 1 argument but was called with 0 arguments"
+
+    code = """\
+fn f(x):
+    echo hi
+
+f()
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_cannot_have_func_with_duplicate_argument_names() -> None:
+    msg = "Argument `x` already exists"
+
+    code = """\
+fn f(x, x):
+    echo hi
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_must_call_user_defined_functions_with_proper_types() -> None:
+    msg = "Expected type `string`, got type `number` instead"
+
+    code = """\
+fn f(x):
+    echo hi
+
+f(1)
 """
 
     with pytest.raises(AstError, match=re.escape(msg)):

@@ -34,7 +34,7 @@ from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType
 from cicada.domain.session import SessionStatus
 from cicada.domain.triggers import CommitTrigger, Trigger, json_to_trigger
-from cicada.eval.builtins.hashof import hashOf
+from cicada.eval.builtins import hashOf
 from cicada.eval.constexpr_visitor import (
     CommandFailed,
     ConstexprEvalVisitor,

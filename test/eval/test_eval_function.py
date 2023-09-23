@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock, call, patch
 
-from cicada.eval.main import run_pipeline
+from cicada.ast.entry import parse_and_analyze
+from cicada.ast.nodes import BooleanValue, StringValue
+from cicada.eval.main import EvalVisitor, run_pipeline
 
 
 def test_calling_shell_function_invokes_sh_binary() -> None:
@@ -71,3 +73,84 @@ def test_calling_builtin_print_function_calls_print() -> None:
         run_pipeline('print("testing 123")')
 
     assert p.call_args == call("testing 123")
+
+
+def test_eval_user_defined_func() -> None:
+    code = """
+let mut ran = false
+
+fn f():
+  ran = true
+
+f()
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    ran = visitor.symbols.get("ran")
+
+    assert ran
+    assert isinstance(ran, BooleanValue)
+    assert ran.value
+
+
+def test_function_is_only_ran_if_called() -> None:
+    code = """
+let mut ran = false
+
+fn f():
+  ran = true
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    ran = visitor.symbols.get("ran")
+
+    assert ran
+    assert isinstance(ran, BooleanValue)
+    assert not ran.value
+
+
+def test_function_creates_its_own_scope() -> None:
+    code = """
+fn f():
+  let x = true
+
+f()
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    assert not visitor.symbols.get("x")
+
+
+def test_function_passes_arguments() -> None:
+    code = """
+let mut str = ""
+
+fn concat(x, y):
+  # TODO: fix = having higher precedence
+  str = (x + y)
+
+concat("hello", " world")
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    symbol = visitor.symbols.get("str")
+
+    assert symbol
+    assert isinstance(symbol, StringValue)
+    assert symbol.value == "hello world"

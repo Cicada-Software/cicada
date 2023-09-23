@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from ast import literal_eval as python_literal_eval
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, auto
@@ -103,9 +104,13 @@ class RecordValue(Value):
     type: Type
 
 
+BuiltInFunction = Callable[..., Value]  # type: ignore[misc]
+
+
 @dataclass
 class FunctionValue(Value):
     type: FunctionType
+    func: FunctionDefStatement | BuiltInFunction | None = None
 
 
 T = TypeVar("T")
@@ -695,6 +700,51 @@ class TitleStatement(Statement):
         return f"{type(self).__name__}(): # {self.info}\n{parts}"
 
 
+@dataclass
+class FunctionDefStatement(Expression):
+    name: str
+
+    arg_names: tuple[str, ...]
+
+    type: Type
+    body: BlockExpression
+
+    __match_args__ = ("name", "arg_names", "type", "body")
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_func_def_stmt(self)
+
+    def __str__(self) -> str:
+        name = f"name={self.name}"
+
+        if self.arg_names:
+            args = "\n".join(
+                f"{i}={arg}" for i, arg in enumerate(self.arg_names)
+            )
+            args = indent(args, "  ")
+
+        else:
+            args = ""
+
+        # TODO: combine func and type args?
+        func_type = f"type={self.type}"
+        func_type = indent(func_type, "  ")
+
+        body = f"body={self.body}"
+        body = indent(body, "  ")
+
+        return "\n".join(
+            x
+            for x in (
+                f"{type(self).__name__}({name}): # {self.info}",
+                args,
+                func_type,
+                body,
+            )
+            if x
+        )
+
+
 class NodeVisitor(Generic[T]):
     def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError()
@@ -751,6 +801,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError()
 
     def visit_title_stmt(self, node: TitleStatement) -> T:
+        raise NotImplementedError()
+
+    def visit_func_def_stmt(self, node: FunctionDefStatement) -> T:
         raise NotImplementedError()
 
 
@@ -824,3 +877,6 @@ class TraversalVisitor(NodeVisitor[None]):
     def visit_title_stmt(self, node: TitleStatement) -> None:
         for part in node.parts:
             part.accept(self)
+
+    def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
+        node.body.accept(self)

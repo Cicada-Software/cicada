@@ -13,7 +13,9 @@ from cicada.ast.nodes import (
     BooleanValue,
     Expression,
     FileNode,
+    FunctionDefStatement,
     FunctionExpression,
+    FunctionValue,
     IdentifierExpression,
     IfExpression,
     LetExpression,
@@ -35,6 +37,7 @@ from cicada.ast.nodes import (
     UnreachableValue,
     Value,
 )
+from cicada.ast.types import FunctionType, UnitType
 from cicada.domain.triggers import Trigger
 
 
@@ -295,6 +298,14 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         # TitleStatement is special in that it is used for display purposes and
         # is computed after semantic analysis, but before the actual evaluation
         # of the workflow.
+        return UnitValue()
+
+    def visit_func_def_stmt(self, node: FunctionDefStatement) -> Value:
+        self.symbols[node.name] = FunctionValue(
+            type=FunctionType(arg_types=[], rtype=UnitType()),
+            func=node,
+        )
+
         return UnitValue()
 
     @contextmanager

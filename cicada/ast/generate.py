@@ -6,7 +6,7 @@ from enum import Enum
 from itertools import groupby
 from typing import NoReturn, Self, cast
 
-from cicada.ast.types import UnknownType
+from cicada.ast.types import FunctionType, StringType, UnitType, UnknownType
 from cicada.parse.token import (
     BooleanLiteralToken,
     CacheToken,
@@ -17,6 +17,7 @@ from cicada.parse.token import (
     DanglingToken,
     EqualToken,
     FloatLiteralToken,
+    FunctionToken,
     IdentifierToken,
     IfToken,
     IntegerLiteralToken,
@@ -48,6 +49,7 @@ from .nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
     IfExpression,
@@ -377,6 +379,9 @@ def generate_node(state: ParserState) -> Node:
 
     if isinstance(token, TitleToken):
         return generate_title_stmt(state)
+
+    if isinstance(token, FunctionToken):
+        return generate_function_def(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
@@ -953,3 +958,102 @@ def generate_title_stmt(state: ParserState) -> TitleStatement:
 
     except StopIteration as ex:
         raise AstError(error_msg, start) from ex
+
+
+def generate_function_def(state: ParserState) -> FunctionDefStatement:
+    start = state.current_token
+
+    name = state.next_non_whitespace_or_eof()
+    if not name:
+        raise AstError.expected_token(last=start)
+
+    if isinstance(name, KeywordToken):
+        raise AstError(
+            f"Cannot use keyword `{name.content}` as function name", name
+        )
+
+    if not isinstance(name, IdentifierToken):
+        raise AstError(
+            f"Expected identifier, got `{name.content}` instead", name
+        )
+
+    open_paren = state.next_non_whitespace_or_eof()
+    if not isinstance(open_paren, OpenParenToken):
+        raise AstError.unexpected_token(open_paren or name, expected="(")
+
+    args = parse_func_def_args(state)
+
+    close_paren: Token | None = state.current_token
+
+    if not isinstance(close_paren, CloseParenToken):
+        close_paren = state.next_non_whitespace_or_eof()
+
+    if not isinstance(close_paren, CloseParenToken):
+        raise AstError.unexpected_token(
+            close_paren or open_paren, expected=")"
+        )
+
+    colon = state.next_non_whitespace_or_eof()
+    if not isinstance(colon, ColonToken):
+        raise AstError.unexpected_token(colon or close_paren, expected=":")
+
+    newline = next(state, None)
+    if not isinstance(newline, NewlineToken):
+        raise AstError.unexpected_token(newline or close_paren, expected="\\n")
+
+    whitespace = next(state, None)
+    if not isinstance(whitespace, WhiteSpaceToken):
+        raise AstError(
+            "Expected whitespace after function definition",
+            whitespace or newline,
+        )
+
+    exprs = cast(list[Expression], generate_block(state, whitespace))
+    block = BlockExpression.from_exprs(exprs, whitespace)
+
+    return FunctionDefStatement(
+        info=LineInfo.from_token(start),
+        arg_names=tuple(args),
+        name=name.content,
+        type=FunctionType(
+            arg_types=[StringType()] * len(args), rtype=UnitType()
+        ),
+        body=block,
+        is_constexpr=False,
+    )
+
+
+def parse_func_def_args(state: ParserState) -> list[str]:
+    args: list[str] = []
+
+    with state.peek() as peek:
+        arg = state.next_non_whitespace_or_eof()
+
+        if isinstance(arg, IdentifierToken):
+            peek.drop_peeked_tokens()
+
+            args.append(arg.content)
+
+            while True:
+                close_paren_or_comma = state.next_non_whitespace_or_eof()
+
+                if isinstance(close_paren_or_comma, CloseParenToken):
+                    break
+
+                if not isinstance(close_paren_or_comma, CommaToken):
+                    raise AstError(
+                        "Expected `,` or `)`",
+                        close_paren_or_comma or arg,
+                    )
+
+                arg = state.next_non_whitespace_or_eof()
+
+                if not isinstance(arg, IdentifierToken):
+                    raise AstError(
+                        "Expected argument",
+                        arg or close_paren_or_comma,
+                    )
+
+                args.append(arg.content)
+
+    return args

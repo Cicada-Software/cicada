@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from types import EllipsisType
 
 
 class Type:
@@ -133,18 +132,41 @@ class UnionType(Type):
         return " | ".join(str(ty) for ty in self.types)
 
 
+class VariadicTypeArg(Type):
+    """
+    A wrapper that expresses a repeatable variadic type. For example, a
+    function that takes 0-N string types should use a variadic argument type to
+    express this.
+    """
+
+    type: Type
+
+    __match_args__ = ("type",)
+
+    def __init__(self, type: Type) -> None:
+        self.type = type
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, VariadicTypeArg) and other.type == self.type
+
+    def __str__(self) -> str:
+        return str(self.type)
+
+
 class FunctionType(Type):
     """
     A function type is used to represent the arguments/return types of a
     function definition or function call.
     """
 
-    arg_types: list[Type | EllipsisType]
+    arg_types: list[Type]
     rtype: Type
+
+    __match_args__ = ("arg_types", "rtype")
 
     def __init__(
         self,
-        arg_types: list[Type | EllipsisType],
+        arg_types: list[Type],
         rtype: Type,
     ) -> None:
         self.arg_types = arg_types
