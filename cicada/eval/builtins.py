@@ -1,4 +1,3 @@
-import shlex
 import subprocess
 import sys
 from hashlib import sha256
@@ -84,8 +83,11 @@ def builtin_shell(
 
         args.append(value.value)
 
+    # `shlex.join` is intentionally not used here to allow for shell features
+    # like piping and env vars.
+
     process = subprocess.run(  # noqa: PLW1510
-        ["/bin/sh", "-c", shlex.join(args)],  # noqa: S603
+        ["/bin/sh", "-c", " ".join(args)],  # noqa: S603
         env=visitor.trigger.env if visitor.trigger else None,
     )
 

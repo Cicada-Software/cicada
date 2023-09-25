@@ -261,10 +261,13 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         # To fix this we attempt to cd into the saved directory, run the
         # command, then save the cwd for the next command. We also keep track
         # of the exit code so that we can return it after saving the cwd.
-        cmd = " ; ".join(
+
+        # `args` explicitly DOES NOT use `shlex.join` so that shell features
+        # like piping, env vars, and so forth can be used.
+        cmd = " ;\n".join(
             [
                 f'cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"',  # noqa: E501
-                shlex.join(args),
+                " ".join(args),
                 '__cicada_exit_code="$?"',
                 'echo "$PWD" > /tmp/__cicada_cwd',
                 'exit "$__cicada_exit_code"',

@@ -445,11 +445,14 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
                 lines, _ = termios.tcgetwinsize(sys.stdout)
                 termios.tcsetwinsize(sys.stdout, (lines, 120))
 
+            # `shlex.join` is intentionally not used here to allow for shell
+            # featuresd like piping and env vars.
+
             process = subprocess.Popen(
                 [  # noqa: S603
                     "/bin/sh",
                     "-c",
-                    shlex.join(args),
+                    " ".join(args),
                 ],
                 stdout=slave,
                 stderr=subprocess.STDOUT,

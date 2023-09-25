@@ -29,8 +29,7 @@ the `shell` command:
 shell whoami
 ```
 
-> Note that you cannot use the pipe operator (`|`) with the `shell` command, only one command can be executed at
-> a time.
+Click [here](./shell-stmt.md) to learn more about the `shell` statement.
 
 To make sure that your workflow works, try pushing to your repository. If you are using GitHub or Gitlab, you
 should see a green check next to the commit indicating that the workflow completed successfully.
