@@ -109,14 +109,14 @@ class AstError(ValueError):
 
     @classmethod
     def expected_token(cls, *, last: Token) -> Self:
-        return cls(f"expected token after `{last.content}`", last)
+        return cls(f"Expected token after `{last.content}`", last)
 
     @classmethod
     def unexpected_token(cls, token: Token, *, expected: str = "") -> Self:
         if expected:
-            return cls(f"expected `{expected}`", token)
+            return cls(f"Expected `{expected}`", token)
 
-        return cls(f"unexpected token `{token.content}`", token)
+        return cls(f"Unexpected token `{token.content}`", token)
 
     def __str__(self) -> str:
         parts = [
@@ -645,12 +645,12 @@ def generate_let_expr(state: ParserState) -> LetExpression:
 
         if isinstance(name, KeywordToken):
             raise AstError(
-                f"cannot use keyword `{name.content}` as an identifier name",
+                f"Cannot use keyword `{name.content}` as an identifier name",
                 name,
             )
 
         if not isinstance(name, IdentifierToken):
-            raise AstError("expected identifier", name)
+            raise AstError("Expected identifier", name)
 
         equal = state.next_non_whitespace()
 
@@ -819,7 +819,7 @@ def generate_expr(state: ParserState) -> Expression:
         raise AstError.unexpected_token(token)
 
     else:
-        raise AstError(f"expected an expression, got `{token.content}`", token)
+        raise AstError(f"Expected an expression, got `{token.content}`", token)
 
     if func_expr := promote_expr_to_func_expr(state, token, expr):
         expr = func_expr
@@ -878,7 +878,7 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
         else:
             suggestion = "image"
 
-        msg = f"invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"  # noqa: E501
+        msg = f"Invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"  # noqa: E501
 
         raise AstError(msg, run_type_token) from ex
 
@@ -888,7 +888,7 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
 
     if run_type == RunType.IMAGE:
         if not isinstance(space, WhiteSpaceToken):
-            raise AstError("expected whitespace", space or run_type_token)
+            raise AstError("Expected whitespace", space or run_type_token)
 
         for token in state:
             if not isinstance(

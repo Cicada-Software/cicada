@@ -180,10 +180,10 @@ def test_generate_bool_expr() -> None:
 
 
 def test_catch_missing_closing_paren() -> None:
-    with pytest.raises(AstError, match="expected token after `1`"):
+    with pytest.raises(AstError, match="Expected token after `1`"):
         generate_ast_tree(tokenize("let x = (1"))
 
-    with pytest.raises(AstError, match=r"expected `\)`"):
+    with pytest.raises(AstError, match=r"Expected `\)`"):
         generate_ast_tree(tokenize("let x = (1 x"))
 
 
@@ -242,21 +242,21 @@ def test_generate_on_statement_with_where_clause() -> None:
 
 
 def test_invalid_let_exprs_are_caught() -> None:
-    with pytest.raises(AstError, match="expected token after `let`"):
+    with pytest.raises(AstError, match="Expected token after `let`"):
         generate_ast_tree(tokenize("let"))
 
-    with pytest.raises(AstError, match="expected token after `x`"):
+    with pytest.raises(AstError, match="Expected token after `x`"):
         generate_ast_tree(tokenize("let x"))
 
-    with pytest.raises(AstError, match="expected token after `=`"):
+    with pytest.raises(AstError, match="Expected token after `=`"):
         generate_ast_tree(tokenize("let x ="))
 
-    with pytest.raises(AstError, match="expected `=`"):
+    with pytest.raises(AstError, match="Expected `=`"):
         generate_ast_tree(tokenize("let x 123"))
 
 
 def test_invalid_on_stmt_is_caught() -> None:
-    with pytest.raises(AstError, match="expected token after `on`"):
+    with pytest.raises(AstError, match="Expected token after `on`"):
         generate_ast_tree(tokenize("on"))
 
 
@@ -888,7 +888,7 @@ if true:
 def test_stray_dangling_tokens_give_useful_error_message() -> None:
     code = "let x = 0.abc"
 
-    with pytest.raises(AstError, match="unexpected token"):
+    with pytest.raises(AstError, match="Unexpected token"):
         generate_ast_tree(tokenize(code))
 
 
@@ -906,28 +906,28 @@ if true:
 def test_let_identifier_cannot_be_named_mut() -> None:
     code = "let mut = 123"
 
-    with pytest.raises(AstError, match="expected identifier"):
+    with pytest.raises(AstError, match="Expected identifier"):
         generate_ast_tree(tokenize(code))
 
 
 def test_let_identifier_cannot_be_a_keyword() -> None:
     code = "let if = 123"
 
-    with pytest.raises(AstError, match="cannot use keyword"):
+    with pytest.raises(AstError, match="Cannot use keyword"):
         generate_ast_tree(tokenize(code))
 
 
 def test_let_name_must_be_identifier() -> None:
     code = 'let "x" = 123'
 
-    with pytest.raises(AstError, match="expected identifier"):
+    with pytest.raises(AstError, match="Expected identifier"):
         generate_ast_tree(tokenize(code))
 
 
 def test_show_error_when_expression_is_expected() -> None:
     code = "if ="
 
-    with pytest.raises(AstError, match="expected an expression, got `=`"):
+    with pytest.raises(AstError, match="Expected an expression, got `=`"):
         generate_ast_tree(tokenize(code))
 
 
@@ -963,14 +963,14 @@ def test_generate_run_on_stmt_with_self_hosted() -> None:
 def test_run_on_must_have_content_after_space() -> None:
     code = "run_on image "
 
-    with pytest.raises(AstError, match="expected token after ` `"):
+    with pytest.raises(AstError, match="Expected token after ` `"):
         generate_ast_tree(tokenize(code))
 
 
 def test_run_on_must_have_space_after_run_type() -> None:
     code = "run_on image"
 
-    with pytest.raises(AstError, match="expected whitespace"):
+    with pytest.raises(AstError, match="Expected whitespace"):
         generate_ast_tree(tokenize(code))
 
 
@@ -979,7 +979,7 @@ def test_run_on_must_have_valid_type() -> None:
 
     with pytest.raises(
         AstError,
-        match="invalid `run_on` type `invalid`. Did you mean `image`?",
+        match="Invalid `run_on` type `invalid`. Did you mean `image`?",
     ):
         generate_ast_tree(tokenize(code))
 
@@ -1066,7 +1066,7 @@ def test_error_messages_for_invalid_cache_stmts() -> None:
         "cache": invalid_cache,
         "cache ": invalid_cache,
         "cache x ": invalid_cache,
-        "cache x x": "expected `using`",
+        "cache x x": "Expected `using`",
         "cache x using ": invalid_cache,
     }
 
@@ -1161,7 +1161,7 @@ def test_not_in_binary_oper() -> None:
 def test_in_must_follow_not_in_binary_expr_context() -> None:
     code = 'let x = "a" not + "abc"'
 
-    with pytest.raises(AstError, match="expected `in`"):
+    with pytest.raises(AstError, match="Expected `in`"):
         generate_ast_tree(tokenize(code))
 
 
@@ -1334,27 +1334,27 @@ fn add(x: number, y: number) -> number:
 
 def test_invalid_function_defs_are_caught() -> None:
     tests = {
-        "fn": "expected token after `fn`",
+        "fn": "Expected token after `fn`",
         "fn fn": "Cannot use keyword `fn` as function name",
         "fn 1": "Expected identifier, got `1` instead",
-        "fn f": "expected `(`",
-        "fn f+": "expected `(`",
-        "fn f(": "expected `)`",
-        "fn f(+": "expected `)`",
-        "fn f()": "expected `:`",
-        "fn f()x": "expected `:`",
-        "fn f():": "expected `\\n`",
+        "fn f": "Expected `(`",
+        "fn f+": "Expected `(`",
+        "fn f(": "Expected `)`",
+        "fn f(+": "Expected `)`",
+        "fn f()": "Expected `:`",
+        "fn f()x": "Expected `:`",
+        "fn f():": "Expected `\\n`",
         "fn f():\n": "Expected whitespace after function definition",
         "fn f():\nx": "Expected whitespace after function definition",
         "fn f(x": "Expected `,` or `)`",
         "fn f(x,": "Expected argument",
-        "fn f() -": "expected `->`",
+        "fn f() -": "Expected `->`",
         "fn f() ->": "Expected type",
         "fn f() -> x": "Unknown type `x`",
-        "fn f() -> string": "expected `:`",
-        "fn f() -> string:": "expected `\\n`",
-        "fn f() -> (": "expected `)`",
-        "fn f() -> ()": "expected `:`",
+        "fn f() -> string": "Expected `:`",
+        "fn f() -> string:": "Expected `\\n`",
+        "fn f() -> (": "Expected `)`",
+        "fn f() -> ()": "Expected `:`",
         "fn f(x:": "Expected type",
         "fn f(x: number": "Expected `,` or `)`",
     }

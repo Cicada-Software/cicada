@@ -63,26 +63,26 @@ def test_basic_function_call_is_valid() -> None:
 
 
 def test_unknown_variable_causes_error() -> None:
-    msg = "variable `unknown` is not defined"
+    msg = "Variable `unknown` is not defined"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("unknown")
 
 
 def test_undefined_variable_causes_error() -> None:
-    with pytest.raises(AstError, match="variable `x` is not defined"):
+    with pytest.raises(AstError, match="Variable `x` is not defined"):
         parse_and_analyze("let y = x")
 
 
 def test_boolean_not_on_non_bool_fails() -> None:
-    msg = "cannot use `not` operator with non-boolean value"
+    msg = "Cannot use `not` operator with non-boolean value"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = not 1")
 
 
 def test_negation_on_non_numeric_fails() -> None:
-    msg = "cannot use `-` operator with non-numeric value"
+    msg = "Cannot use `-` operator with non-numeric value"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = - false")
@@ -106,14 +106,14 @@ def test_on_statement_where_clause_must_be_bool() -> None:
 
 
 def test_lhs_of_member_expr_cannot_be_identifier() -> None:
-    msg = "member `a` does not exist on `x`"
+    msg = "Member `a` does not exist on `x`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = 123\nlet y = x.a")
 
 
 def test_record_lhs_of_member_expr_must_exist() -> None:
-    msg = "member `doesnt_exist` does not exist on `event`"
+    msg = "Member `doesnt_exist` does not exist on `event`"
 
     trigger = build_trigger("a")
 
@@ -122,21 +122,21 @@ def test_record_lhs_of_member_expr_must_exist() -> None:
 
 
 def test_binary_exprs_must_be_of_same_type() -> None:
-    msg = "expression of type `bool` cannot be used with type `number`"
+    msg = "Expression of type `bool` cannot be used with type `number`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = 1 + true")
 
 
 def test_binary_expr_must_be_an_allowed_type() -> None:
-    msg = "expected type `number`, got type `bool` instead"
+    msg = "Expected type `number`, got type `bool` instead"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = true * true")
 
 
 def test_binary_expr_error_message_with_multiple_allowed_types() -> None:
-    msg = "expected type `number`, or `string`, got type `bool` instead"
+    msg = "Expected type `number`, or `string`, got type `bool` instead"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("let x = true + true")
@@ -263,14 +263,14 @@ let s1 = "abc" + "123"
 
 
 def test_cannot_use_non_constexpr_stmt_before_on_stmt() -> None:
-    msg = "cannot use `on` statement after a function call"
+    msg = "Cannot use `on` statement after a function call"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("echo hi\non x")
 
 
 def test_cannot_use_non_constexpr_stmt_before_run_on_stmt() -> None:
-    msg = "cannot use `run_on` statement after a function call"
+    msg = "Cannot use `run_on` statement after a function call"
 
     code = """\
 echo hi
@@ -282,14 +282,14 @@ run_on image alpine
 
 
 def test_cannot_use_multiple_on_stmts() -> None:
-    msg = "cannot use multiple `on` statements in a single file"
+    msg = "Cannot use multiple `on` statements in a single file"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("on a\non b", build_trigger("a"))
 
 
 def test_cannot_use_multiple_run_on_stmts() -> None:
-    msg = "cannot use multiple `run_on` statements in a single file"
+    msg = "Cannot use multiple `run_on` statements in a single file"
 
     code = """\
 run_on image alpine
@@ -358,7 +358,7 @@ def test_type_checking_of_event_triggers() -> None:
 
 
 def test_on_statement_requires_trigger() -> None:
-    msg = "cannot use `on` statement when trigger is not defined"
+    msg = "Cannot use `on` statement when trigger is not defined"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze("on git.push")
@@ -445,7 +445,9 @@ if true:
 echo (x)
 """
 
-    with pytest.raises(AstError, match="is not defined"):
+    msg = "`x` is not defined"
+
+    with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
 
 
@@ -466,7 +468,7 @@ let x =
 echo (x)
 """
 
-    msg = "cannot convert type `record` to `string`"
+    msg = "Cannot convert type `record` to `string`"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code)
@@ -479,17 +481,16 @@ let x = 123
 x = 456
 """
 
-    # For whatever reason I cannot have a space after ".*"
-    msg = "cannot assign to immutable variable .*are you forgetting `mut`"
+    msg = "Cannot assign to immutable variable `x` (are you forgetting `mut`?)"
 
-    with pytest.raises(AstError, match=msg):
+    with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
 
 
 def test_cannot_assign_to_non_identifiers() -> None:
     code = "123 = 456"
 
-    msg = "you can only assign to variables"
+    msg = "You can only assign to variables"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code)
@@ -549,7 +550,7 @@ def test_error_message_when_assigning_non_string_value_to_env() -> None:
 def test_error_message_when_assigning_to_nonexistent_member_expr() -> None:
     code = "unknown.variable = 123"
 
-    msg = "variable `unknown` is not defined"
+    msg = "Variable `unknown` is not defined"
 
     with pytest.raises(AstError, match=msg):
         parse_and_analyze(code)
@@ -726,7 +727,7 @@ let x = x.starts_with("y", "z")
 
 
 def test_starts_with_must_have_string_arg() -> None:
-    msg = "expected type `string`, got type `number` instead"
+    msg = "Expected type `string`, got type `number` instead"
 
     code = """\
 let x = ""

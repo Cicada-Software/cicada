@@ -209,7 +209,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 name = cast(IdentifierExpression, node.lhs).name
 
                 raise AstError(
-                    f"member `{node.name}` does not exist on `{name}`",
+                    f"Member `{node.name}` does not exist on `{name}`",
                     node,
                 )
 
@@ -222,7 +222,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             name = cast(IdentifierExpression, node.lhs).name
 
             raise AstError(
-                f"member `{node.name}` does not exist on `{name}`",
+                f"Member `{node.name}` does not exist on `{name}`",
                 node,
             )
 
@@ -236,7 +236,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.type = symbol.type
 
         else:
-            raise AstError(f"variable `{node.name}` is not defined", node)
+            raise AstError(f"Variable `{node.name}` is not defined", node)
 
     def visit_paren_expr(self, node: ParenthesisExpression) -> None:
         # TODO: test this
@@ -251,14 +251,14 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if node.oper == UnaryOperator.NOT:
             if node.rhs.type != BooleanType():
                 raise AstError(
-                    "cannot use `not` operator with non-boolean value",
+                    "Cannot use `not` operator with non-boolean value",
                     node,
                 )
 
         elif node.oper == UnaryOperator.NEGATE:
             if node.rhs.type != NumericType():
                 raise AstError(
-                    "cannot use `-` operator with non-numeric value", node
+                    "Cannot use `-` operator with non-numeric value", node
                 )
 
         else:
@@ -278,7 +278,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
                 if isinstance(var, LetExpression) and not var.is_mutable:
                     raise AstError(
-                        f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
+                        f"Cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
                         node.lhs,
                     )
 
@@ -330,7 +330,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     member.accept(self)
 
             else:
-                raise AstError("you can only assign to variables", node.lhs)
+                raise AstError("You can only assign to variables", node.lhs)
 
         else:
             node.lhs.accept(self)
@@ -352,7 +352,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             types = ", ".join(wrapped)
 
             raise AstError(
-                f"expected type {types}, got type `{node.lhs.type}` instead",
+                f"Expected type {types}, got type `{node.lhs.type}` instead",
                 node.lhs,
             )
 
@@ -387,7 +387,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             if arg.type != StringType():
                 raise AstError(
-                    f"expected type `{StringType()}`, got type `{arg.type}` instead",  # noqa: E501
+                    f"Expected type `{StringType()}`, got type `{arg.type}` instead",  # noqa: E501
                     arg,
                 )
 
@@ -494,7 +494,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             # TODO: include location of existing on stmt
 
             raise AstError(
-                "cannot use multiple `on` statements in a single file",
+                "Cannot use multiple `on` statements in a single file",
                 node,
             )
 
@@ -502,14 +502,14 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             # TODO: include location of offending non-constexpr function
 
             raise AstError(
-                "cannot use `on` statement after a function call", node
+                "Cannot use `on` statement after a function call", node
             )
 
         super().visit_on_stmt(node)
 
         if not self.trigger:
             raise AstError(
-                "cannot use `on` statement when trigger is not defined",
+                "Cannot use `on` statement when trigger is not defined",
                 node,
             )
 
@@ -539,13 +539,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if self.has_ran_function:
             raise AstError(
-                "cannot use `run_on` statement after a function call",
+                "Cannot use `run_on` statement after a function call",
                 node,
             )
 
         if self.run_on:
             raise AstError(
-                "cannot use multiple `run_on` statements in a single file",
+                "Cannot use multiple `run_on` statements in a single file",
                 node,
             )
 
@@ -582,7 +582,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if node.expr.type not in STRING_COERCIBLE_TYPES:
             raise AstError(
-                f"cannot convert type `{node.expr.type}` to `{StringType()}`",
+                f"Cannot convert type `{node.expr.type}` to `{StringType()}`",
                 node.expr,
             )
 
@@ -709,7 +709,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             )
 
             raise AstError(
-                f"expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
+                f"Expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
                 rhs,
             )
 
