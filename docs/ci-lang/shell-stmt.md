@@ -39,6 +39,23 @@ shell echo 1 + 2 = (1 + 2)
 
 The above workflow will print out `1 + 2 = 3`.
 
+### Capture stdout/stderr
+
+In Cicada you can capture and manipulate the stdout of a command by assigning it to
+a variable and accessing it's properties:
+
+```
+let cmd =
+  shell echo Hello world!
+
+print(cmd.stdout)
+```
+
+Running this workflow will print `Hello world!` \*. Using stdout like this helps you
+utilize more of what Cicada has to offer, without having to rely on shell scripts.
+
+> \* An extra newline will be printed since `echo` and `print` both add newlines.
+
 ### Using Shell Features
 
 You can also use `shell` to gain access to shell features like env vars, piping, and conditional
@@ -78,6 +95,29 @@ shell "
 
 This shell script runs `./run-tests.sh` and print whether the tests passed or failed
 based on the resulting exit code.
+
+## Shell Aliases
+
+Shell aliases are special identifiers that can be used directly without the need to prefix it with `shell`.
+
+For example, the following are equivalent in Cicada:
+
+```
+shell echo hi
+
+echo hi
+```
+
+These are the current commands that are allowed to be used as aliases, though this list may grow in the future:
+
+* `cd`
+* `cp`
+* `echo`
+* `git`
+* `ls`
+* `make`
+* `mkdir`
+* `rm`
 
 ## Notes on Environment Variables
 

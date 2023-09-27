@@ -8,9 +8,10 @@ import subprocess
 import sys
 import termios
 from contextlib import suppress
+from decimal import Decimal
 from itertools import chain
 from pathlib import Path
-from subprocess import PIPE, STDOUT
+from subprocess import PIPE, STDOUT, Popen
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
@@ -25,6 +26,7 @@ from cicada.ast.nodes import (
     FunctionExpression,
     FunctionValue,
     IdentifierExpression,
+    NumericValue,
     RecordValue,
     StringValue,
     UnitValue,
@@ -33,8 +35,8 @@ from cicada.ast.nodes import (
 )
 from cicada.ast.semantic_analysis import StringCoercibleType
 from cicada.ast.types import (
+    CommandType,
     FunctionType,
-    RecordType,
     StringType,
     UnitType,
     VariadicTypeArg,
@@ -99,7 +101,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         built_in_symbols = {
             "shell": FunctionValue(
                 type=FunctionType(
-                    [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
+                    [VariadicTypeArg(StringCoercibleType)], rtype=CommandType()
                 ),
                 func=self.builtin_shell,
             ),
@@ -119,7 +121,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             ),
             **{
                 alias: FunctionValue(
-                    FunctionType([StringCoercibleType], rtype=RecordType()),
+                    FunctionType([StringCoercibleType], rtype=CommandType()),
                     func=self.builtin_shell,
                 )
                 for alias in SHELL_ALIASES
@@ -254,7 +256,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             process.stdout.strip().split(b"\n")[-1].decode().strip()
         )
 
-    def _container_exec(self, args: list[str]) -> int:
+    def _container_exec(self, args: list[str]) -> Popen[bytes]:
         # This command is a hack to make sure we are in cwd from the last
         # command that was ran. Because each `exec` command is executed in the
         # container WORKDIR folder the cwd is not saved after `exec` finishes.
@@ -326,7 +328,9 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
                 self.terminal.append(data)
 
-        return process.wait()
+        process.wait()
+
+        return process
 
     @property
     def temp_dir(self) -> str:
@@ -409,12 +413,22 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             args.append(value.value)
 
-        exit_code = self._container_exec(args)
+        process = self._container_exec(args)
 
-        if exit_code != 0:
-            raise CommandFailed(exit_code)
+        if process.returncode != 0:
+            raise CommandFailed(process.returncode)
 
-        return RecordValue({}, RecordType())
+        stdout = process.stdout.read().decode() if process.stdout else ""
+        stderr = process.stderr.read().decode() if process.stderr else ""
+
+        return RecordValue(
+            {
+                "exit_code": NumericValue(Decimal(process.returncode)),
+                "stdout": StringValue(stdout),
+                "stderr": StringValue(stderr),
+            },
+            CommandType(),
+        )
 
     def builtin_print(self, node: FunctionExpression) -> Value:
         args: list[str] = []

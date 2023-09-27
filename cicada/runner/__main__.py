@@ -10,6 +10,7 @@ import sys
 import tempfile
 import termios
 from contextlib import redirect_stdout, suppress
+from decimal import Decimal
 from functools import partial
 from io import StringIO
 from pathlib import Path
@@ -25,13 +26,14 @@ from cicada.ast.nodes import (
     CacheStatement,
     FunctionExpression,
     IdentifierExpression,
+    NumericValue,
     RecordValue,
     StringValue,
     UnitValue,
     Value,
 )
 from cicada.ast.semantic_analysis import IgnoreWorkflow
-from cicada.ast.types import RecordType
+from cicada.ast.types import CommandType
 from cicada.domain.session import SessionStatus
 from cicada.domain.triggers import CommitTrigger, Trigger, json_to_trigger
 from cicada.eval.builtins import hashOf
@@ -478,8 +480,17 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
             if returncode != 0:
                 raise CommandFailed(returncode)
 
-            # TODO: return rich "command type" value
-            return RecordValue({}, RecordType())
+            stdout = process.stdout.read().decode() if process.stdout else ""
+            stderr = process.stderr.read().decode() if process.stderr else ""
+
+            return RecordValue(
+                {
+                    "exit_code": NumericValue(Decimal(process.returncode)),
+                    "stdout": StringValue(stdout),
+                    "stderr": StringValue(stderr),
+                },
+                CommandType(),
+            )
 
         if node.callee.name == "print":
             self.data_stream.append(" ".join(args).encode() + b"\r\n")

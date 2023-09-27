@@ -1,16 +1,18 @@
 import subprocess
 import sys
+from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
 from typing import cast
 
 from cicada.ast.nodes import (
     FunctionExpression,
+    NumericValue,
     RecordValue,
     StringValue,
     UnitValue,
 )
-from cicada.ast.types import RecordType
+from cicada.ast.types import CommandType
 from cicada.eval.constexpr_visitor import (
     CommandFailed,
     ConstexprEvalVisitor,
@@ -89,10 +91,19 @@ def builtin_shell(
     process = subprocess.run(  # noqa: PLW1510
         ["/bin/sh", "-c", " ".join(args)],  # noqa: S603
         env=visitor.trigger.env if visitor.trigger else None,
+        capture_output=True,
     )
 
     if process.returncode != 0:
         sys.exit(process.returncode)
 
-    # TODO: return rich "command type" value
-    return RecordValue({}, RecordType())
+    # TODO: add function to handle this
+    return RecordValue(
+        {
+            "exit_code": NumericValue(Decimal(process.returncode)),
+            # TODO: what should happen if invalid unicode sequence is found?
+            "stdout": StringValue(process.stdout.decode()),
+            "stderr": StringValue(process.stdout.decode()),
+        },
+        CommandType(),
+    )

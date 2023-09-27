@@ -15,7 +15,11 @@ def test_calling_shell_function_invokes_sh_binary() -> None:
     ):
         run_pipeline("shell echo hello")
 
-    assert p.call_args == call(["/bin/sh", "-c", "echo hello"], env=None)
+    assert p.call_args == call(
+        ["/bin/sh", "-c", "echo hello"],
+        env=None,
+        capture_output=True,
+    )
 
 
 def test_failing_shell_command_calls_exit() -> None:
@@ -43,6 +47,7 @@ def test_calling_shell_function_with_exprs() -> None:
     assert p.call_args == call(
         ["/bin/sh", "-c", "echo 123 456 789 true"],
         env=None,
+        capture_output=True,
     )
 
 
@@ -63,8 +68,8 @@ def test_can_call_multiple_functions() -> None:
         run_pipeline("echo hello\necho world")
 
     assert p.call_args_list == [
-        call(["/bin/sh", "-c", "echo hello"], env=None),
-        call(["/bin/sh", "-c", "echo world"], env=None),
+        call(["/bin/sh", "-c", "echo hello"], env=None, capture_output=True),
+        call(["/bin/sh", "-c", "echo world"], env=None, capture_output=True),
     ]
 
 

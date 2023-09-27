@@ -88,6 +88,19 @@ class RecordType(Type):
         return None
 
 
+# TODO: make this frozen
+@dataclass
+class CommandType(RecordType):
+    fields: list[RecordField] = field(
+        default_factory=lambda: [
+            RecordField("exit_code", NumericType()),
+            RecordField("stdout", StringType()),
+            RecordField("stderr", StringType()),
+            # TODO: add runtime duration
+        ]
+    )
+
+
 BOOL_LIKE_TYPES = (BooleanType(), NumericType(), StringType())
 
 

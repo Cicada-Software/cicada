@@ -31,6 +31,7 @@ from cicada.ast.semantic_analysis import (
 )
 from cicada.ast.types import (
     BooleanType,
+    CommandType,
     FunctionType,
     NumericType,
     RecordField,
@@ -831,3 +832,27 @@ fn f():
 """
 
     parse_and_analyze(code)
+
+
+def test_access_shell_function_record_fields() -> None:
+    code = """\
+let cmd =
+    echo hi
+
+let a = cmd.exit_code
+let b = cmd.stdout
+let b = cmd.stderr
+"""
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case LetExpression(
+            "cmd",
+            expr=BlockExpression(
+                exprs=[FunctionExpression(type=CommandType())]
+            ),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")

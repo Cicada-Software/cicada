@@ -37,6 +37,7 @@ from cicada.ast.nodes import (
 from cicada.ast.types import (
     BOOL_LIKE_TYPES,
     BooleanType,
+    CommandType,
     FunctionType,
     NumericType,
     RecordField,
@@ -116,7 +117,7 @@ Symbol = Value | Expression
 BUILT_IN_SYMBOLS: dict[str, Symbol] = {
     "shell": FunctionValue(
         FunctionType(
-            [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
+            [VariadicTypeArg(StringCoercibleType)], rtype=CommandType()
         ),
     ),
     "print": FunctionValue(
@@ -132,7 +133,7 @@ BUILT_IN_SYMBOLS: dict[str, Symbol] = {
     ),
     **{
         alias: FunctionValue(
-            FunctionType([StringCoercibleType], rtype=RecordType())
+            FunctionType([StringCoercibleType], rtype=CommandType())
         )
         for alias in SHELL_ALIASES
     },
