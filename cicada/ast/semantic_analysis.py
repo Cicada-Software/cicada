@@ -187,7 +187,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         super().visit_let_expr(node)
 
         if node.name in RESERVED_NAMES:
-            raise AstError(f"Name `{node.name}` is reserved", node.info)
+            raise AstError(f"Name `{node.name}` is reserved", node)
 
         self.symbols[node.name] = node
 
@@ -210,7 +210,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
                 raise AstError(
                     f"member `{node.name}` does not exist on `{name}`",
-                    node.info,
+                    node,
                 )
 
         elif isinstance(
@@ -223,7 +223,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError(
                 f"member `{node.name}` does not exist on `{name}`",
-                node.info,
+                node,
             )
 
         if self.is_constexpr(node.lhs):
@@ -236,7 +236,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.type = symbol.type
 
         else:
-            raise AstError(f"variable `{node.name}` is not defined", node.info)
+            raise AstError(f"variable `{node.name}` is not defined", node)
 
     def visit_paren_expr(self, node: ParenthesisExpression) -> None:
         # TODO: test this
@@ -252,13 +252,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if node.rhs.type != BooleanType():
                 raise AstError(
                     "cannot use `not` operator with non-boolean value",
-                    node.info,
+                    node,
                 )
 
         elif node.oper == UnaryOperator.NEGATE:
             if node.rhs.type != NumericType():
                 raise AstError(
-                    "cannot use `-` operator with non-numeric value", node.info
+                    "cannot use `-` operator with non-numeric value", node
                 )
 
         else:
@@ -279,7 +279,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 if isinstance(var, LetExpression) and not var.is_mutable:
                     raise AstError(
                         f"cannot assign to immutable variable `{node.lhs.name}` (are you forgetting `mut`?)",  # noqa: E501
-                        node.lhs.info,
+                        node.lhs,
                     )
 
             elif isinstance(node.lhs, MemberExpression):
@@ -296,7 +296,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     case IdentifierExpression(name="event"):
                         raise AstError(
                             "Cannot reassign `event` because it is immutable",
-                            node.rhs.info,
+                            node.rhs,
                         )
 
                 if rvalue.type.get_name(member.name):
@@ -319,7 +319,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                                 # TODO: add more info here
                                 msg = "You can only assign strings to env vars"
 
-                                raise AstError(msg, node.rhs.info)
+                                raise AstError(msg, node.rhs)
 
                     # TODO: RecordType's should be immutable, but it's easier
                     # to just assign directly.
@@ -330,9 +330,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     member.accept(self)
 
             else:
-                raise AstError(
-                    "you can only assign to variables", node.lhs.info
-                )
+                raise AstError("you can only assign to variables", node.lhs)
 
         else:
             node.lhs.accept(self)
@@ -355,7 +353,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError(
                 f"expected type {types}, got type `{node.lhs.type}` instead",
-                node.lhs.info,
+                node.lhs,
             )
 
         if self.is_constexpr(node.lhs) and self.is_constexpr(node.rhs):
@@ -382,7 +380,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if len(node.args) != 1:
                 raise AstError(
                     f"`{node.callee.name}` takes exactly one argument",
-                    node.info,
+                    node,
                 )
 
             arg = node.args[0]
@@ -390,7 +388,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if arg.type != StringType():
                 raise AstError(
                     f"expected type `{StringType()}`, got type `{arg.type}` instead",  # noqa: E501
-                    arg.info,
+                    arg,
                 )
 
             node.type = node.callee.type.rtype
@@ -406,7 +404,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         # TODO: this is never hit because callee is always checked
         if not symbol:
             raise AstError(
-                f"Function `{node.callee.name}` is not defined", node.info
+                f"Function `{node.callee.name}` is not defined",
+                node,
             )
 
         assert isinstance(symbol, FunctionValue)
@@ -449,7 +448,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             msg = f"Function `{node.callee.name}` takes at least {expected} but was called with {got}"  # noqa: E501
 
-            raise AstError(msg, node.info)
+            raise AstError(msg, node)
 
         for arg, ty in zip(positionals, symbol.type.arg_types, strict=False):
             if not self.is_type_compatible(arg.type, ty):
@@ -465,7 +464,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if not self.is_type_compatible(arg.type, var_arg.type):
                 msg = f"Expected type `{var_arg.type}`, got type `{arg.type}` instead"  # noqa: E501
 
-                raise AstError(msg, arg.info)
+                raise AstError(msg, arg)
 
     def type_check_normal_func_expr(
         self, node: FunctionExpression, symbol: FunctionValue
@@ -481,13 +480,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             msg = f"Function `{node.callee.name}` takes {expected} but was called with {got}"  # noqa: E501
 
-            raise AstError(msg, node.info)
+            raise AstError(msg, node)
 
         for arg, ty in zip(node.args, symbol.type.arg_types, strict=True):
             if not self.is_type_compatible(arg.type, ty):
                 raise AstError(
                     f"Expected type `{ty}`, got type `{arg.type}` instead",
-                    arg.info,
+                    arg,
                 )
 
     def visit_on_stmt(self, node: OnStatement) -> None:
@@ -496,14 +495,14 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError(
                 "cannot use multiple `on` statements in a single file",
-                node.info,
+                node,
             )
 
         if self.has_ran_function:
             # TODO: include location of offending non-constexpr function
 
             raise AstError(
-                "cannot use `on` statement after a function call", node.info
+                "cannot use `on` statement after a function call", node
             )
 
         super().visit_on_stmt(node)
@@ -511,7 +510,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if not self.trigger:
             raise AstError(
                 "cannot use `on` statement when trigger is not defined",
-                node.info,
+                node,
             )
 
         if self.trigger.type != node.event:
@@ -524,12 +523,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if not self.is_constexpr(node.where):
                 raise AstError(
                     "`where` clause must be a constant expression",
-                    node.where.info,
+                    node.where,
                 )
 
             if node.where.type != BooleanType():
                 raise AstError(
-                    "`where` clause must be a boolean type", node.where.info
+                    "`where` clause must be a boolean type",
+                    node.where,
                 )
 
         self.has_on_stmt = True
@@ -540,13 +540,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.has_ran_function:
             raise AstError(
                 "cannot use `run_on` statement after a function call",
-                node.info,
+                node,
             )
 
         if self.run_on:
             raise AstError(
                 "cannot use multiple `run_on` statements in a single file",
-                node.info,
+                node,
             )
 
         # TODO: use run_on field from field_node instead
@@ -562,7 +562,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if node.condition.type not in BOOL_LIKE_TYPES:
                 raise AstError(
                     f"Type `{node.condition.type}` cannot be converted to bool",  # noqa: E501
-                    node.condition.info,
+                    node.condition,
                 )
 
             node.is_constexpr = node.body.is_constexpr
@@ -572,7 +572,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         super().visit_block_expr(node)
 
         if not node.exprs:  # pragma: no cover
-            raise AstError("Block cannot be empty", node.info)
+            raise AstError("Block cannot be empty", node)
 
         node.is_constexpr = all(self.is_constexpr(x) for x in node.exprs)
         node.type = node.exprs[-1].type
@@ -583,7 +583,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if node.expr.type not in STRING_COERCIBLE_TYPES:
             raise AstError(
                 f"cannot convert type `{node.expr.type}` to `{StringType()}`",
-                node.expr.info,
+                node.expr,
             )
 
         node.type = StringType()
@@ -594,12 +594,12 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.cache_stmt:
             msg = "Cannot have multiple `cache` statements in a single file"
 
-            raise AstError(msg, node.info)
+            raise AstError(msg, node)
 
         if node.using.type != StringType():
             raise AstError(
                 f"Expected `{StringType()}` type, got type `{node.using.type}`",  # noqa: E501
-                node.using.info,
+                node.using,
             )
 
         self.cache_stmt = node
@@ -610,14 +610,14 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.file_node and self.file_node.title:
             raise AstError(
                 "Cannot have multiple `title` statements in a single file",
-                node.info,
+                node,
             )
 
         for part in node.parts:
             if not part.is_constexpr:
                 raise AstError(  # pragma: no cover
                     "Only constant values allowed in `title`",
-                    part.info,
+                    part,
                 )
 
         if self.file_node:
@@ -656,7 +656,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if func_rtype != UnitType() and body_rtype != func_rtype:
             raise AstError(
                 f"Expected type `{func_rtype}`, got type `{body_rtype}` instead",  # noqa: E501
-                node.body.exprs[-1].info,
+                node.body.exprs[-1],
             )
 
     def check_for_duplicate_arg_names(
@@ -671,7 +671,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 # and column info
                 raise AstError(
                     f"Argument `{arg_name}` already exists",
-                    node.info,
+                    node,
                 )
 
             seen.add(arg_name)
@@ -710,7 +710,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError(
                 f"expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
-                rhs.info,
+                rhs,
             )
 
     def get_symbol(self, node: Expression) -> Expression | Value | None:

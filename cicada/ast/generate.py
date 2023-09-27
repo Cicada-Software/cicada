@@ -97,7 +97,9 @@ class AstError(ValueError):
     column: int
     msg: str
 
-    def __init__(self, msg: str, info: Token | LineInfo) -> None:
+    def __init__(self, msg: str, info: Token | LineInfo | Node) -> None:
+        info = info if isinstance(info, Token | LineInfo) else info.info
+
         self.msg = msg
         self.line = info.line
         self.column = info.column_start
@@ -878,7 +880,7 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
 
         msg = f"invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"  # noqa: E501
 
-        raise AstError(msg, info=run_type_token) from ex
+        raise AstError(msg, run_type_token) from ex
 
     space = next(state, None)
 
