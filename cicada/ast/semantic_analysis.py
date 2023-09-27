@@ -1,6 +1,7 @@
 from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
+from decimal import Decimal
 from typing import cast
 
 from cicada.ast.common import trigger_to_record
@@ -9,6 +10,7 @@ from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
     BlockExpression,
+    BooleanValue,
     CacheStatement,
     Expression,
     FileNode,
@@ -19,6 +21,7 @@ from cicada.ast.nodes import (
     IfExpression,
     LetExpression,
     MemberExpression,
+    NumericValue,
     OnStatement,
     ParenthesisExpression,
     RecordValue,
@@ -624,19 +627,37 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         # TODO: only allow funcs at top level for now?
         # TODO: allow calling user defined functions via shell format
 
-        self.symbols[node.name] = FunctionValue(
-            type=cast(FunctionType, node.type),
-            func=node,
-        )
+        self.symbols[node.name] = FunctionValue(type=node.type, func=node)
 
         self.check_for_duplicate_arg_names(node)
 
         with self.new_scope():
-            for arg in node.arg_names:
+            for arg, ty in zip(
+                node.arg_names, node.type.arg_types, strict=True
+            ):
                 # TODO: this should be just a type since the value is unknown
-                self.symbols[arg] = StringValue("")
+
+                if ty == StringType():
+                    value: Value = StringValue("")
+                elif ty == NumericType():
+                    value = NumericValue(Decimal(0))
+                elif ty == BooleanType():
+                    value = BooleanValue(False)
+                else:
+                    assert False
+
+                self.symbols[arg] = value
 
             super().visit_func_def_stmt(node)
+
+        func_rtype = node.type.rtype
+        body_rtype = node.body.exprs[-1].type
+
+        if func_rtype != UnitType() and body_rtype != func_rtype:
+            raise AstError(
+                f"Expected type `{func_rtype}`, got type `{body_rtype}` instead",  # noqa: E501
+                node.body.exprs[-1].info,
+            )
 
     def check_for_duplicate_arg_names(
         self,

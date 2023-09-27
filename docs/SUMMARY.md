@@ -15,5 +15,6 @@
     - [Built-in Functions](./ci-lang/built-in-functions.md)
   - [Secrets](./ci-lang/secrets.md)
   - [Caching](./ci-lang/caching.md)
+  - [Functions](./ci-lang/functions.md)
 - [Self-Hosting](./installing.md)
   - [Self-Hosted Runners](./self-hosted-runner.md)

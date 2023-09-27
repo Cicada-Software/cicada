@@ -807,3 +807,26 @@ f(1)
 
     with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
+
+
+def test_function_return_type_must_match_block_rtype() -> None:
+    msg = "Expected type `number`, got type `string` instead"
+
+    code = """\
+fn f() -> number:
+    "not a number"
+"""
+
+    with pytest.raises(AstError, match=re.escape(msg)):
+        parse_and_analyze(code)
+
+
+def test_body_rtype_ignored_when_function_rtype_is_unit_type() -> None:
+    # TODO: if explicit () unit type is used then emit an error
+
+    code = """\
+fn f():
+    echo not unit type but thats ok
+"""
+
+    parse_and_analyze(code)

@@ -183,3 +183,18 @@ class FunctionType(Type):
         args = ", ".join(str(ty) for ty in self.arg_types)
 
         return f"({args}) -> {self.rtype}"
+
+
+TYPE_NAMES = {
+    "string": StringType,
+    "number": NumericType,
+    "bool": BooleanType,
+    "()": UnitType,
+}
+
+
+def string_to_type(s: str) -> Type | None:
+    if ty := TYPE_NAMES.get(s):
+        return ty()
+
+    return None

@@ -92,7 +92,11 @@ class EvalVisitor(ConstexprEvalVisitor):
                 for name, arg in zip(func.arg_names, args, strict=True):
                     self.symbols[name] = arg
 
-                return func.body.accept(self)
+                rvalue = func.body.accept(self)
+
+                return (
+                    UnitValue() if symbol.type.rtype == UnitType() else rvalue
+                )
 
         if callable(symbol.func):
             # TODO: make this type-safe

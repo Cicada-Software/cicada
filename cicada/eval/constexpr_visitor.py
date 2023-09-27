@@ -37,7 +37,6 @@ from cicada.ast.nodes import (
     UnreachableValue,
     Value,
 )
-from cicada.ast.types import FunctionType, UnitType
 from cicada.domain.triggers import Trigger
 
 
@@ -301,10 +300,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         return UnitValue()
 
     def visit_func_def_stmt(self, node: FunctionDefStatement) -> Value:
-        self.symbols[node.name] = FunctionValue(
-            type=FunctionType(arg_types=[], rtype=UnitType()),
-            func=node,
-        )
+        self.symbols[node.name] = FunctionValue(type=node.type, func=node)
 
         return UnitValue()
 

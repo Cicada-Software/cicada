@@ -1265,6 +1265,73 @@ fn f(x, y):
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
 
 
+def test_parse_function_with_return_type() -> None:
+    code = """\
+fn f() -> string:
+  "hello world"
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="f",
+            arg_names=[],
+            type=FunctionType([], rtype=StringType()),
+            body=BlockExpression([StringExpression()]),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_function_with_explicit_unit_rtype() -> None:
+    code = """\
+fn f() -> ():
+  echo hi
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="f",
+            arg_names=[],
+            type=FunctionType([], rtype=UnitType()),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_function_with_arg_type() -> None:
+    code = """\
+fn add(x: number, y: number) -> number:
+  x + y
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="add",
+            arg_names=["x", "y"],
+            type=FunctionType(
+                [NumericType(), NumericType()],
+                rtype=NumericType(),
+            ),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
 def test_invalid_function_defs_are_caught() -> None:
     tests = {
         "fn": "expected token after `fn`",
@@ -1281,6 +1348,15 @@ def test_invalid_function_defs_are_caught() -> None:
         "fn f():\nx": "Expected whitespace after function definition",
         "fn f(x": "Expected `,` or `)`",
         "fn f(x,": "Expected argument",
+        "fn f() -": "expected `->`",
+        "fn f() ->": "Expected type",
+        "fn f() -> x": "Unknown type `x`",
+        "fn f() -> string": "expected `:`",
+        "fn f() -> string:": "expected `\\n`",
+        "fn f() -> (": "expected `)`",
+        "fn f() -> ()": "expected `:`",
+        "fn f(x:": "Expected type",
+        "fn f(x: number": "Expected `,` or `)`",
     }
 
     for test, expected in tests.items():

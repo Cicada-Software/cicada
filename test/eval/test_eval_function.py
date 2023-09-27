@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, call, patch
 
 from cicada.ast.entry import parse_and_analyze
-from cicada.ast.nodes import BooleanValue, StringValue
+from cicada.ast.nodes import BooleanValue, NumericValue, StringValue, UnitValue
 from cicada.eval.main import EvalVisitor, run_pipeline
 
 
@@ -154,3 +154,42 @@ concat("hello", " world")
     assert symbol
     assert isinstance(symbol, StringValue)
     assert symbol.value == "hello world"
+
+
+def test_function_returns_return_value() -> None:
+    code = """
+fn add(x: number, y: number) -> number:
+    x + y
+
+let num = add(1, 2)
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    symbol = visitor.symbols.get("num")
+
+    assert symbol
+    assert isinstance(symbol, NumericValue)
+    assert symbol.value == 3
+
+
+def test_function_with_unit_type_rtype_returns_return_unit_value() -> None:
+    code = """
+fn f():
+    echo hi
+
+let x = f()
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    symbol = visitor.symbols.get("x")
+
+    assert symbol
+    assert isinstance(symbol, UnitValue)

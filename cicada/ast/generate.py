@@ -6,7 +6,14 @@ from enum import Enum
 from itertools import groupby
 from typing import NoReturn, Self, cast
 
-from cicada.ast.types import FunctionType, StringType, UnitType, UnknownType
+from cicada.ast.types import (
+    FunctionType,
+    StringType,
+    Type,
+    UnitType,
+    UnknownType,
+    string_to_type,
+)
 from cicada.parse.token import (
     BooleanLiteralToken,
     CacheToken,
@@ -18,6 +25,7 @@ from cicada.parse.token import (
     EqualToken,
     FloatLiteralToken,
     FunctionToken,
+    GreaterThanToken,
     IdentifierToken,
     IfToken,
     IntegerLiteralToken,
@@ -981,7 +989,7 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
     if not isinstance(open_paren, OpenParenToken):
         raise AstError.unexpected_token(open_paren or name, expected="(")
 
-    args = parse_func_def_args(state)
+    arg_names, arg_types = parse_func_def_args(state)
 
     close_paren: Token | None = state.current_token
 
@@ -993,7 +1001,11 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
             close_paren or open_paren, expected=")"
         )
 
-    colon = state.next_non_whitespace_or_eof()
+    rtype = parse_func_return_type(state)
+
+    # Use current token since above function advances token for us
+    colon = state.current_token
+
     if not isinstance(colon, ColonToken):
         raise AstError.unexpected_token(colon or close_paren, expected=":")
 
@@ -1013,18 +1025,18 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
 
     return FunctionDefStatement(
         info=LineInfo.from_token(start),
-        arg_names=tuple(args),
+        arg_names=tuple(arg_names),
         name=name.content,
-        type=FunctionType(
-            arg_types=[StringType()] * len(args), rtype=UnitType()
-        ),
+        type=FunctionType(arg_types, rtype=rtype or UnitType()),
         body=block,
         is_constexpr=False,
     )
 
 
-def parse_func_def_args(state: ParserState) -> list[str]:
-    args: list[str] = []
+def parse_func_def_args(state: ParserState) -> tuple[list[str], list[Type]]:
+    # TODO: create an argument dataclass
+    arg_names: list[str] = []
+    arg_types: list[Type] = []
 
     with state.peek() as peek:
         arg = state.next_non_whitespace_or_eof()
@@ -1032,18 +1044,24 @@ def parse_func_def_args(state: ParserState) -> list[str]:
         if isinstance(arg, IdentifierToken):
             peek.drop_peeked_tokens()
 
-            args.append(arg.content)
+            arg_names.append(arg.content)
+            arg_types.append(StringType())
 
             while True:
-                close_paren_or_comma = state.next_non_whitespace_or_eof()
+                token = state.next_non_whitespace_or_eof()
 
-                if isinstance(close_paren_or_comma, CloseParenToken):
+                # Handle arg type from last argument
+                if isinstance(token, ColonToken):
+                    arg_types[-1] = generate_type(state)
+                    token = state.next_non_whitespace_or_eof()
+
+                if isinstance(token, CloseParenToken):
                     break
 
-                if not isinstance(close_paren_or_comma, CommaToken):
+                if not isinstance(token, CommaToken):
                     raise AstError(
                         "Expected `,` or `)`",
-                        close_paren_or_comma or arg,
+                        token or arg,
                     )
 
                 arg = state.next_non_whitespace_or_eof()
@@ -1051,9 +1069,64 @@ def parse_func_def_args(state: ParserState) -> list[str]:
                 if not isinstance(arg, IdentifierToken):
                     raise AstError(
                         "Expected argument",
-                        arg or close_paren_or_comma,
+                        arg or token,
                     )
 
-                args.append(arg.content)
+                arg_names.append(arg.content)
+                arg_types.append(StringType())
 
-    return args
+    assert len(arg_names) == len(arg_types)
+
+    return arg_names, arg_types
+
+
+def parse_func_return_type(state: ParserState) -> Type | None:
+    colon_or_rtype = state.next_non_whitespace_or_eof()
+
+    if not isinstance(colon_or_rtype, MinusToken):
+        return None
+
+    arrow = next(state, None)
+
+    if not isinstance(arrow, GreaterThanToken):
+        raise AstError.unexpected_token(
+            arrow or colon_or_rtype,
+            expected="->",
+        )
+
+    ty = generate_type(state)
+
+    state.next_non_whitespace_or_eof()
+
+    return ty
+
+
+def generate_type(state: ParserState) -> Type:
+    current = state.current_token
+    rtype_token = state.next_non_whitespace_or_eof()
+
+    rtype: Type | None = None
+
+    if isinstance(rtype_token, OpenParenToken):
+        close_paren = state.next_non_whitespace_or_eof()
+        if not isinstance(close_paren, CloseParenToken):
+            raise AstError.unexpected_token(
+                close_paren or rtype_token,
+                expected=")",
+            )
+
+        rtype = UnitType()
+
+    elif isinstance(rtype_token, IdentifierToken):
+        rtype = string_to_type(rtype_token.content)
+
+    else:
+        raise AstError("Expected type", rtype_token or current)
+
+    if not rtype:
+        raise AstError(
+            f"Unknown type `{rtype_token.content}`",
+            rtype_token,
+        )
+
+    return rtype

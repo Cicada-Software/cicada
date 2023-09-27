@@ -706,7 +706,7 @@ class FunctionDefStatement(Expression):
 
     arg_names: tuple[str, ...]
 
-    type: Type
+    type: FunctionType
     body: BlockExpression
 
     __match_args__ = ("name", "arg_names", "type", "body")
