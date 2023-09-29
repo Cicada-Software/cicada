@@ -198,3 +198,21 @@ let x = f()
 
     assert symbol
     assert isinstance(symbol, UnitValue)
+
+
+def test_strip_string_function() -> None:
+    code = """
+let input = " hello world "
+let x = input.strip()
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    symbol = visitor.symbols.get("x")
+
+    assert symbol
+    assert isinstance(symbol, StringValue)
+    assert symbol.value == "hello world"

@@ -139,6 +139,22 @@ BUILT_IN_SYMBOLS: dict[str, Symbol] = {
 }
 
 
+MEMBER_FUNCTION_TYPES: dict[str, tuple[Type, Symbol]] = {
+    "starts_with": (
+        StringType(),
+        FunctionValue(FunctionType([StringType()], rtype=BooleanType())),
+    ),
+    "ends_with": (
+        StringType(),
+        FunctionValue(FunctionType([StringType()], rtype=BooleanType())),
+    ),
+    "strip": (
+        StringType(),
+        FunctionValue(FunctionType([], rtype=StringType())),
+    ),
+}
+
+
 class SemanticAnalysisVisitor(TraversalVisitor):
     types: dict[str, Type]
     symbols: ChainMap[str, Symbol]
@@ -215,8 +231,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         elif isinstance(
             node.lhs, IdentifierExpression | MemberExpression
-        ) and node.name in ("starts_with", "ends_with"):
-            node.type = FunctionType([StringType()], rtype=BooleanType())
+        ) and (data := MEMBER_FUNCTION_TYPES.get(node.name)):
+            node.type = data[1].type
 
         else:
             name = cast(IdentifierExpression, node.lhs).name
@@ -371,25 +387,36 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if not isinstance(node.callee, MemberExpression):
                 raise NotImplementedError()
 
-            assert node.callee.name in ("starts_with", "ends_with")
-            assert isinstance(node.callee.type, FunctionType)
+            member_type, symbol = MEMBER_FUNCTION_TYPES[node.callee.name]
 
-            # TODO: validate against function type itself
-            if len(node.args) != 1:
+            assert isinstance(symbol, FunctionValue)
+
+            if node.callee.lhs.type != member_type:
+                ty = node.callee.lhs.type
+
                 raise AstError(
-                    f"`{node.callee.name}` takes exactly one argument",
-                    node,
+                    f"Expected type `{member_type}`, got type `{ty}` instead",
+                    node.callee.lhs,
                 )
 
-            arg = node.args[0]
-
-            if arg.type != StringType():
-                raise AstError(
-                    f"Expected type `{StringType()}`, got type `{arg.type}` instead",  # noqa: E501
-                    arg,
+            if len(node.args) != len(symbol.type.arg_types):
+                raise AstError.incorrect_arg_count(
+                    func_name=node.callee.name,
+                    expected=len(symbol.type.arg_types),
+                    got=len(node.args),
+                    info=node,
                 )
 
-            node.type = node.callee.type.rtype
+            for arg, arg_type in zip(
+                node.args, symbol.type.arg_types, strict=True
+            ):
+                if arg.type != arg_type:
+                    raise AstError(
+                        f"Expected type `{arg_type}`, got type `{arg.type}` instead",  # noqa: E501
+                        arg,
+                    )
+
+            node.type = symbol.type.rtype
 
             node.is_constexpr = self.is_constexpr(node.callee) and all(
                 self.is_constexpr(x) for x in node.args
@@ -397,7 +424,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             return
 
-        symbol = self.symbols.get(node.callee.name)
+        symbol = self.symbols.get(node.callee.name)  # type: ignore
 
         # TODO: this is never hit because callee is always checked
         if not symbol:
@@ -441,12 +468,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         variadics = node.args[required_args:]
 
         if len(positionals) < required_args:
-            expected = f"{required_args} {pluralize('argument', required_args)}"  # noqa: E501
-            got = f"{len(positionals)} {pluralize('argument', len(positionals))}"  # noqa: E501
-
-            msg = f"Function `{node.callee.name}` takes at least {expected} but was called with {got}"  # noqa: E501
-
-            raise AstError(msg, node)
+            raise AstError.incorrect_arg_count(
+                func_name=node.callee.name,
+                expected=required_args,
+                got=len(positionals),
+                info=node,
+                at_least=True,
+            )
 
         for arg, ty in zip(positionals, symbol.type.arg_types, strict=False):
             if not self.is_type_compatible(arg.type, ty):
@@ -469,16 +497,16 @@ class SemanticAnalysisVisitor(TraversalVisitor):
     ) -> None:
         assert isinstance(node.callee, IdentifierExpression)
 
-        expected_args = len(symbol.type.arg_types)
-        got_args = len(node.args)
+        expected = len(symbol.type.arg_types)
+        got = len(node.args)
 
-        if expected_args != got_args:
-            expected = f"{expected_args} {pluralize('argument', expected_args)}"  # noqa: E501
-            got = f"{got_args} {pluralize('argument', got_args)}"
-
-            msg = f"Function `{node.callee.name}` takes {expected} but was called with {got}"  # noqa: E501
-
-            raise AstError(msg, node)
+        if expected != got:
+            raise AstError.incorrect_arg_count(
+                func_name=node.callee.name,
+                expected=expected,
+                got=got,
+                info=node,
+            )
 
         for arg, ty in zip(node.args, symbol.type.arg_types, strict=True):
             if not self.is_type_compatible(arg.type, ty):
@@ -727,7 +755,3 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             return compare in to.types
 
         return compare == to
-
-
-def pluralize(noun: str, count: int) -> str:
-    return noun if count == 1 else f"{noun}s"

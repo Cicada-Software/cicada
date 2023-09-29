@@ -46,3 +46,17 @@ if event.branch.ends_with("-dev"):
 ```
 
 `ends_with` returns a `bool` type.
+
+### `strip()`
+
+Strip the start and end of a string:
+
+```
+let name = " bob "
+
+print(name.strip())
+```
+
+This will print `bob` when ran.
+
+`strip()` returns a `string` type.

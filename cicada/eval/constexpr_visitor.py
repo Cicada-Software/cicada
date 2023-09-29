@@ -282,16 +282,25 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         if not isinstance(node.callee, MemberExpression):
             return NotImplemented
 
-        # TODO: move to separate function
-        assert node.callee.name in ("starts_with", "ends_with")
-
+        # TODO: use member function types
         expr = cast(StringValue, node.callee.lhs.accept(self))
-        val = cast(StringValue, node.args[0].accept(self))
+        args = cast(
+            list[StringValue],
+            [arg.accept(self) for arg in node.args],
+        )
 
-        if node.callee.name == "starts_with":
-            return BooleanValue(expr.value.startswith(val.value))
+        name = node.callee.name
 
-        return BooleanValue(expr.value.endswith(val.value))
+        if name == "starts_with":
+            return BooleanValue(expr.value.startswith(args[0].value))
+
+        if name == "ends_with":
+            return BooleanValue(expr.value.endswith(args[0].value))
+
+        if name == "strip":
+            return StringValue(expr.value.strip())
+
+        assert False
 
     def visit_title_stmt(self, node: TitleStatement) -> Value:
         # TitleStatement is special in that it is used for display purposes and

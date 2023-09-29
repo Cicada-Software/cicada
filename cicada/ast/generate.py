@@ -6,6 +6,7 @@ from enum import Enum
 from itertools import groupby
 from typing import NoReturn, Self, cast
 
+from cicada.ast.common import pluralize
 from cicada.ast.types import (
     FunctionType,
     StringType,
@@ -117,6 +118,25 @@ class AstError(ValueError):
             return cls(f"Expected `{expected}`", token)
 
         return cls(f"Unexpected token `{token.content}`", token)
+
+    @classmethod
+    def incorrect_arg_count(
+        cls,
+        *,
+        func_name: str,
+        expected: int,
+        got: int,
+        info: Token | LineInfo | Node,
+        at_least: bool = False,
+    ) -> Self:
+        tmp1 = f"{expected} {pluralize('argument', expected)}"
+        tmp2 = f"{got} {pluralize('argument', got)}"
+
+        condition = "at least " if at_least else ""
+
+        msg = f"Function `{func_name}` takes {condition}{tmp1} but was called with {tmp2}"  # noqa: E501
+
+        return cls(msg, info)
 
     def __str__(self) -> str:
         parts = [

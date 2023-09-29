@@ -707,7 +707,7 @@ let x = event.type.starts_with("x")
 
 
 def test_starts_with_must_have_one_arg() -> None:
-    msg = "`starts_with` takes exactly one argument"
+    msg = "Function `starts_with` takes 1 argument but was called with 0 arguments"  # noqa: E501
 
     code = """\
 let x = ""
@@ -721,6 +721,8 @@ let x = x.starts_with()
 let x = ""
 let x = x.starts_with("y", "z")
 """
+
+    msg = "Function `starts_with` takes 1 argument but was called with 2 arguments"  # noqa: E501
 
     with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
