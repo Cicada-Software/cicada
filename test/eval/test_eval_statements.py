@@ -3,7 +3,7 @@ import pytest
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import RecordValue, StringValue
 from cicada.ast.semantic_analysis import IgnoreWorkflow
-from cicada.ast.types import RecordField, RecordType, StringType
+from cicada.ast.types import RecordType, StringType
 from cicada.domain.triggers import (
     CommitTrigger,
     GitSha,
@@ -114,19 +114,19 @@ def test_on_statement_converts_trigger_data_to_record() -> None:
                 "secret": RecordValue(),
             },
             type=RecordType(
-                fields=[
-                    RecordField("author", StringType()),
-                    RecordField("branch", StringType()),
-                    RecordField("committed_on", StringType()),
-                    RecordField("env", RecordType()),
-                    RecordField("message", StringType()),
-                    RecordField("provider", StringType()),
-                    RecordField("ref", StringType()),
-                    RecordField("repository_url", StringType()),
-                    RecordField("secret", RecordType()),
-                    RecordField("sha", StringType()),
-                    RecordField("type", StringType()),
-                ]
+                fields={
+                    "author": StringType(),
+                    "branch": StringType(),
+                    "committed_on": StringType(),
+                    "env": RecordType(),
+                    "message": StringType(),
+                    "provider": StringType(),
+                    "ref": StringType(),
+                    "repository_url": StringType(),
+                    "secret": RecordType(),
+                    "sha": StringType(),
+                    "type": StringType(),
+                }
             ),
         ):
             return

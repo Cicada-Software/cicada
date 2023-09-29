@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from cicada.ast.nodes import NumericValue, RecordValue, StringValue, Value
-from cicada.ast.types import RecordField, RecordType
+from cicada.ast.types import RecordType
 from cicada.common.json import asjson
 from cicada.domain.triggers import Trigger
 
@@ -21,7 +21,7 @@ def json_to_record(j: object) -> Value:
         for k, v in j.items():
             value = json_to_record(v)
             items[k] = value
-            types.fields.append(RecordField(k, value.type))
+            types.fields[k] = value.type
 
         return RecordValue(items, type=types)
 

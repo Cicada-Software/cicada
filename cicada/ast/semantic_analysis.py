@@ -40,7 +40,6 @@ from cicada.ast.types import (
     CommandType,
     FunctionType,
     NumericType,
-    RecordField,
     RecordType,
     StringType,
     Type,
@@ -201,9 +200,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         super().visit_member_expr(node)
 
         if isinstance(node.lhs.type, RecordType):
-            for field in node.lhs.type.fields:
-                if field.name == node.name:
-                    node.type = field.type
+            for name, field_type in node.lhs.type.fields.items():
+                if name == node.name:
+                    node.type = field_type
                     break
 
             else:
@@ -300,7 +299,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                             node.rhs,
                         )
 
-                if rvalue.type.get_name(member.name):
+                if rvalue.type.fields.get(member.name):
                     member.accept(self)
 
                     self.ensure_valid_op_types(
@@ -322,11 +321,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
                                 raise AstError(msg, node.rhs)
 
-                    # TODO: RecordType's should be immutable, but it's easier
+                    # TODO: RecordType should be immutable, but it's easier
                     # to just assign directly.
-                    rvalue.type.fields.append(
-                        RecordField(member.name, node.rhs.type)
-                    )
+                    rvalue.type.fields[member.name] = node.rhs.type
 
                     member.accept(self)
 

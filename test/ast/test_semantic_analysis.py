@@ -34,7 +34,6 @@ from cicada.ast.types import (
     CommandType,
     FunctionType,
     NumericType,
-    RecordField,
     RecordType,
     StringType,
     UnitType,
@@ -388,7 +387,7 @@ def test_environment_variable_semantics() -> None:
     match visitor.symbols["env"]:
         case RecordValue(
             value={"HELLO": StringValue("world")},
-            type=RecordType([RecordField("HELLO", StringType())]),
+            type=RecordType({"HELLO": StringType()}),
         ):
             pass
 

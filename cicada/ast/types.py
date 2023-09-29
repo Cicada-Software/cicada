@@ -60,12 +60,6 @@ class BooleanType(Type):
 
 
 @dataclass
-class RecordField:
-    name: str
-    type: Type
-
-
-@dataclass
 class RecordType(Type):
     """
     A record is essentially a named tuple. They are immutable, have fields,
@@ -73,31 +67,23 @@ class RecordType(Type):
     cannot change once created though.
     """
 
-    # TODO: turn fields into a dict
-    fields: list[RecordField] = field(default_factory=list)
+    fields: dict[str, Type] = field(default_factory=dict)
 
     def __str__(self) -> str:
         # TODO: return more descriptive string type
         return "record"
 
-    def get_name(self, name: str) -> RecordField | None:
-        for field in self.fields:
-            if field.name == name:
-                return field
-
-        return None
-
 
 # TODO: make this frozen
 @dataclass
 class CommandType(RecordType):
-    fields: list[RecordField] = field(
-        default_factory=lambda: [
-            RecordField("exit_code", NumericType()),
-            RecordField("stdout", StringType()),
-            RecordField("stderr", StringType()),
+    fields: dict[str, Type] = field(
+        default_factory=lambda: {
+            "exit_code": NumericType(),
+            "stdout": StringType(),
+            "stderr": StringType(),
             # TODO: add runtime duration
-        ]
+        }
     )
 
 
