@@ -139,7 +139,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             return NumericValue(-rhs.value)
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_binary_expr(self, node: BinaryExpression) -> Value:
         # TODO: simplify
@@ -170,7 +170,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
                 )
 
             except TypeError as ex:  # pragma: no cover
-                raise NotImplementedError() from ex
+                raise NotImplementedError from ex
 
         if isinstance(lhs, StringValue) and isinstance(rhs, StringValue):
             if node.oper == BinaryOperator.ADD:
@@ -233,7 +233,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             if node.oper == BinaryOperator.XOR:
                 return BooleanValue(lhs.value ^ rhs.value)
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_on_stmt(self, node: OnStatement) -> Value:
         assert self.trigger

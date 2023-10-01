@@ -122,7 +122,7 @@ class Node(ABC):
 
     @abstractmethod
     def accept(self, visitor: NodeVisitor[T]) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass
@@ -497,7 +497,7 @@ class BinaryOperator(Enum):
         if op := TOKEN_TO_BINARY_OPER.get(type(token)):
             return cls(op.value)
 
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def precedence(self) -> int:
         return int(self.value)
@@ -747,64 +747,64 @@ class FunctionDefStatement(Expression):
 
 class NodeVisitor(Generic[T]):
     def visit_file_node(self, node: FileNode) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_func_expr(self, node: FunctionExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_let_expr(self, node: LetExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_ident_expr(self, node: IdentifierExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_member_expr(self, node: MemberExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_str_expr(self, node: StringExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_bool_expr(self, node: BooleanExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_num_expr(self, node: NumericExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_paren_expr(self, node: ParenthesisExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_stmt(self, node: Statement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_on_stmt(self, node: OnStatement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_if_expr(self, node: IfExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_unary_expr(self, node: UnaryExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_binary_expr(self, node: BinaryExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_block_expr(self, node: BlockExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_to_string_expr(self, node: ToStringExpression) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_cache_stmt(self, node: CacheStatement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_title_stmt(self, node: TitleStatement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def visit_func_def_stmt(self, node: FunctionDefStatement) -> T:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class TraversalVisitor(NodeVisitor[None]):

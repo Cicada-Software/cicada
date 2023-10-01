@@ -89,7 +89,7 @@ class ExecutionContext:
     cloned_repo: Path
 
     async def run(self) -> int:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class RemoteDockerLikeExecutionContext(ExecutionContext):

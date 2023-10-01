@@ -31,7 +31,7 @@ def json_to_record(j: object) -> Value:
     if isinstance(j, int | float):
         return NumericValue(Decimal(j))
 
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def pluralize(noun: str, count: int) -> str:

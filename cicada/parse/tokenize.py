@@ -99,7 +99,7 @@ class ChunkGrouper:
 
     def __next__(self) -> Chunk:
         if self._chunk_index >= len(self._chunks):
-            raise StopIteration()
+            raise StopIteration
 
         chunk = self._chunks[self._chunk_index]
         self._chunk_index += 1

@@ -81,7 +81,7 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
         wrap_in_github_check_run.return_value = nullcontext()
 
         async def f() -> None:
-            raise RuntimeError()
+            raise RuntimeError
 
         get_execution_type.return_value.return_value.run.side_effect = f
 

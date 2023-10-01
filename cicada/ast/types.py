@@ -14,7 +14,7 @@ class Type:
         return type(self) == type(other)
 
     def __str__(self) -> str:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnknownType(Type):

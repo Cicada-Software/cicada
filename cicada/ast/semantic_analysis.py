@@ -385,7 +385,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if not isinstance(node.callee, IdentifierExpression):
             if not isinstance(node.callee, MemberExpression):
-                raise NotImplementedError()
+                raise NotImplementedError
 
             member_type, symbol = MEMBER_FUNCTION_TYPES[node.callee.name]
 

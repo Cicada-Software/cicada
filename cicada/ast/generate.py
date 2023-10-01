@@ -174,7 +174,7 @@ class ParserState:
 
     def __next__(self) -> Token:
         if self._current_index >= len(self.tokens):
-            raise StopIteration()
+            raise StopIteration
 
         token = self.tokens[self._current_index]
         self._current_index += 1

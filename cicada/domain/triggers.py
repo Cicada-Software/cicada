@@ -39,7 +39,7 @@ class Trigger:
 
     @classmethod
     def from_dict(cls, **kw: str) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass(kw_only=True)
