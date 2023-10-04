@@ -256,7 +256,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             process.stdout.strip().split(b"\n")[-1].decode().strip()
         )
 
-    def _container_exec(self, args: list[str]) -> Popen[bytes]:
+    def _container_exec(self, args: list[str]) -> tuple[Popen[bytes], bytes]:
         # This command is a hack to make sure we are in cwd from the last
         # command that was ran. Because each `exec` command is executed in the
         # container WORKDIR folder the cwd is not saved after `exec` finishes.
@@ -319,6 +319,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         os.close(slave)
 
+        stdout = b""
+
         with suppress(IOError):
             while True:
                 data = os.read(master, 1024)
@@ -326,11 +328,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 if not data:
                     break
 
+                stdout += data
                 self.terminal.append(data)
 
         process.wait()
 
-        return process
+        return process, stdout
 
     @property
     def temp_dir(self) -> str:
@@ -413,19 +416,15 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             args.append(value.value)
 
-        process = self._container_exec(args)
+        process, stdout = self._container_exec(args)
 
         if process.returncode != 0:
             raise CommandFailed(process.returncode)
 
-        stdout = process.stdout.read().decode() if process.stdout else ""
-        stderr = process.stderr.read().decode() if process.stderr else ""
-
         return RecordValue(
             {
                 "exit_code": NumericValue(Decimal(process.returncode)),
-                "stdout": StringValue(stdout),
-                "stderr": StringValue(stderr),
+                "stdout": StringValue(stdout.decode()),
             },
             CommandType(),
         )

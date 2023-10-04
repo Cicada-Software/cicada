@@ -481,13 +481,11 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
                 raise CommandFailed(returncode)
 
             stdout = process.stdout.read().decode() if process.stdout else ""
-            stderr = process.stderr.read().decode() if process.stderr else ""
 
             return RecordValue(
                 {
                     "exit_code": NumericValue(Decimal(process.returncode)),
                     "stdout": StringValue(stdout),
-                    "stderr": StringValue(stderr),
                 },
                 CommandType(),
             )

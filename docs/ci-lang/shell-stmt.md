@@ -39,7 +39,7 @@ shell echo 1 + 2 = (1 + 2)
 
 The above workflow will print out `1 + 2 = 3`.
 
-### Capture stdout/stderr
+### Capture stdout
 
 In Cicada you can capture and manipulate the stdout of a command by assigning it to
 a variable and accessing it's properties:
@@ -54,7 +54,10 @@ print(cmd.stdout)
 Running this workflow will print `Hello world!` \*. Using stdout like this helps you
 utilize more of what Cicada has to offer, without having to rely on shell scripts.
 
-> \* An extra newline will be printed since `echo` and `print` both add newlines.
+> \* An extra newline will be printed because the stdout from `echo` includes a newline, and
+> `print` adds another newline. Use `.strip()` to strip the whitespace before printing.
+
+Note that when capturing command output, stdout and stderr will be merged into one.
 
 ### Using Shell Features
 

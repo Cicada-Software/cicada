@@ -81,7 +81,6 @@ class CommandType(RecordType):
         default_factory=lambda: {
             "exit_code": NumericType(),
             "stdout": StringType(),
-            "stderr": StringType(),
             # TODO: add runtime duration
         }
     )

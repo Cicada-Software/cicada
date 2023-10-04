@@ -842,7 +842,6 @@ let cmd =
 
 let a = cmd.exit_code
 let b = cmd.stdout
-let b = cmd.stderr
 """
 
     tree = parse_and_analyze(code)

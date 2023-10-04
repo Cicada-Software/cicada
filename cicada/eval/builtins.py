@@ -88,11 +88,23 @@ def builtin_shell(
     # `shlex.join` is intentionally not used here to allow for shell features
     # like piping and env vars.
 
-    process = subprocess.run(  # noqa: PLW1510
+    process = subprocess.Popen(
         ["/bin/sh", "-c", " ".join(args)],  # noqa: S603
         env=visitor.trigger.env if visitor.trigger else None,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
+
+    assert process.stdout
+
+    data = b""
+
+    for line in process.stdout:
+        data += line
+
+        print(line.decode(), end="")  # noqa: T201
+
+    process.wait()
 
     if process.returncode != 0:
         sys.exit(process.returncode)
@@ -102,8 +114,7 @@ def builtin_shell(
         {
             "exit_code": NumericValue(Decimal(process.returncode)),
             # TODO: what should happen if invalid unicode sequence is found?
-            "stdout": StringValue(process.stdout.decode()),
-            "stderr": StringValue(process.stdout.decode()),
+            "stdout": StringValue(data.decode()),
         },
         CommandType(),
     )
