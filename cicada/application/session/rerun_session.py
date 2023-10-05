@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -106,7 +107,17 @@ class RerunSession:
 
         self.session_repo.create(session)
 
-        await self.workflow_runner(session, terminal, cloned_repo, filenode)
+        try:
+            await self.workflow_runner(
+                session, terminal, cloned_repo, filenode
+            )
+
+        except Exception:
+            logger = logging.getLogger("cicada")
+            logger.exception("Workflow crashed:")
+
+            session.finish(SessionStatus.FAILURE)
+
         assert session.status != SessionStatus.PENDING
         assert session.finished_at is not None
 
