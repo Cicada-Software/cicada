@@ -1,23 +1,31 @@
 from uuid import uuid4
 
+from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.terminal_session_repo import (
     LIVE_TERMINAL_SESSIONS,
     TerminalSessionRepo,
 )
+from cicada.domain.session import Session
 from test.api.common import SqliteTestWrapper
+from test.common import build
 
 
 class TestTerminalSessionRepo(SqliteTestWrapper):
     repo: TerminalSessionRepo
+    session_repo: SessionRepo
 
     @classmethod
     def setup_class(cls) -> None:
         super().reset()
 
         cls.repo = TerminalSessionRepo(cls.connection)
+        cls.session_repo = SessionRepo(cls.connection)
 
     def test_create_and_get_terminal_session(self) -> None:
         session_id = uuid4()
+
+        session = build(Session, id=session_id)
+        self.session_repo.create(session)
 
         new_terminal_session = self.repo.create(session_id)
 
@@ -25,6 +33,9 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
 
     def test_get_terminal_session_that_has_finished(self) -> None:
         session_id = uuid4()
+
+        session = build(Session, id=session_id)
+        self.session_repo.create(session)
 
         terminal_session = self.repo.create(session_id)
 

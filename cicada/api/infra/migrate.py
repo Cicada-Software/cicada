@@ -881,6 +881,49 @@ def migrate_v41(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=42)
+def migrate_v42(db: sqlite3.Connection) -> None:
+    # TODO: this could probably be cleaned up, but since this was created
+    # incrementally it is easier to keep it as it is (ie, creating a column
+    # just to delete/rename it later).
+
+    db.executescript(
+        """
+        ALTER TABLE terminal_sessions
+        ADD COLUMN workflow_uuid TEXT NOT NULL DEFAULT '';
+        """
+    )
+
+    rows = db.execute(
+        """
+        SELECT
+            wf.uuid AS workflow_uuid,
+            ts.session_id AS session_id
+        FROM terminal_sessions ts
+        JOIN workflows wf
+            ON wf.session_id = SUBSTR(ts.session_id, 0, 37)
+            AND wf.run_number = SUBSTR(ts.session_id, 38);
+        """
+    ).fetchall()
+
+    for workflow_id, session_id in rows:
+        db.execute(
+            """
+            UPDATE terminal_sessions SET workflow_uuid=? WHERE session_id=?;
+            """,
+            [workflow_id, session_id],
+        )
+
+    db.executescript(
+        """
+        UPDATE terminal_sessions SET session_id=workflow_uuid;
+        ALTER TABLE terminal_sessions DROP COLUMN workflow_uuid;
+        ALTER TABLE terminal_sessions
+            RENAME COLUMN session_id TO workflow_uuid;
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

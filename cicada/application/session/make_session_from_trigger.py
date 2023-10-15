@@ -93,12 +93,6 @@ class MakeSessionFromTrigger:
 
         session_id = uuid4()
 
-        def callback(data: bytes) -> None:  # pragma: no cover
-            self.terminal_session_repo.append_to_session(session_id, data)
-
-        terminal = self.terminal_session_repo.create(session_id)
-        terminal.callback = callback
-
         filenode = files[0]
 
         title = eval_title(filenode.title)
@@ -121,6 +115,12 @@ class MakeSessionFromTrigger:
             title=title,
         )
         self.session_repo.create(session)
+
+        def callback(data: bytes) -> None:  # pragma: no cover
+            self.terminal_session_repo.append_to_session(session_id, data)
+
+        terminal = self.terminal_session_repo.create(session_id)
+        terminal.callback = callback
 
         try:
             await self.workflow_runner(
