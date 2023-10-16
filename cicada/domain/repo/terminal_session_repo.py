@@ -1,22 +1,20 @@
 from abc import ABC, abstractmethod
 
-from cicada.domain.session import SessionId
+from cicada.domain.session import WorkflowId
 from cicada.domain.terminal_session import TerminalSession
 
 
 class ITerminalSessionRepo(ABC):
     @abstractmethod
-    def create(self, session_id: SessionId, run: int = -1) -> TerminalSession:
+    def create(self, workflow_id: WorkflowId) -> TerminalSession:
         ...
 
     @abstractmethod
-    def append_to_session(
-        self, session_id: SessionId, data: bytes, run: int = -1
-    ) -> None:
+    def append_to_workflow(self, workflow_id: WorkflowId, data: bytes) -> None:
         ...
 
     @abstractmethod
-    def get_by_session_id(
-        self, session_id: SessionId, run: int = -1
+    def get_by_workflow_id(
+        self, workflow_id: WorkflowId
     ) -> TerminalSession | None:
         ...

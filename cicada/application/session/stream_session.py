@@ -28,10 +28,18 @@ class StreamSession:
     async def stream(
         self, session_id: SessionId, run: int
     ) -> AsyncGenerator[dict[str, str | list[str]], str]:
-        terminal = self.terminal_session_repo.get_by_session_id(
-            session_id, run
-        )
+        session = self.session_repo.get_session_by_session_id(session_id)
+        if not session:
+            yield {"error": "Session not found"}
+            return
 
+        # TODO: allow for getting workflow id by session id/run
+        workflow_id = self.session_repo.get_workflow_id_from_session(session)
+        if not workflow_id:
+            yield {"error": "Session not found"}
+            return
+
+        terminal = self.terminal_session_repo.get_by_workflow_id(workflow_id)
         if not terminal:
             yield {"error": "Session not found"}
             return

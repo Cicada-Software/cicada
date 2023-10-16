@@ -94,18 +94,16 @@ class RerunSession:
             run_on_self_hosted=run_on_self_hosted,
             title=session.title,
         )
+        self.session_repo.create(session)
+
+        workflow_id = self.session_repo.get_workflow_id_from_session(session)
+        assert workflow_id
 
         def callback(data: bytes) -> None:
-            self.terminal_session_repo.append_to_session(
-                session.id, data, run=session.run
-            )
+            self.terminal_session_repo.append_to_workflow(workflow_id, data)
 
-        terminal = self.terminal_session_repo.create(
-            session.id, run=session.run
-        )
+        terminal = self.terminal_session_repo.create(workflow_id)
         terminal.callback = callback
-
-        self.session_repo.create(session)
 
         try:
             await self.workflow_runner(

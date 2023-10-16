@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cicada.domain.repo.repository_repo import Permission
-from cicada.domain.session import Run, Session, SessionId
+from cicada.domain.session import Run, Session, SessionId, WorkflowId
 from cicada.domain.user import User
 
 
@@ -60,4 +60,11 @@ class ISessionRepo(ABC):
         *,
         permission: Permission,
     ) -> bool:
+        ...
+
+    # TODO: placeholder until a better API comes around
+    @abstractmethod
+    def get_workflow_id_from_session(
+        self, session: Session
+    ) -> WorkflowId | None:
         ...

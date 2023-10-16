@@ -116,10 +116,13 @@ class MakeSessionFromTrigger:
         )
         self.session_repo.create(session)
 
-        def callback(data: bytes) -> None:  # pragma: no cover
-            self.terminal_session_repo.append_to_session(session_id, data)
+        workflow_id = self.session_repo.get_workflow_id_from_session(session)
+        assert workflow_id
 
-        terminal = self.terminal_session_repo.create(session_id)
+        def callback(data: bytes) -> None:  # pragma: no cover
+            self.terminal_session_repo.append_to_workflow(workflow_id, data)
+
+        terminal = self.terminal_session_repo.create(workflow_id)
         terminal.callback = callback
 
         try:

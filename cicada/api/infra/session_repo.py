@@ -15,6 +15,7 @@ from cicada.domain.session import (
     SessionStatus,
     Status,
     Workflow,
+    WorkflowId,
 )
 from cicada.domain.triggers import GitSha, Trigger, json_to_trigger
 from cicada.domain.user import User
@@ -486,3 +487,20 @@ class SessionRepo(ISessionRepo, DbConnection):
             run_on_self_hosted=bool(row[6]),
             title=row[7] if row[7] else None,
         )
+
+    def get_workflow_id_from_session(
+        self, session: Session
+    ) -> WorkflowId | None:
+        rows = self.conn.execute(
+            """
+            SELECT uuid FROM workflows WHERE session_id=? AND run_number=?;
+            """,
+            [session.id, session.run],
+        ).fetchall()
+
+        if not rows:
+            return None
+
+        assert len(rows) == 1
+
+        return WorkflowId(rows[0][0])

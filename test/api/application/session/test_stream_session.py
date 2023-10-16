@@ -27,7 +27,7 @@ async def test_stream_full_session() -> None:
     terminal.append(b"hello\n")
     terminal.append(b"world")
     terminal.finish()
-    terminal_session_repo.get_by_session_id.return_value = terminal
+    terminal_session_repo.get_by_workflow_id.return_value = terminal
 
     session_repo.get_session_by_session_id.return_value = SlimSession()
 
@@ -54,7 +54,7 @@ async def test_stop_session_mid_stream() -> None:
     terminal = TerminalSession()
     terminal.append(b"hello\n")
     terminal.append(b"world")
-    terminal_session_repo.get_by_session_id.return_value = terminal
+    terminal_session_repo.get_by_workflow_id.return_value = terminal
 
     session_repo.get_session_by_session_id.return_value = SlimSession()
 
@@ -82,7 +82,7 @@ async def test_stream_non_existent_session_fails() -> None:
     session_repo = MagicMock()
     session_stopper = AsyncMock()
 
-    terminal_session_repo.get_by_session_id.return_value = None
+    terminal_session_repo.get_by_workflow_id.return_value = None
 
     stream = StreamSession(
         terminal_session_repo=terminal_session_repo,

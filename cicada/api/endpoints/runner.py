@@ -84,13 +84,18 @@ async def runner(
                 session.status = SessionStatus.PENDING
                 session_repo.update(session)
 
-                terminal_session_repo = di.terminal_session_repo()
-                terminal = terminal_session_repo.get_by_session_id(
-                    session.id,
-                    session.run,
+                workflow_id = session_repo.get_workflow_id_from_session(
+                    session
                 )
+                assert workflow_id
 
+                terminal_session_repo = di.terminal_session_repo()
+
+                terminal = terminal_session_repo.get_by_workflow_id(
+                    workflow_id
+                )
                 assert terminal
+
                 session_running = True
 
                 async def session_stopper(terminal: TerminalSession) -> None:
