@@ -81,10 +81,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 started_at,
                 finished_at,
                 run_number,
-                rerun_number,
                 run_on_self_hosted,
                 title
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             [
                 workflow.id,
@@ -96,7 +95,6 @@ class SessionRepo(ISessionRepo, DbConnection):
                 workflow.started_at,
                 workflow.finished_at,
                 session.run,
-                1,
                 int(workflow.run_on_self_hosted),
                 workflow.title,
             ],

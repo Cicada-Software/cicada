@@ -924,6 +924,16 @@ def migrate_v42(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=43)
+def migrate_v43(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        ALTER TABLE workflows DROP COLUMN rerun_number;
+        ALTER TABLE workflows ADD COLUMN parent TEXT NULL;
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         cursor = db.cursor()

@@ -51,6 +51,10 @@ class Workflow:
     A workflow is singular, meaning that if you want to "rerun" a workflow, a
     new workflow is created. Once a workflow is finished, it shouldn't be need
     to be updated again.
+
+    Workflows can spawn sub-workflows, allowing for features such as matrix
+    builds. Sub workflows are scoped to the workflow that spawned them, meaning
+    they are still scoped to the same session as their parent.
     """
 
     id: WorkflowId
@@ -62,6 +66,8 @@ class Workflow:
     # TODO: make this immutable/frozen
     run_on_self_hosted: bool = False
     title: str | None = None
+
+    sub_workflows: list["Workflow"] = field(default_factory=list)
 
 
 @dataclass
