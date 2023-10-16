@@ -18,7 +18,7 @@ from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowId
 from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import eval_title
 
@@ -116,13 +116,22 @@ class MakeSessionFromTrigger:
         )
         self.session_repo.create(session)
 
-        workflow_id = self.session_repo.get_workflow_id_from_session(session)
-        assert workflow_id
+        assert trigger.sha
+
+        workflow = Workflow(
+            id=WorkflowId(uuid4()),
+            filename=Path(),
+            sha=trigger.sha,
+            status=status,
+            run_on_self_hosted=run_on_self_hosted,
+            title=title,
+        )
+        self.session_repo.create_workflow(workflow, session)
 
         def callback(data: bytes) -> None:  # pragma: no cover
-            self.terminal_session_repo.append_to_workflow(workflow_id, data)
+            self.terminal_session_repo.append_to_workflow(workflow.id, data)
 
-        terminal = self.terminal_session_repo.create(workflow_id)
+        terminal = self.terminal_session_repo.create(workflow.id)
         terminal.callback = callback
 
         try:
@@ -140,6 +149,11 @@ class MakeSessionFromTrigger:
         assert session.finished_at is not None
 
         self.session_repo.update(session)
+
+        # TODO: set these directly, dont pull from session
+        workflow.status = session.status
+        workflow.finished_at = session.finished_at
+        self.session_repo.update_workflow(workflow)
 
         return self.session_repo.get_session_by_session_id(
             session.id,

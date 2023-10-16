@@ -1,8 +1,9 @@
 from dataclasses import MISSING, Field, fields, is_dataclass
 from datetime import datetime, timezone
 from enum import Enum
+from secrets import token_hex
 from types import GenericAlias, NoneType, UnionType
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, NewType, TypeVar
 from uuid import UUID, uuid4
 
 from cicada.domain.datetime import Datetime, UtcDatetime
@@ -21,6 +22,8 @@ def get_default_type(field_type: Any) -> Any:  # type: ignore
                 return None
 
         raise TypeError("Cannot auto build union types")
+    if isinstance(field_type, NewType):
+        return get_default_type(field_type.__supertype__)
 
     if isinstance(field_type, GenericAlias):
         return get_default_type(field_type.__origin__)
@@ -45,6 +48,9 @@ def get_default_type(field_type: Any) -> Any:  # type: ignore
             repository_url="https://github.com/user/repo",
             provider="github",
         )
+
+    if issubclass(field_type, GitSha):
+        return GitSha(token_hex(4))
 
     return field_type()
 

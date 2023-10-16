@@ -15,6 +15,7 @@ from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook
 from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.triggers import GitSha, Trigger
 from test.api.endpoints.common import TestEndpointWrapper
 
 
@@ -46,18 +47,18 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.mock_gitlab_infra_details() as mocks,
         ):
 
-            async def f(
-                session: Session,
-                _: TerminalSession,
-                __: Path,
-                ___: FileNode,
-            ) -> None:
+            async def run(session: Session, *_) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
-            mocks["run_workflow"].side_effect = f
+            mocks["run_workflow"].side_effect = run
             mocks["repo_get_env"].return_value = {}
 
-            mocks["gather_issue_workflows"].return_value = [FileNode([])]
+            async def gather(trigger: Trigger, *_) -> list[FileNode]:  # type: ignore
+                trigger.sha = GitSha("deadbeef")
+
+                return [FileNode([])]
+
+            mocks["gather_issue_workflows"].side_effect = gather
 
             response = self.client.post(
                 "/api/gitlab_webhook",
@@ -74,6 +75,11 @@ class TestGitlabWebhook(TestEndpointWrapper):
         session = sessions[0]
         assert session.status == SessionStatus.SUCCESS
         assert session.finished_at
+
+        assert session.trigger.sha == GitSha("deadbeef")
+
+        session.trigger.sha = None
+
         assert session.trigger == gitlab_event_to_issue(event)
 
         assert not TASK_QUEUE

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from cicada.domain.repo.repository_repo import Permission
-from cicada.domain.session import Run, Session, SessionId, WorkflowId
+from cicada.domain.session import Run, Session, SessionId, Workflow, WorkflowId
 from cicada.domain.user import User
 
 
@@ -11,7 +11,15 @@ class ISessionRepo(ABC):
         ...
 
     @abstractmethod
+    def create_workflow(self, workflow: Workflow, session: Session) -> None:
+        ...
+
+    @abstractmethod
     def update(self, session: Session) -> None:
+        ...
+
+    @abstractmethod
+    def update_workflow(self, workflow: Workflow) -> None:
         ...
 
     @abstractmethod

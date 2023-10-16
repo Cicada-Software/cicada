@@ -14,6 +14,7 @@ from cicada.api.endpoints.webhook.github.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.github.main import router as github_webhook
 from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
+from cicada.domain.triggers import GitSha, Trigger
 from test.api.endpoints.common import TestEndpointWrapper
 
 
@@ -48,11 +49,16 @@ class TestGitHubWebhooks(TestEndpointWrapper):
         ):
             mocks["repo_get_env"].return_value = {}
 
-            async def f(session: Session, *_, **__) -> None:  # type: ignore
+            async def run(session: Session, *_, **__) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
-            mocks["run_workflow"].side_effect = f
-            mocks["gather_issues"].return_value = [FileNode([])]
+            async def gather(trigger: Trigger, *_) -> list[FileNode]:  # type: ignore
+                trigger.sha = GitSha("deadbeef")
+
+                return [FileNode([])]
+
+            mocks["run_workflow"].side_effect = run
+            mocks["gather_issues"].side_effect = gather
 
             response = self.client.post(
                 "/api/github_webhook",
@@ -69,6 +75,13 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             session = sessions[0]
             assert session.status == SessionStatus.SUCCESS
             assert session.finished_at
+
+            assert session.trigger.sha == GitSha("deadbeef")
+
+            # Remove because the sha is injected before workflow runs, not when
+            # event is triggered
+            session.trigger.sha = None
+
             assert session.trigger == github_event_to_issue(event)
 
             assert not TASK_QUEUE

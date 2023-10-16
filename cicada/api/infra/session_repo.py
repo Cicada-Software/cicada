@@ -1,7 +1,6 @@
 import json
 import sqlite3
 from pathlib import Path
-from uuid import uuid4
 
 from cicada.api.infra.db_connection import DbConnection
 from cicada.common.json import asjson
@@ -69,7 +68,10 @@ class SessionRepo(ISessionRepo, DbConnection):
             ],
         )
 
-        cursor.execute(
+        self.conn.commit()
+
+    def create_workflow(self, workflow: Workflow, session: Session) -> None:
+        self.conn.execute(
             """
             INSERT INTO workflows (
                 uuid,
@@ -86,17 +88,18 @@ class SessionRepo(ISessionRepo, DbConnection):
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             [
-                uuid4(),
+                workflow.id,
                 session.id,
-                session.status.name,
-                str(session.trigger.sha),
-                "",
-                session.started_at,
-                session.finished_at,
+                workflow.status.name,
+                str(workflow.sha),
+                # TODO: disallow empty paths in Workflow object itself
+                "" if workflow.filename == Path() else str(workflow.filename),
+                workflow.started_at,
+                workflow.finished_at,
                 session.run,
                 1,
-                int(session.run_on_self_hosted),
-                session.title,
+                int(workflow.run_on_self_hosted),
+                workflow.title,
             ],
         )
 
@@ -120,18 +123,18 @@ class SessionRepo(ISessionRepo, DbConnection):
             ],
         )
 
-        cursor.execute(
+    def update_workflow(self, workflow: Workflow) -> None:
+        self.conn.execute(
             """
             UPDATE workflows SET
                 status=?,
                 finished_at=?
-            WHERE session_id=? AND run_number=?;
+            WHERE uuid=?;
             """,
             [
-                session.status.name,
-                session.finished_at,
-                session.id,
-                session.run,
+                workflow.status.name,
+                workflow.finished_at,
+                workflow.id,
             ],
         )
 

@@ -5,7 +5,7 @@ from cicada.api.infra.terminal_session_repo import (
     LIVE_TERMINAL_SESSIONS,
     TerminalSessionRepo,
 )
-from cicada.domain.session import Session, WorkflowId
+from cicada.domain.session import Session, Workflow, WorkflowId
 from test.api.common import SqliteTestWrapper
 from test.common import build
 
@@ -27,13 +27,13 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         session = build(Session, id=session_id)
         self.session_repo.create(session)
 
-        workflow_id = self.session_repo.get_workflow_id_from_session(session)
-        assert workflow_id
+        workflow = build(Workflow)
+        self.session_repo.create_workflow(workflow, session)
 
-        new_terminal_session = self.repo.create(workflow_id)
+        new_terminal_session = self.repo.create(workflow.id)
 
         assert new_terminal_session is self.repo.get_by_workflow_id(
-            workflow_id
+            workflow.id
         )
 
     def test_get_terminal_session_that_has_finished(self) -> None:
@@ -42,20 +42,20 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         session = build(Session, id=session_id)
         self.session_repo.create(session)
 
-        workflow_id = self.session_repo.get_workflow_id_from_session(session)
-        assert workflow_id
+        workflow = build(Workflow)
+        self.session_repo.create_workflow(workflow, session)
 
-        terminal_session = self.repo.create(workflow_id)
+        terminal_session = self.repo.create(workflow.id)
 
-        self.repo.append_to_workflow(workflow_id, b"line 1\r\n")
-        self.repo.append_to_workflow(workflow_id, b"line 2\r\n")
-        self.repo.append_to_workflow(workflow_id, b"line 3\n")
-        self.repo.append_to_workflow(workflow_id, b"line 4\n")
+        self.repo.append_to_workflow(workflow.id, b"line 1\r\n")
+        self.repo.append_to_workflow(workflow.id, b"line 2\r\n")
+        self.repo.append_to_workflow(workflow.id, b"line 3\n")
+        self.repo.append_to_workflow(workflow.id, b"line 4\n")
 
         # TODO: this is an ugly hack, makes things harder to test
         LIVE_TERMINAL_SESSIONS.clear()
 
-        received_terminal_session = self.repo.get_by_workflow_id(workflow_id)
+        received_terminal_session = self.repo.get_by_workflow_id(workflow.id)
 
         assert received_terminal_session
         assert received_terminal_session.is_done
