@@ -138,7 +138,9 @@ async def get_recent_sessions(
         )
 
     elif session:
-        recent = session_repo.get_runs_for_session(user, session)
+        return JSONResponse(
+            asjson(session_repo.get_runs_for_session(user, session))
+        )
 
     else:
         recent = session_repo.get_recent_sessions(user)

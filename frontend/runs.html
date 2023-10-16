@@ -116,6 +116,15 @@ cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
 
     if (new URLSearchParams(window.location.search).has("session")) {
       sessions.classList.add("list-view");
+
+      // hacky way of converting single session with list of workflows to a
+      // list of sessions like before
+      e = e.runs.map((run, i) => {
+        let copy = structuredClone(e)
+        delete copy.runs
+
+        return {...copy, "run": i+1};
+      });
     }
 
     for (const session of e) {

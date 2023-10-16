@@ -1,12 +1,13 @@
 from dataclasses import is_dataclass
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 
 def asjson(obj: Any) -> Any:  # type: ignore[misc]
     # TODO: this isnt JSON, rename function
     if isinstance(obj, dict):
-        return {k: asjson(v) for k, v in obj.items()}
+        return {str(asjson(k)): asjson(v) for k, v in obj.items()}
 
     if isinstance(obj, Enum):
         return obj.value
@@ -30,5 +31,8 @@ def asjson(obj: Any) -> Any:  # type: ignore[misc]
 
     if isinstance(obj, int | float | str):
         return obj
+
+    if isinstance(obj, Path):
+        return "" if obj == Path() else str(obj)
 
     return str(obj)

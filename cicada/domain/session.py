@@ -65,32 +65,6 @@ class Workflow:
 
 
 @dataclass
-class Run:
-    """
-    A run encapsulates a collection of workflows that are part of a session. A
-    run is represented as a dictionary, where the key is the filename of the
-    workflow, and the value is a list of workflows for the current run. When a
-    session is first started, a run will contain N items for each of the N
-    workflows to be ran. Since the session was just started, each list will
-    only have 1 workflow in it.
-
-    When you rerun a session, a new run object is created. If you don't want to
-    rerun all workflows for a particular run though (say only one failed), you
-    can rerun only a particular workflow in that run. When you do so, the new
-    workflow will be appended to the list of workflows with the same name. The
-    index of the workflow in the list indicates the order in which it was ran:
-    the oldest workflows are at the start, the newest ones at the end.
-    """
-
-    workflows: dict[Path, list[Workflow]]
-
-    def __post_init__(self) -> None:
-        for workflows in self.workflows.values():
-            if not workflows:
-                raise ValueError("Expected list of workflows")
-
-
-@dataclass
 class Session:
     """
     A session is created whenever an event is triggered. A session is where all
@@ -113,6 +87,9 @@ class Session:
     run: int = 1
     run_on_self_hosted: bool = False
     title: str | None = None
+
+    # TODO: deprecate run
+    runs: list[Workflow] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         assert self.run >= 1

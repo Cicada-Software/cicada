@@ -3,15 +3,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
-import pytest
-
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.session_repo import SessionRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.repo.repository_repo import Permission
 from cicada.domain.repository import Repository
-from cicada.domain.session import Session
+from cicada.domain.session import Session, Workflow
 from cicada.domain.triggers import CommitTrigger
 from cicada.domain.user import User
 from test.api.common import SqliteTestWrapper
@@ -199,8 +197,7 @@ class TestSessionRepo(SqliteTestWrapper):
 
             assert test.is_allowed == is_allowed
 
-    @pytest.mark.xfail(reason="Major refactoring")
-    def test_get_runs_for_session2(self) -> None:
+    def test_get_runs_for_session(self) -> None:
         self.reset()
 
         user = self.create_dummy_user(username="bob")
@@ -208,28 +205,34 @@ class TestSessionRepo(SqliteTestWrapper):
 
         self.session_repo.create(session)
 
+        workflow = build(
+            Workflow,
+            sha=session.trigger.sha,
+            started_at=session.started_at,
+            finished_at=session.finished_at,
+        )
+
+        self.session_repo.create_workflow(workflow, session)
+
         self.create_dummy_repo_for_user(
             user,
             perms=["read"],
             url=session.trigger.repository_url,
         )
 
-        runs = self.session_repo.get_runs_for_session2(user, session.id)
+        session = self.session_repo.get_runs_for_session(user, session.id)
 
-        assert len(runs) == 1
-        run = runs[0]
+        assert session
 
-        workflows = run.workflows[Path()]
-
-        assert len(workflows) == 1
-        workflow = workflows[0]
+        assert len(session.runs) == 1
+        workflow = session.runs[0]
 
         assert workflow.filename == Path()
         assert workflow.sha == session.trigger.sha
         assert workflow.started_at == session.started_at
         assert workflow.finished_at == session.finished_at
 
-    def test_get_runs_for_session2_fails_when_user_doesnt_have_access(
+    def test_get_runs_for_session_fails_when_user_doesnt_have_access(
         self,
     ) -> None:
         self.reset()
@@ -245,7 +248,7 @@ class TestSessionRepo(SqliteTestWrapper):
             url=session.trigger.repository_url,
         )
 
-        assert not self.session_repo.get_runs_for_session2(user, session.id)
+        assert not self.session_repo.get_runs_for_session(user, session.id)
 
     def test_create_self_hosted_session(self) -> None:
         session = build(Session, run_on_self_hosted=True)

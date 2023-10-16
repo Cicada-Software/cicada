@@ -8,7 +8,6 @@ from cicada.domain.datetime import UtcDatetime
 from cicada.domain.repo.repository_repo import Permission
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.session import (
-    Run,
     Session,
     SessionId,
     SessionStatus,
@@ -289,52 +288,6 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         return [self._convert(x) for x in rows]
 
-    def get_runs_for_session(
-        self,
-        user: User,
-        uuid: SessionId,
-    ) -> list[Session]:
-        if user.is_admin:
-            rows = self.conn.execute(
-                """
-                SELECT
-                    s.uuid,
-                    s.status,
-                    s.started_at,
-                    s.finished_at,
-                    s.run_number,
-                    t.data,
-                    run_on_self_hosted,
-                    title
-                FROM sessions s
-                JOIN triggers t ON t.id = s.trigger_id
-                WHERE s.uuid=?
-                ORDER BY s.started_at DESC;
-                """,
-                [uuid],
-            ).fetchall()
-
-        else:
-            rows = self.conn.execute(
-                """
-                SELECT
-                    session_uuid,
-                    session_status,
-                    session_started_at,
-                    session_finished_at,
-                    session_run,
-                    trigger_data,
-                    session_run_on_self_hosted,
-                    session_title
-                FROM v_user_sessions
-                WHERE user_uuid=? AND session_uuid=?
-                ORDER BY session_started_at DESC;
-                """,
-                [user.id, uuid],
-            ).fetchall()
-
-        return [self._convert(x) for x in rows]
-
     def get_recent_sessions_as_admin(self) -> list[Session]:
         rows = self.conn.execute(
             """
@@ -413,9 +366,13 @@ class SessionRepo(ISessionRepo, DbConnection):
             for p in rows[0].split(",")
         )
 
-    def get_runs_for_session2(self, user: User, uuid: SessionId) -> list[Run]:
+    def get_runs_for_session(
+        self,
+        user: User,
+        uuid: SessionId,
+    ) -> Session | None:
         if not self._can_user_access_session_id(user, uuid, permission="read"):
-            return []
+            return None
 
         rows = self.conn.execute(
             """
@@ -436,9 +393,9 @@ class SessionRepo(ISessionRepo, DbConnection):
         ).fetchall()
 
         if not rows:
-            return []
+            return None
 
-        runs: list[Run] = []
+        workflows: list[Workflow] = []
 
         for row in rows:
             workflow = Workflow(
@@ -456,9 +413,19 @@ class SessionRepo(ISessionRepo, DbConnection):
                 title=row["title"] if row["title"] else None,
             )
 
-            runs.append(Run({workflow.filename: [workflow]}))
+            workflows.append(workflow)
 
-        return runs
+        # TODO: move to top, remove explicit access check
+        session = self.get_session_by_session_id(
+            uuid,
+            user=user,
+            permission="read",
+        )
+        assert session
+
+        session.runs = workflows
+
+        return session
 
     def _get_trigger(self, uuid: SessionId) -> Trigger | None:
         cursor = self.conn.execute(
