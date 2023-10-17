@@ -52,3 +52,14 @@ class StopSession:
 
         session.finish(SessionStatus.STOPPED)
         self.session_repo.update(session)
+
+        # TODO: improve this flow
+        workflow_id = self.session_repo.get_workflow_id_from_session(session)
+        assert workflow_id
+
+        workflow = self.session_repo.get_workflow_by_id(workflow_id)
+        assert workflow
+
+        workflow.status = session.status
+        workflow.finished_at = session.finished_at
+        self.session_repo.update_workflow(workflow)

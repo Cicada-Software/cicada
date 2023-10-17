@@ -74,3 +74,15 @@ class ISessionRepo(ABC):
         self, session: Session
     ) -> WorkflowId | None:
         ...
+
+    @abstractmethod
+    def get_workflow_by_id(self, uuid: WorkflowId) -> Workflow | None:
+        """
+        Get a workflow by its ID.
+
+        This function should not be called directly because it does not verify
+        that the user is allowed to see it. Only call this function if you know
+        the calling user has access!
+        """
+
+        ...

@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from pathlib import Path
+from uuid import UUID
 
 from cicada.api.infra.db_connection import DbConnection
 from cicada.common.json import asjson
@@ -103,9 +104,7 @@ class SessionRepo(ISessionRepo, DbConnection):
         self.conn.commit()
 
     def update(self, session: Session) -> None:
-        cursor = self.conn.cursor()
-
-        cursor.execute(
+        self.conn.execute(
             """
             UPDATE sessions SET
                 status=?,
@@ -119,6 +118,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session.run,
             ],
         )
+
+        self.conn.commit()
 
     def update_workflow(self, workflow: Workflow) -> None:
         self.conn.execute(
@@ -241,7 +242,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             [user.id],
         ).fetchall()
 
-        return [self._convert(x) for x in rows]
+        return [self._convert_session(x) for x in rows]
 
     def get_recent_sessions_for_repo(
         self, user: User, repository_url: str
@@ -286,7 +287,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 [user.id, repository_url],
             ).fetchall()
 
-        return [self._convert(x) for x in rows]
+        return [self._convert_session(x) for x in rows]
 
     def get_recent_sessions_as_admin(self) -> list[Session]:
         rows = self.conn.execute(
@@ -307,7 +308,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             """
         ).fetchall()
 
-        return [self._convert(x) for x in rows]
+        return [self._convert_session(x) for x in rows]
 
     def can_user_access_session(
         self,
@@ -405,7 +406,7 @@ class SessionRepo(ISessionRepo, DbConnection):
         return None
 
     @staticmethod
-    def _convert(row: sqlite3.Row) -> Session:
+    def _convert_session(row: sqlite3.Row) -> Session:
         return Session(
             id=SessionId(row[0]),
             status=SessionStatus(row[1]),
@@ -434,7 +435,7 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         assert len(rows) == 1
 
-        return WorkflowId(rows[0][0])
+        return WorkflowId(UUID(rows[0][0]))
 
     def _get_workflows_for_session(self, uuid: SessionId) -> list[Workflow]:
         rows = self.conn.execute(
@@ -455,24 +456,44 @@ class SessionRepo(ISessionRepo, DbConnection):
             [uuid],
         ).fetchall()
 
-        workflows: list[Workflow] = []
+        return [self._convert_workflow(row) for row in rows]
 
-        for row in rows:
-            workflow = Workflow(
-                id=row["uuid"],
-                filename=Path(row["filename"]),
-                sha=GitSha(row["sha"]),
-                status=Status(row["status"]),
-                started_at=UtcDatetime.fromisoformat(row["started_at"]),
-                finished_at=(
-                    UtcDatetime.fromisoformat(row["finished_at"])
-                    if row["finished_at"]
-                    else None
-                ),
-                run_on_self_hosted=bool(row["run_on_self_hosted"]),
-                title=row["title"] if row["title"] else None,
-            )
+    def get_workflow_by_id(self, uuid: WorkflowId) -> Workflow | None:
+        rows = self.conn.execute(
+            """
+            SELECT
+                uuid,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number,
+                run_on_self_hosted,
+                title
+            FROM workflows
+            WHERE uuid=?;
+            """,
+            [uuid],
+        ).fetchall()
 
-            workflows.append(workflow)
+        if not rows:
+            return None
 
-        return workflows
+        return self._convert_workflow(rows[0])
+
+    def _convert_workflow(self, row: sqlite3.Row) -> Workflow:
+        return Workflow(
+            id=WorkflowId(UUID(row["uuid"])),
+            filename=Path(row["filename"]),
+            sha=GitSha(row["sha"]),
+            status=Status(row["status"]),
+            started_at=UtcDatetime.fromisoformat(row["started_at"]),
+            finished_at=(
+                UtcDatetime.fromisoformat(row["finished_at"])
+                if row["finished_at"]
+                else None
+            ),
+            run_on_self_hosted=bool(row["run_on_self_hosted"]),
+            title=row["title"] if row["title"] else None,
+        )

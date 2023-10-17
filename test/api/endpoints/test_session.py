@@ -4,7 +4,7 @@ from uuid import uuid4
 from cicada.api.endpoints.login_util import create_access_token
 from cicada.api.endpoints.session import router as session_router
 from cicada.common.json import asjson
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.user import User
 from test.api.endpoints.common import TestEndpointWrapper
 from test.common import build
@@ -20,6 +20,9 @@ class TestSessionEndpoints(TestEndpointWrapper):
     def test_stop_session(self) -> None:
         session = build(Session)
         self.di.session_repo().create(session)
+
+        workflow = build(Workflow)
+        self.di.session_repo().create_workflow(workflow, session)
 
         with self.inject_dummy_env_vars():
             user = build(User, username="admin", is_admin=True)
