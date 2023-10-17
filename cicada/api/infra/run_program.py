@@ -12,7 +12,7 @@ from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.session import Session, SessionStatus
-from cicada.domain.terminal_session import TerminalSession
+from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
 from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
@@ -172,6 +172,9 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
         except WorkflowFailure as exc:
             return exc.return_code
+
+        except TerminalIsFinished:
+            return 1
 
         finally:
             if visitor:

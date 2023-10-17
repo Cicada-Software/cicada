@@ -2,6 +2,16 @@ from asyncio import Event
 from collections.abc import AsyncIterator, Callable
 
 
+class TerminalIsFinished(ValueError):
+    """
+    Raised when a terminal is appended to after it has finished.
+
+    Implementation detail: Raising this exception causes the container to fail,
+    which is currently how we "tell" the container that the user stopped the
+    session. This should be made more explicit, but for now it works.
+    """
+
+
 class TerminalSession:
     """
     This class represents a terminal session object, that is, it emulates the
@@ -34,6 +44,9 @@ class TerminalSession:
         self.should_stop = Event()
 
     def append(self, data: bytes) -> None:
+        if self.is_done:
+            raise TerminalIsFinished
+
         self.chunks.append(data)
         self.has_new_chunk.set()
 
