@@ -61,13 +61,26 @@
   <div id="status-bar" class="hide-by-default">
     <span id="status" class="ci-status"></span>
     <span id="elapsed-time">--:--:--</span>
+
     <a href="" id="cancel" title="Cancel workflow" onclick="cancel(event)">
       <img src="/static/img/x.svg" />
     </a>
+
     <a href="" id="rerun" title="Re-run workflow" onclick="rerun(event)">
       <img src="/static/img/reload.svg" />
     </a>
+
     <span class="navbar-filler"></span>
+
+    <a
+      id="view-file"
+      href=""
+      title="View workflow file"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img src="/static/img/file-code.svg" />
+    </a>
   </div>
 
   <div id="terminal"></div>
@@ -115,6 +128,15 @@ p, pre {
   padding: 0.4em;
 }
 
+#view-file {
+  text-decoration: none;
+  color: var(--lightgray);
+  transition: color 150ms, background 150ms;
+  padding: 0.4em;
+  display: none;
+  cursor: pointer;
+}
+
 #cancel:hover {
   color: var(--red);
   background: var(--dark-red);
@@ -132,11 +154,11 @@ p, pre {
   padding: 0.4em;
 }
 
-#repo, #run-number, #rerun {
+#repo, #run-number, #rerun, #view-file {
   transition: color 150ms, background 150ms;
 }
 
-#repo:hover, #run-number:hover, #rerun:hover {
+#repo:hover, #run-number:hover, #rerun:hover, #view-file:hover {
   background: var(--medium-gray);
 }
 
@@ -305,6 +327,16 @@ function getSessionAndCommitInfo(callback) {
       document.getElementById("run-number").href = `/runs?session=${e.id}`;
 
       const repository = e.trigger.repository_url;
+      const currentWorkflow = e.runs[currentRun - 1];
+
+      if (currentWorkflow.filename) {
+        const url = `${repository}/blob/${e.trigger.sha}/${currentWorkflow.filename}`;
+
+        const viewWorkflow = document.getElementById("view-file");
+
+        viewWorkflow.href = url;
+        viewWorkflow.style.display = "flex";
+      }
 
       if (trigger == "git.push") {
         const { provider, message, sha, ref, committed_on, author } = e.trigger;

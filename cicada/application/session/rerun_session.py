@@ -98,10 +98,11 @@ class RerunSession:
         self.session_repo.create(session)
 
         assert session.trigger.sha
+        assert filenode.file
 
         workflow = Workflow(
             id=WorkflowId(uuid4()),
-            filename=Path(),
+            filename=filenode.file.relative_to(cloned_repo),
             sha=session.trigger.sha,
             status=status,
             run_on_self_hosted=run_on_self_hosted,

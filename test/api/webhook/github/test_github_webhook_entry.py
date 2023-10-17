@@ -18,6 +18,13 @@ from cicada.domain.triggers import GitSha, Trigger
 from test.api.endpoints.common import TestEndpointWrapper
 
 
+async def dummy_gather(trigger: Trigger, repo: Path) -> list[FileNode]:
+    if not trigger.sha:
+        trigger.sha = GitSha("deadbeef")
+
+    return [FileNode([], file=repo / "file.ci")]
+
+
 class TestGitHubWebhooks(TestEndpointWrapper):
     @classmethod
     def setup_class(cls) -> None:
@@ -52,13 +59,8 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             async def run(session: Session, *_, **__) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
-            async def gather(trigger: Trigger, *_) -> list[FileNode]:  # type: ignore
-                trigger.sha = GitSha("deadbeef")
-
-                return [FileNode([])]
-
             mocks["run_workflow"].side_effect = run
-            mocks["gather_issues"].side_effect = gather
+            mocks["gather_issues"].side_effect = dummy_gather
 
             response = self.client.post(
                 "/api/github_webhook",
@@ -108,7 +110,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f
-            mocks["gather_git_pushes"].return_value = [FileNode([])]
+            mocks["gather_git_pushes"].side_effect = dummy_gather
 
             response = self.client.post(
                 "/api/github_webhook",

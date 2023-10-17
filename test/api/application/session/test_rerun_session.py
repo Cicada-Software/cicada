@@ -1,16 +1,22 @@
 import asyncio
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from cicada.application.session.rerun_session import RerunSession
+from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
-from cicada.domain.triggers import CommitTrigger, GitSha
+from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 from test.api.application.session.test_make_session_from_trigger import (
     AsyncTap,
     make_fake_repository_repo,
 )
+
+
+async def dummy_gather(_: Trigger, repo: Path) -> list[FileNode]:
+    return [FileNode([], file=repo / "file.ci")]
 
 
 async def test_reran_session_is_created_and_ran() -> None:
@@ -30,7 +36,7 @@ async def test_reran_session_is_created_and_ran() -> None:
     cmd = RerunSession(
         session_repo,
         terminal_session_repo,
-        gather_workflows=AsyncMock(return_value=[1]),
+        gather_workflows=dummy_gather,
         workflow_runner=dummy_check_runner,
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),

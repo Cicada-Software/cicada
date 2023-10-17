@@ -207,6 +207,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 title=row["title"] if row["title"] else None,
             )
 
+            session.runs = self._get_workflows_for_session(uuid)
+
             if not user or self.can_user_access_session(
                 user,
                 session,
@@ -372,46 +374,7 @@ class SessionRepo(ISessionRepo, DbConnection):
         if not self._can_user_access_session_id(user, uuid, permission="read"):
             return None
 
-        rows = self.conn.execute(
-            """
-            SELECT
-                uuid,
-                status,
-                sha,
-                filename,
-                started_at,
-                finished_at,
-                run_number,
-                run_on_self_hosted,
-                title
-            FROM workflows
-            WHERE session_id = ?;
-            """,
-            [uuid],
-        ).fetchall()
-
-        if not rows:
-            return None
-
-        workflows: list[Workflow] = []
-
-        for row in rows:
-            workflow = Workflow(
-                id=row["uuid"],
-                filename=Path(row["filename"]),
-                sha=GitSha(row["sha"]),
-                status=Status(row["status"]),
-                started_at=UtcDatetime.fromisoformat(row["started_at"]),
-                finished_at=(
-                    UtcDatetime.fromisoformat(row["finished_at"])
-                    if row["finished_at"]
-                    else None
-                ),
-                run_on_self_hosted=bool(row["run_on_self_hosted"]),
-                title=row["title"] if row["title"] else None,
-            )
-
-            workflows.append(workflow)
+        workflows = self._get_workflows_for_session(uuid)
 
         # TODO: move to top, remove explicit access check
         session = self.get_session_by_session_id(
@@ -472,3 +435,44 @@ class SessionRepo(ISessionRepo, DbConnection):
         assert len(rows) == 1
 
         return WorkflowId(rows[0][0])
+
+    def _get_workflows_for_session(self, uuid: SessionId) -> list[Workflow]:
+        rows = self.conn.execute(
+            """
+            SELECT
+                uuid,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number,
+                run_on_self_hosted,
+                title
+            FROM workflows
+            WHERE session_id = ?;
+            """,
+            [uuid],
+        ).fetchall()
+
+        workflows: list[Workflow] = []
+
+        for row in rows:
+            workflow = Workflow(
+                id=row["uuid"],
+                filename=Path(row["filename"]),
+                sha=GitSha(row["sha"]),
+                status=Status(row["status"]),
+                started_at=UtcDatetime.fromisoformat(row["started_at"]),
+                finished_at=(
+                    UtcDatetime.fromisoformat(row["finished_at"])
+                    if row["finished_at"]
+                    else None
+                ),
+                run_on_self_hosted=bool(row["run_on_self_hosted"]),
+                title=row["title"] if row["title"] else None,
+            )
+
+            workflows.append(workflow)
+
+        return workflows

@@ -133,9 +133,6 @@ async def gather_workflows_via_trigger(
             },
         )
 
-        # TODO: only fail if all runnable files had errors
-        return []
-
     return [x for x in files_or_errors if not isinstance(x, AstError)]
 
 

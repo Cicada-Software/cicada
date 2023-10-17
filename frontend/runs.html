@@ -123,8 +123,13 @@ cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
         let copy = structuredClone(e)
         delete copy.runs
 
-        return {...copy, "run": i+1};
-      });
+        return {
+          ...copy,
+          ...run,
+          "run": i+1,
+          "id": copy.id,
+        };
+      }).reverse();
     }
 
     for (const session of e) {

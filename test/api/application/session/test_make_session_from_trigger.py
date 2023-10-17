@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 from cicada.application.session.make_session_from_trigger import (
@@ -10,7 +11,7 @@ from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus
 from cicada.domain.terminal_session import TerminalSession
-from cicada.domain.triggers import CommitTrigger, GitSha
+from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 class AsyncTap:
@@ -45,6 +46,10 @@ def make_fake_repository_repo() -> MagicMock:
     return mock
 
 
+async def dummy_gather(_: Trigger, repo: Path) -> list[FileNode]:
+    return [FileNode([], file=repo / "file.ci")]
+
+
 async def test_session_is_created() -> None:
     tap = AsyncTap()
 
@@ -63,7 +68,7 @@ async def test_session_is_created() -> None:
         session_repo,
         terminal_session_repo,
         dummy_check_runner,
-        gather_workflows=AsyncMock(return_value=[FileNode([])]),
+        gather_workflows=dummy_gather,
         env_repo=MagicMock(),
         repository_repo=make_fake_repository_repo(),
         installation_repo=MagicMock(),
