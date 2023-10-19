@@ -21,14 +21,14 @@ from cicada.api.infra.gitlab.workflows import (
 from cicada.api.infra.gitlab.workflows import (
     run_workflow as run_gitlab_workflow,
 )
-from cicada.api.infra.notifications.send_email import send_email
+from cicada.api.infra.notifications.send_email import (
+    send_failure_notifications,
+)
 from cicada.application.exceptions import CicadaException
-from cicada.application.notifications.send_notification import SendNotification
 from cicada.application.session.rerun_session import RerunSession
 from cicada.application.session.stop_session import StopSession
 from cicada.application.session.stream_session import StreamSession
 from cicada.common.json import asjson
-from cicada.domain.notification import Notification
 from cicada.domain.session import Session, SessionId, SessionStatus
 
 router = APIRouter()
@@ -91,14 +91,8 @@ async def rerun_session(
     async def run(old_session: Session) -> None:
         session = await cmd.handle(old_session)
 
-        if not (user and session and session.status.is_failure()):
-            return
-
-        email_cmd = SendNotification(send_email)
-
-        await email_cmd.handle(
-            Notification(type="email", user=user, session=session)
-        )
+        if session:
+            await send_failure_notifications(user, [session])
 
     TASK_QUEUE.add(run(session))
 

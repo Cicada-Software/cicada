@@ -4,7 +4,10 @@ from datetime import timedelta
 from email.message import EmailMessage
 
 from cicada.api.settings import DNSSettings, SMTPSettings
-from cicada.domain.notification import NotificationEmail
+from cicada.application.notifications.send_notification import SendNotification
+from cicada.domain.notification import Notification, NotificationEmail
+from cicada.domain.session import Session
+from cicada.domain.user import User
 
 logger = logging.getLogger("cicada")
 
@@ -72,3 +75,25 @@ def format_elapsed_time(delta: timedelta) -> str:
     append_unit("second", seconds)
 
     return ", ".join(parts)
+
+
+# TODO: move to its own application service
+async def send_failure_notifications(
+    user: User | None, sessions: list[Session]
+) -> None:
+    """
+    If any of the sessions failed, send the user a notification.
+    """
+
+    if not user:
+        return
+
+    for session in sessions:
+        if not session.status.is_failure():
+            return
+
+        email_cmd = SendNotification(send_email)
+
+        await email_cmd.handle(
+            Notification(type="email", user=user, session=session)
+        )

@@ -112,7 +112,7 @@ async def run_workflow(
     session: Session,
     terminal: TerminalSession,
     cloned_repo: Path,
-    _: FileNode,  # TODO: remove this
+    file: FileNode,
     di: DiContainer | None = None,
 ) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
@@ -153,7 +153,7 @@ async def run_workflow(
                     cloned_repo=cloned_repo,
                 )
 
-            exit_code = await ctx.run()
+            exit_code = await ctx.run(file)
 
             session.finish(exit_code_to_status_code(exit_code))
 

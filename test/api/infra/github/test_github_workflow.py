@@ -80,7 +80,7 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
         get_repo_access_token.return_value = "access_token"
         wrap_in_github_check_run.return_value = nullcontext()
 
-        async def f() -> None:
+        async def f(_: FileNode) -> None:
             raise RuntimeError
 
         get_execution_type.return_value.return_value.run.side_effect = f

@@ -68,9 +68,6 @@ async def run_workflow(
     cloned_repo: Path,
     filenode: FileNode,
 ) -> None:
-    # TODO: remove
-    assert filenode
-
     settings = GitlabSettings()
 
     wrapper: AbstractAsyncContextManager[None]
@@ -95,7 +92,7 @@ async def run_workflow(
                 cloned_repo=cloned_repo,
             )
 
-            exit_code = await ctx.run()
+            exit_code = await ctx.run(filenode)
 
             session.finish(exit_code_to_status_code(exit_code))
 

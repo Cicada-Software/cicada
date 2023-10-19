@@ -85,4 +85,11 @@ def folder_get_runnable_ci_files(
 
             files_or_errors.append(err)
 
-    return files_or_errors
+    return sorted(files_or_errors, key=extract_filename)
+
+
+def extract_filename(item: FileNode | AstError) -> str:
+    if isinstance(item, FileNode):
+        return str(item.file or "")
+
+    return item.filename or ""

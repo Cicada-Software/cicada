@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 
-from cicada.api.infra.repo_get_ci_files import folder_get_runnable_ci_files
 from cicada.ast.generate import AstError, generate_ast_tree
-from cicada.ast.nodes import RunType
+from cicada.ast.nodes import FileNode, RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
@@ -88,7 +87,7 @@ class ExecutionContext:
     terminal: TerminalSession
     cloned_repo: Path
 
-    async def run(self) -> int:
+    async def run(self, file: FileNode) -> int:
         raise NotImplementedError
 
 
@@ -108,7 +107,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
     program: str
     executor_name: str
 
-    async def run(self) -> int:
+    async def run(self, file: FileNode) -> int:
         if not await self.is_program_installed():
             msg = f"Cannot use `{self.executor_name}` executor because {self.program} is not installed!"  # noqa: E501
 
@@ -119,20 +118,9 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
             return 1
 
-        files = folder_get_runnable_ci_files(
-            self.cloned_repo, self.session.trigger
-        )
+        assert file.file
 
-        for file in files:
-            if isinstance(file, AstError):
-                # TODO: handle this
-                continue
-
-            assert file.file
-
-            return await asyncio.to_thread(partial(self.run_file, file.file))
-
-        assert False, "Expected at least one workflow"
+        return await asyncio.to_thread(partial(self.run_file, file.file))
 
     def run_file(self, file: Path) -> int:
         try:
@@ -218,52 +206,42 @@ class SelfHostedExecutionContext(ExecutionContext):
     session_repo: ISessionRepo
     runner_repo: IRunnerRepo
 
-    async def run(self) -> int:
-        files = folder_get_runnable_ci_files(
-            self.cloned_repo, self.session.trigger
-        )
+    async def run(self, file: FileNode) -> int:
+        assert file.file
 
         session_status: SessionStatus | None = None
 
-        for file in files:
-            if isinstance(file, AstError):
-                continue
+        try:
+            self.runner_repo.queue_session(self.session, file, self.url)
 
-            assert file.file
+            while True:
+                # TODO: make specialized function to just get status
+                session = self.session_repo.get_session_by_session_id(
+                    self.session.id,
+                    run=self.session.run,
+                )
+                assert session
 
-            try:
-                self.runner_repo.queue_session(self.session, file, self.url)
+                session_status = session.status
 
-                while True:
-                    # TODO: make specialized function to just get status
-                    session = self.session_repo.get_session_by_session_id(
-                        self.session.id,
-                        run=self.session.run,
-                    )
-                    assert session
+                if session_status.is_finished():
+                    break
 
-                    session_status = session.status
+                await asyncio.sleep(1)
 
-                    if session_status.is_finished():
-                        break
+        except AstError:
+            # Shouldn't happen, gather phase should pass without issues
 
-                    await asyncio.sleep(1)
+            logging.getLogger("cicada").exception("")
 
-            except AstError:
-                # Shouldn't happen, gather phase should pass without issues
+            return 1
 
-                logging.getLogger("cicada").exception("")
+        finally:
+            self.terminal.finish()
 
-                return 1
-
-            finally:
-                self.terminal.finish()
-
-            # TODO: don't turn session status into int since it just gets
-            # converted back to a session status anyways
-            return 1 if not session or session_status.is_failure() else 0
-
-        assert False, "Expected at least one workflow"
+        # TODO: don't turn session status into int since it just gets
+        # converted back to a session status anyways
+        return 1 if not session or session_status.is_failure() else 0
 
 
 EXECUTOR_MAPPING = {

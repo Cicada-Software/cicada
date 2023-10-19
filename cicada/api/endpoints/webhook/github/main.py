@@ -21,13 +21,13 @@ from cicada.api.infra.github.workflows import (
     gather_issue_workflows,
     run_workflow,
 )
-from cicada.api.infra.notifications.send_email import send_email
+from cicada.api.infra.notifications.send_email import (
+    send_failure_notifications,
+)
 from cicada.api.settings import GitHubSettings, GitProviderSettings
-from cicada.application.notifications.send_notification import SendNotification
 from cicada.application.session.make_session_from_trigger import (
     MakeSessionFromTrigger,
 )
-from cicada.domain.notification import Notification
 from cicada.domain.user import User
 
 from .converters import github_event_to_commit, github_event_to_issue
@@ -60,16 +60,9 @@ def handle_github_push_event(  # type: ignore[misc]
     commit = github_event_to_commit(event)
 
     async def run() -> None:
-        session = await cmd.handle(commit)
+        sessions = await cmd.handle(commit)
 
-        if not (user and session and session.status.is_failure()):
-            return
-
-        email_cmd = SendNotification(send_email)
-
-        await email_cmd.handle(
-            Notification(type="email", user=user, session=session)
-        )
+        await send_failure_notifications(user, sessions)
 
     TASK_QUEUE.add(run())
 
@@ -94,15 +87,9 @@ def handle_github_issue_event(  # type: ignore[misc]
     issue = github_event_to_issue(event)
 
     async def run() -> None:
-        session = await cmd.handle(issue)
+        sessions = await cmd.handle(issue)
 
-        if not user or not session or session.status.is_failure():
-            return
-
-        email_cmd = SendNotification(send_email)
-        await email_cmd.handle(
-            Notification(type="email", user=user, session=session)
-        )
+        await send_failure_notifications(user, sessions)
 
     TASK_QUEUE.add(run())
 

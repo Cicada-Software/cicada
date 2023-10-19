@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
@@ -23,6 +25,7 @@ from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import eval_title
 
 
+# TODO: rename to some thing more fitting
 class MakeSessionFromTrigger:
     """
     This is probably one of the most important application services, since this
@@ -44,13 +47,6 @@ class MakeSessionFromTrigger:
     for setting the stop time and status (an AssertionError is thrown if these
     are not set). The TerminalSession argument is for streaming the stdout
     of the program back to Cicada so that it can be displayed to the user.
-
-    One of the current limitations to this service is that it is not capable
-    of running multiple workflows from one trigger. Basically, if there are 2
-    files which contain the same trigger, say `git.push`, then an exception is
-    thrown. The reason being that there is no way in the UI to show multiple
-    workflows for a single session, or link a particular session to the
-    workflow file(s) that it is currently running.
     """
 
     def __init__(
@@ -73,42 +69,31 @@ class MakeSessionFromTrigger:
         self.installation_repo = installation_repo
         self.secret_repo = secret_repo
 
-    async def handle(self, trigger: Trigger) -> Session | None:
+    async def handle(self, trigger: Trigger) -> list[Session]:
+        self.trigger = trigger
+
         with TemporaryDirectory() as cloned_repo:
-            return await self._handle(Path(cloned_repo), trigger)
+            self.cloned_repo = Path(cloned_repo)
 
-    async def _handle(
-        self, cloned_repo: Path, trigger: Trigger
-    ) -> Session | None:
-        trigger.env = self.get_env_vars(trigger)
-        trigger.secret = self.get_secrets(trigger)
+            self._inject_env_vars_and_secrets_into_trigger()
 
-        files = await self.gather_workflows(trigger, cloned_repo)
+            workflows = await self.gather_workflows(
+                self.trigger, self.cloned_repo
+            )
 
-        if not files:
-            return None
+            # TODO: limit max concurrent workflows
+            return await asyncio.gather(
+                *[self.run_workflow(x) for x in workflows]
+            )
 
-        # TODO: allow for multiple workflows in one session
-        assert len(files) == 1
-
-        session_id = uuid4()
-
-        filenode = files[0]
-
+    async def run_workflow(self, filenode: FileNode) -> Session:
         title = eval_title(filenode.title)
 
-        match filenode:
-            case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
-                status = SessionStatus.BOOTING
-                run_on_self_hosted = True
-
-            case _:
-                status = SessionStatus.PENDING
-                run_on_self_hosted = False
+        status, run_on_self_hosted = self._get_boot_info(filenode)
 
         session = Session(
-            id=session_id,
-            trigger=trigger,
+            id=uuid4(),
+            trigger=self.trigger,
             status=status,
             run_on_self_hosted=run_on_self_hosted,
             # TODO: move to workflow object
@@ -116,28 +101,27 @@ class MakeSessionFromTrigger:
         )
         self.session_repo.create(session)
 
-        assert trigger.sha
+        assert self.trigger.sha
         assert filenode.file
 
         workflow = Workflow(
             id=WorkflowId(uuid4()),
-            filename=filenode.file.relative_to(cloned_repo),
-            sha=trigger.sha,
+            filename=filenode.file.relative_to(self.cloned_repo),
+            sha=self.trigger.sha,
             status=status,
             run_on_self_hosted=run_on_self_hosted,
             title=title,
         )
         self.session_repo.create_workflow(workflow, session)
 
-        def callback(data: bytes) -> None:  # pragma: no cover
-            self.terminal_session_repo.append_to_workflow(workflow.id, data)
-
         terminal = self.terminal_session_repo.create(workflow.id)
-        terminal.callback = callback
+        terminal.callback = partial(
+            self.terminal_session_repo.append_to_workflow, workflow.id
+        )
 
         try:
             await self.workflow_runner(
-                session, terminal, cloned_repo, filenode
+                session, terminal, self.cloned_repo, filenode
             )
 
         except Exception:
@@ -156,19 +140,32 @@ class MakeSessionFromTrigger:
         workflow.finished_at = session.finished_at
         self.session_repo.update_workflow(workflow)
 
-        return self.session_repo.get_session_by_session_id(
-            session.id,
-            session.run,
-        )
+        return session
 
-    def get_env_vars(self, trigger: Trigger) -> dict[str, str]:
+    def _inject_env_vars_and_secrets_into_trigger(self) -> None:
+        self.trigger.env = self._get_env_vars()
+        self.trigger.secret = self._get_secrets()
+
+    def _get_env_vars(self) -> dict[str, str]:
         return get_env_vars_for_repo(
-            self.env_repo, self.repository_repo, trigger
+            self.env_repo, self.repository_repo, self.trigger
         )
 
-    def get_secrets(self, trigger: Trigger) -> dict[str, str]:
+    def _get_secrets(self) -> dict[str, str]:
         cmd = GatherSecretsFromTrigger(
             self.repository_repo, self.installation_repo, self.secret_repo
         )
 
-        return cmd.handle(trigger)
+        return cmd.handle(self.trigger)
+
+    def _get_boot_info(self, filenode: FileNode) -> tuple[SessionStatus, bool]:
+        match filenode:
+            case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
+                status = SessionStatus.BOOTING
+                run_on_self_hosted = True
+
+            case _:
+                status = SessionStatus.PENDING
+                run_on_self_hosted = False
+
+        return status, run_on_self_hosted
