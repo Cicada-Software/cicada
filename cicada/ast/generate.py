@@ -16,6 +16,7 @@ from cicada.ast.types import (
     string_to_type,
 )
 from cicada.parse.token import (
+    AtToken,
     BooleanLiteralToken,
     CacheToken,
     CloseParenToken,
@@ -58,6 +59,7 @@ from .nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
@@ -410,7 +412,7 @@ def generate_node(state: ParserState) -> Node:
     if isinstance(token, TitleToken):
         return generate_title_stmt(state)
 
-    if isinstance(token, FunctionToken):
+    if isinstance(token, AtToken | FunctionToken):
         return generate_function_def(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
@@ -990,7 +992,60 @@ def generate_title_stmt(state: ParserState) -> TitleStatement:
         raise AstError(error_msg, start) from ex
 
 
+def generate_function_annotations(
+    state: ParserState,
+) -> list[FunctionAnnotation]:
+    at = state.current_token
+
+    if not isinstance(at, AtToken):
+        return []
+
+    # skip @ token
+    token = next(state, None)
+
+    if not token:
+        raise AstError.expected_token(last=at)
+
+    expr = generate_expr(state)
+
+    if not isinstance(expr, IdentifierExpression):
+        raise AstError("Expected identifier", expr)
+
+    last = state.current_token
+
+    # skip over identifier
+    token = next(state, None)
+
+    if not token:
+        raise AstError("Expected function after annotation", last)
+
+    if not isinstance(token, WhiteSpaceToken | NewlineToken):
+        raise AstError("Expected whitespace", last)
+
+    last = state.current_token
+
+    # skip whitespace
+    token = next(state, None)
+    if not token:
+        raise AstError("Expected function after annotation", last)
+
+    if isinstance(token, AtToken):
+        raise AstError(
+            "Multiple function annotations are not supported yet",
+            last,
+        )
+
+    return [
+        FunctionAnnotation(
+            info=replace(expr.info, column_start=at.column_start),
+            expr=expr,
+        )
+    ]
+
+
 def generate_function_def(state: ParserState) -> FunctionDefStatement:
+    annotations = generate_function_annotations(state)
+
     start = state.current_token
 
     name = state.next_non_whitespace_or_eof()
@@ -1052,6 +1107,7 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
         type=FunctionType(arg_types, rtype=rtype or UnitType()),
         body=block,
         is_constexpr=False,
+        annotations=annotations,
     )
 
 

@@ -51,6 +51,7 @@ class EqualToken(Token): pass
 class DotToken(Token): pass
 class CommaToken(Token): pass
 class WhiteSpaceToken(Token): pass
+class AtToken(Token): pass
 
 
 class FloatLiteralToken(Token):

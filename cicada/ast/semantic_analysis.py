@@ -14,6 +14,7 @@ from cicada.ast.nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     FunctionValue,
@@ -137,6 +138,12 @@ BUILT_IN_SYMBOLS: dict[str, Symbol] = {
         for alias in SHELL_ALIASES
     },
 }
+
+# Function annotations are not first-class objects, meaning they cannot be used
+# outside of annotations. This also means you can declare a symbol with the
+# same name as an annotation and the name will still be reserved for the
+# annotation. These semantics will be merged in the future.
+BUILT_IN_ANNOTATIONS = ("workflow",)
 
 
 MEMBER_FUNCTION_TYPES: dict[str, tuple[Type, Symbol]] = {
@@ -683,6 +690,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             raise AstError(
                 f"Expected type `{func_rtype}`, got type `{body_rtype}` instead",  # noqa: E501
                 node.body.exprs[-1],
+            )
+
+    def visit_func_annotation(self, node: FunctionAnnotation) -> None:
+        if node.expr.name not in BUILT_IN_ANNOTATIONS:
+            raise AstError(
+                f"Unknown annotation `@{node.expr.name}`",
+                node.expr,
             )
 
     def check_for_duplicate_arg_names(

@@ -38,6 +38,7 @@ TOKEN_SEPARATORS = {
     ":": ColonToken,
     "=": EqualToken,
     ",": CommaToken,
+    "@": AtToken,
 }
 
 KEYWORD_NAMES = {

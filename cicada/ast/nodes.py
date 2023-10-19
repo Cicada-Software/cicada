@@ -701,6 +701,34 @@ class TitleStatement(Statement):
 
 
 @dataclass
+class FunctionAnnotation(Node):
+    """
+    A function annotations are similar to function annotations in Python or
+    Kotlin. They are identifiers prefixed by `@` preceding a function, and
+    can be stacked (though not supported currently):
+
+    @do
+    @something
+    fn f(x, y):
+        x + y
+
+    Annotations are not first-class like they are in Python/Kotlin. Currently
+    they are used to give certain meaning/hints to the compiler, though this
+    will change in the future.
+    """
+
+    expr: IdentifierExpression
+
+    __match_args__ = ("expr",)
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_func_annotation(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.expr.name}) # {self.info}"
+
+
+@dataclass
 class FunctionDefStatement(Expression):
     name: str
 
@@ -708,6 +736,8 @@ class FunctionDefStatement(Expression):
 
     type: FunctionType
     body: BlockExpression
+
+    annotations: list[FunctionAnnotation] = field(default_factory=list)
 
     __match_args__ = ("name", "arg_names", "type", "body")
 
@@ -806,6 +836,9 @@ class NodeVisitor(Generic[T]):
     def visit_func_def_stmt(self, node: FunctionDefStatement) -> T:
         raise NotImplementedError
 
+    def visit_func_annotation(self, node: FunctionAnnotation) -> T:
+        raise NotImplementedError
+
 
 class TraversalVisitor(NodeVisitor[None]):
     def visit_file_node(self, node: FileNode) -> None:
@@ -880,3 +913,9 @@ class TraversalVisitor(NodeVisitor[None]):
 
     def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
         node.body.accept(self)
+
+        for annotation in node.annotations:
+            annotation.accept(self)
+
+    def visit_func_annotation(self, node: FunctionAnnotation) -> None:
+        node.expr.accept(self)

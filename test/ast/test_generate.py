@@ -10,6 +10,7 @@ from cicada.ast.nodes import (
     BooleanExpression,
     CacheStatement,
     FileNode,
+    FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
@@ -1362,3 +1363,43 @@ def test_invalid_function_defs_are_caught() -> None:
     for test, expected in tests.items():
         with pytest.raises(AstError, match=re.escape(expected)):
             generate_ast_tree(tokenize(test))
+
+
+def test_invalid_function_annotations_are_caught() -> None:
+    tests = {
+        "@": "Expected token after `@`",
+        "@1": "Expected identifier",
+        "@x": "Expected function after annotation",
+        "@x ": "Expected function after annotation",
+        "@x\n": "Expected function after annotation",
+        "@x@y": "Expected whitespace",
+        "@x fn": "Expected token after `fn`",
+        "@x\nfn": "Expected token after `fn`",
+        "@x @y": "Multiple function annotations are not supported yet",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
+
+
+def test_parse_function_def_with_annotations() -> None:
+    code = """\
+@x
+fn f():
+  1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    assert tree
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            name="f",
+            arg_names=[],
+            annotations=[FunctionAnnotation(IdentifierExpression("x"))],
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

@@ -10,6 +10,7 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanExpression,
     Expression,
+    FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
@@ -852,6 +853,37 @@ let b = cmd.stdout
             expr=BlockExpression(
                 exprs=[FunctionExpression(type=CommandType())]
             ),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+def test_only_certain_annotations_are_allowed() -> None:
+    code = """\
+@x
+fn f():
+  1
+"""
+
+    expected = "Unknown annotation `@x`"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        parse_and_analyze(code)
+
+
+def test_valid_annotation_is_allowed() -> None:
+    code = """\
+@workflow
+fn f():
+  1
+"""
+
+    tree = parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case FunctionDefStatement(
+            annotations=[FunctionAnnotation(IdentifierExpression("workflow"))]
         ):
             return
 
