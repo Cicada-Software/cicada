@@ -37,6 +37,7 @@ from cicada.parse.token import (
 from .types import (
     BooleanType,
     FunctionType,
+    ListType,
     NumericType,
     StringType,
     Type,
@@ -404,6 +405,55 @@ class ParenthesisExpression(Expression):
         expr = indent(str(self.expr), "  ")
 
         return f"{type(self).__name__}: # {self.info}\n{expr}"
+
+
+# TODO: make this generic
+@dataclass
+class ListValue(Value):
+    items: list[Value]
+    type: ListType
+
+
+@dataclass
+class ListExpression(Expression):
+    items: list[Expression]
+
+    __match_args__ = ("items",)
+
+    @classmethod
+    def from_items(
+        cls,
+        items: list[Expression],
+        open: Token,
+        close: Token,
+    ) -> Self:
+        return cls(
+            # TODO: move this into LineInfo class method
+            info=LineInfo(
+                line=open.line,
+                column_start=open.column_start,
+                line_end=close.line,
+                column_end=close.column_end,
+            ),
+            items=items,
+            type=UnknownType(),
+            is_constexpr=False,
+        )
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_list_expr(self)
+
+    def __str__(self) -> str:
+        if self.items:
+            items = "\n".join(
+                f"{i}={item}" for i, item in enumerate(self.items)
+            )
+            items = indent(items, "  ")
+
+        else:
+            items = "  <empty>"
+
+        return f"{type(self).__name__}: # {self.info}\n{items}"
 
 
 @dataclass
@@ -803,6 +853,9 @@ class NodeVisitor(Generic[T]):
     def visit_paren_expr(self, node: ParenthesisExpression) -> T:
         raise NotImplementedError
 
+    def visit_list_expr(self, node: ListExpression) -> T:
+        raise NotImplementedError
+
     def visit_stmt(self, node: Statement) -> T:
         raise NotImplementedError
 
@@ -871,6 +924,10 @@ class TraversalVisitor(NodeVisitor[None]):
 
     def visit_paren_expr(self, node: ParenthesisExpression) -> None:
         node.expr.accept(self)
+
+    def visit_list_expr(self, node: ListExpression) -> None:
+        for item in node.items:
+            item.accept(self)
 
     def visit_stmt(self, node: Statement) -> None:
         pass  # pragma: no cover

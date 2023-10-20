@@ -3,6 +3,7 @@ import pytest
 from cicada.ast.types import (
     BooleanType,
     FunctionType,
+    ListType,
     NumericType,
     StringType,
     UnionType,
@@ -59,3 +60,12 @@ def test_stringify_function_type() -> None:
     expected = "(string) -> ()"
 
     assert str(ty) == expected
+
+
+def test_create_list_type() -> None:
+    ty = ListType(NumericType())
+
+    assert ty.inner_type == NumericType()
+    assert ty == ListType(NumericType())
+
+    assert str(ty) == "[number]"

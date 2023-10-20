@@ -183,6 +183,29 @@ class FunctionType(Type):
         return f"({args}) -> {self.rtype}"
 
 
+class ListType(Type):
+    """
+    List types are similar to Python list types in that they can only contain
+    one type. This type is allowed to be unknown, for example, when creating an
+    empty list without a type annotation.
+    """
+
+    inner_type: Type
+
+    __match_args__ = ("inner_type",)
+
+    def __init__(self, inner_type: Type) -> None:
+        self.inner_type = inner_type
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, ListType) and other.inner_type == self.inner_type
+        )
+
+    def __str__(self) -> str:
+        return f"[{self.inner_type}]"
+
+
 TYPE_NAMES = {
     "string": StringType,
     "number": NumericType,

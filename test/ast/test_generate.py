@@ -1,4 +1,5 @@
 import re
+from typing import cast
 
 import pytest
 
@@ -17,6 +18,7 @@ from cicada.ast.nodes import (
     IfExpression,
     LetExpression,
     LineInfo,
+    ListExpression,
     MemberExpression,
     NumericExpression,
     OnStatement,
@@ -1400,6 +1402,53 @@ fn f():
             arg_names=[],
             annotations=[FunctionAnnotation(IdentifierExpression("x"))],
         ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_invalid_list_exprs_are_caught() -> None:
+    tests = {
+        "[": "Expected token",
+        "[,": "Leading commas are not allowed",
+        "[1": "Expected token after `1`",
+        "[1,": "Expected expression after `,`",
+        "[1, 2": "Expected token after `2`",
+        "[1,,": "Expected an expression, got `,`",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
+
+
+def test_parse_valid_list_exprs() -> None:
+    tests = {
+        "[]": [],
+        "[1]": [1],
+        "[1,]": [1],
+        "[1,2]": [1, 2],
+    }
+
+    for test, expected in tests.items():
+        tree = generate_ast_tree(tokenize(test))
+        expr = tree.exprs[0]
+
+        assert isinstance(expr, ListExpression)
+        assert all(isinstance(item, NumericExpression) for item in expr.items)
+
+        nums = [cast(NumericExpression, item).value for item in expr.items]
+
+        assert nums == expected
+
+
+def test_parse_nested_list() -> None:
+    code = "[[1]]"
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case ListExpression([ListExpression([NumericExpression(1)])]):
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

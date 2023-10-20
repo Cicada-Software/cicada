@@ -21,6 +21,7 @@ from cicada.ast.nodes import (
     IdentifierExpression,
     IfExpression,
     LetExpression,
+    ListExpression,
     MemberExpression,
     NumericValue,
     OnStatement,
@@ -40,6 +41,7 @@ from cicada.ast.types import (
     BooleanType,
     CommandType,
     FunctionType,
+    ListType,
     NumericType,
     RecordType,
     StringType,
@@ -267,6 +269,26 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         super().visit_paren_expr(node)
 
         node.type = node.expr.type
+
+    def visit_list_expr(self, node: ListExpression) -> None:
+        super().visit_list_expr(node)
+
+        inner_type: Type = UnknownType()
+
+        if node.items:
+            # TODO: gather types into a union type instead
+
+            inner_type = node.items[0].type
+
+            for item in node.items:
+                if item.type != inner_type:
+                    raise AstError(
+                        f"Expected type `{inner_type}`, got type `{item.type}` instead",  # noqa: E501
+                        item,
+                    )
+
+        node.type = ListType(inner_type)
+        node.is_constexpr = all(item.is_constexpr for item in node.items)
 
     def visit_unary_expr(self, node: UnaryExpression) -> None:
         super().visit_unary_expr(node)

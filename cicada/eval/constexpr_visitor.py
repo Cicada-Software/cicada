@@ -19,6 +19,8 @@ from cicada.ast.nodes import (
     IdentifierExpression,
     IfExpression,
     LetExpression,
+    ListExpression,
+    ListValue,
     MemberExpression,
     NodeVisitor,
     NumericExpression,
@@ -37,6 +39,7 @@ from cicada.ast.nodes import (
     UnreachableValue,
     Value,
 )
+from cicada.ast.types import ListType
 from cicada.domain.triggers import Trigger
 
 
@@ -114,6 +117,11 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
     def visit_paren_expr(self, node: ParenthesisExpression) -> Value:
         return node.expr.accept(self)
+
+    def visit_list_expr(self, node: ListExpression) -> Value:
+        items = [item.accept(self) for item in node.items]
+
+        return ListValue(items, cast(ListType, node.type))
 
     def visit_num_expr(self, node: NumericExpression) -> Value:
         return NumericValue(node.value)

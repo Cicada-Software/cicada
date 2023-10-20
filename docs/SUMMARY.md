@@ -11,6 +11,7 @@
   - [Expressions](./ci-lang/exprs.md)
     - [The `let` Expression](./ci-lang/let-expr.md)
     - [The `if` Expression](./ci-lang/if-expr.md)
+    - [List Expressions](./ci-lang/lists.md)
     - [The Block Expression](./ci-lang/block-expr.md)
     - [Built-in Functions](./ci-lang/built-in-functions.md)
   - [Secrets](./ci-lang/secrets.md)

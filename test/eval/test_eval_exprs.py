@@ -4,10 +4,12 @@ from cicada.ast.common import json_to_record
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import (
     BooleanValue,
+    ListValue,
     NumericValue,
     RecordValue,
     StringValue,
 )
+from cicada.ast.types import ListType, NumericType
 from cicada.eval.main import EvalVisitor
 from test.eval.test_eval_statements import make_dummy_commit_trigger
 
@@ -318,3 +320,30 @@ def test_get_secret() -> None:
 
     assert isinstance(symbol, StringValue)
     assert symbol.value == "abc123"
+
+
+def test_list_expr_evaluates_items_in_order() -> None:
+    code = """\
+let mut i = 0
+
+fn f() -> number:
+  i = (i + 1)
+
+let l = [f(), f(), f()]
+"""
+
+    tree = parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    tree.accept(visitor)
+
+    symbol = visitor.symbols["l"]
+
+    assert isinstance(symbol, ListValue)
+    assert symbol.type == ListType(NumericType())
+
+    assert symbol.items == [
+        NumericValue(Decimal(1)),
+        NumericValue(Decimal(2)),
+        NumericValue(Decimal(3)),
+    ]

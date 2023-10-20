@@ -3,7 +3,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import replace
 from enum import Enum
-from itertools import groupby
+from itertools import count, groupby
 from typing import NoReturn, Self, cast
 
 from cicada.ast.common import pluralize
@@ -19,6 +19,7 @@ from cicada.parse.token import (
     AtToken,
     BooleanLiteralToken,
     CacheToken,
+    CloseBracketToken,
     CloseParenToken,
     ColonToken,
     CommaToken,
@@ -39,6 +40,7 @@ from cicada.parse.token import (
     NewlineToken,
     NotToken,
     OnToken,
+    OpenBracketToken,
     OpenParenToken,
     RunOnToken,
     SlashToken,
@@ -66,6 +68,7 @@ from .nodes import (
     IfExpression,
     LetExpression,
     LineInfo,
+    ListExpression,
     MemberExpression,
     Node,
     NumericExpression,
@@ -723,6 +726,41 @@ def generate_paren_expr(state: ParserState) -> ParenthesisExpression:
     return ParenthesisExpression.from_expr(expr, token)
 
 
+def generate_list_expr(state: ParserState) -> ListExpression:
+    start = state.current_token
+
+    if not state.next_non_whitespace_or_eof():
+        raise AstError.expected_token(last=start)
+
+    items: list[Expression] = []
+
+    for i in count():
+        if isinstance(state.current_token, CommaToken):
+            if i == 0:
+                # TODO: non-fatal, should be a warning instead
+                raise AstError(
+                    "Leading commas are not allowed", state.current_token
+                )
+
+            token: Token = state.current_token
+
+            if not state.next_non_whitespace_or_eof():
+                raise AstError("Expected expression after `,`", token)
+
+        if isinstance(state.current_token, CloseBracketToken):
+            break
+
+        items.append(generate_expr(state))
+
+        token = state.current_token
+
+        # TODO: should be "expected , or ]"
+        if not state.next_non_whitespace_or_eof():
+            raise AstError.expected_token(last=token)
+
+    return ListExpression.from_items(items, start, state.current_token)
+
+
 def regroup_binary_expr(expr: BinaryExpression) -> None:
     match expr:
         case BinaryExpression(
@@ -836,6 +874,9 @@ def generate_expr(state: ParserState) -> Expression:
 
     elif isinstance(token, OpenParenToken):
         expr = generate_paren_expr(state)
+
+    elif isinstance(token, OpenBracketToken):
+        expr = generate_list_expr(state)
 
     elif isinstance(token, DanglingToken):
         raise AstError.unexpected_token(token)

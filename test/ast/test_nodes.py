@@ -70,6 +70,9 @@ title hello world
 
 fn f(x):
   echo hi
+
+let l = [1]
+let l = []
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -133,7 +136,15 @@ FileNode:
       0=FunctionExpression(shell=True): # 28:3..28:6
         callee=IdentifierExpression('shell') # 28:3..28:6
         0=StringExpression('echo') # 28:3..28:6
-        1=StringExpression('hi') # 28:8..28:9\
+        1=StringExpression('hi') # 28:8..28:9
+  LetExpression(): # 30:1..30:3
+    name=l
+    expr=ListExpression: # 30:9..30:11
+      0=NumericExpression(1) # 30:10..30:10
+  LetExpression(): # 31:1..31:3
+    name=l
+    expr=ListExpression: # 31:9..31:10
+      <empty>\
 """
 
     assert str(tree) == expected

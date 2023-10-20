@@ -888,3 +888,21 @@ fn f():
             return
 
     pytest.fail(f"tree does not match: {tree}")
+
+
+def test_lists_cannot_contain_mixed_types() -> None:
+    code = "let l = [1, true]"
+
+    expected = "Expected type `number`, got type `bool`"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        parse_and_analyze(code)
+
+
+def test_arrays_can_be_reassigned() -> None:
+    code = """\
+let mut l = [1]
+l = [2]
+"""
+
+    parse_and_analyze(code)
