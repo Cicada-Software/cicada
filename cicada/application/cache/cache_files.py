@@ -44,23 +44,19 @@ class CacheFilesForSession:
 
                     if not file.is_relative_to(dir):
                         raise InvalidCacheObject(
-                            f"File `{file}` must be relative to current directory"  # noqa: E501
+                            f"File `{file}` must be relative to current directory"
                         )
 
                     if not file.exists():
-                        raise InvalidCacheObject(
-                            f"File `{file}` does not exist"
-                        )
+                        raise InvalidCacheObject(f"File `{file}` does not exist")
 
                     size += file.stat().st_size
 
                     if size > self.MAX_CACHE_SIZE_IN_BYTES:
-                        size_in_mb = int(
-                            self.MAX_CACHE_SIZE_IN_BYTES / 1_000 * 1_000
-                        )
+                        size_in_mb = int(self.MAX_CACHE_SIZE_IN_BYTES / 1_000 * 1_000)
 
                         raise InvalidCacheObject(
-                            f"Cache is too big (must be less than {size_in_mb}MB)"  # noqa: E501
+                            f"Cache is too big (must be less than {size_in_mb}MB)"
                         )
 
                     tf.add(file, arcname=str(file.relative_to(dir)))

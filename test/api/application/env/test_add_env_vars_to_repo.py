@@ -2,9 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from cicada.application.env.add_env_vars_to_repo import (
-    AddEnvironmentVariablesToRepository,
-)
+from cicada.application.env.add_env_vars_to_repo import AddEnvironmentVariablesToRepository
 from cicada.application.exceptions import NotFound, Unauthorized
 from cicada.domain.env_var import EnvironmentVariable
 from cicada.domain.repository import Repository

@@ -59,9 +59,7 @@ def convert_push_event(push: dict[str, Any] | str) -> str:  # type: ignore
 
         for branch in branches:
             if not is_supported_glob(branch):
-                raise AssertionError(
-                    f"Branch glob `{branch}` not supported yet"
-                )
+                raise AssertionError(f"Branch glob `{branch}` not supported yet")
 
             if branch.startswith("**"):
                 conditions.append(f'event.branch.ends_with("{branch[2:]}")')
@@ -136,10 +134,7 @@ def convert_steps(steps: list[Any]) -> str:  # type: ignore
             for line in cmd.split("\n"):
                 exprs = [convert_github_expr(x) for x in shlex.split(line)]
 
-                parts = [
-                    expr if is_safe else shlex.quote(expr)
-                    for expr, is_safe in exprs
-                ]
+                parts = [expr if is_safe else shlex.quote(expr) for expr, is_safe in exprs]
 
                 cmd = " ".join(parts)
 
@@ -208,9 +203,7 @@ def convert_on(on: dict[str, Any] | list[Any]) -> str:  # type: ignore
             events += convert_push_event("push")
 
     elif "issues" in on:
-        assert isinstance(
-            on, dict
-        ), "Only opened and closed issues are supported"
+        assert isinstance(on, dict), "Only opened and closed issues are supported"
 
         events += convert_issues_event(on.pop("issues"))
 

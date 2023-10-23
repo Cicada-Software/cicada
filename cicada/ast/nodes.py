@@ -56,12 +56,10 @@ class LineInfo:
 
     @classmethod
     def from_token(cls, token: Token) -> Self:
-        return cls(
-            token.line, token.column_start, token.line, token.column_end
-        )
+        return cls(token.line, token.column_start, token.line, token.column_end)
 
     def __str__(self) -> str:
-        return f"{self.line}:{self.column_start}..{self.line_end}:{self.column_end}"  # noqa: E501
+        return f"{self.line}:{self.column_start}..{self.line_end}:{self.column_end}"
 
 
 class Value:
@@ -156,9 +154,7 @@ class BlockExpression(Expression):
     is_tabs: bool
 
     @classmethod
-    def from_exprs(
-        cls, exprs: Sequence[Expression], whitespace: Token
-    ) -> Self:
+    def from_exprs(cls, exprs: Sequence[Expression], whitespace: Token) -> Self:
         # TODO: throw AstError
         assert exprs
 
@@ -445,9 +441,7 @@ class ListExpression(Expression):
 
     def __str__(self) -> str:
         if self.items:
-            items = "\n".join(
-                f"{i}={item}" for i, item in enumerate(self.items)
-            )
+            items = "\n".join(f"{i}={item}" for i, item in enumerate(self.items))
             items = indent(items, "  ")
 
         else:
@@ -495,9 +489,7 @@ class UnaryExpression(Expression):
     __match_args__ = ("oper", "rhs")
 
     @classmethod
-    def from_expr(
-        cls, oper: UnaryOperator, expr: Expression, token: Token
-    ) -> Self:
+    def from_expr(cls, oper: UnaryOperator, expr: Expression, token: Token) -> Self:
         return cls(
             info=LineInfo.from_token(token),
             rhs=expr,
@@ -591,11 +583,7 @@ class BinaryExpression(Expression):
         token: Token | LineInfo,
     ) -> Self:
         return cls(
-            info=(
-                LineInfo.from_token(token)
-                if isinstance(token, Token)
-                else token
-            ),
+            info=(LineInfo.from_token(token) if isinstance(token, Token) else token),
             lhs=lhs,
             oper=oper,
             rhs=rhs,
@@ -798,9 +786,7 @@ class FunctionDefStatement(Expression):
         name = f"name={self.name}"
 
         if self.arg_names:
-            args = "\n".join(
-                f"{i}={arg}" for i, arg in enumerate(self.arg_names)
-            )
+            args = "\n".join(f"{i}={arg}" for i, arg in enumerate(self.arg_names))
             args = indent(args, "  ")
 
         else:

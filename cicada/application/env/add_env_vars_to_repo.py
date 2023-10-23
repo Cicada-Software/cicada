@@ -39,9 +39,7 @@ class AddEnvironmentVariablesToRepository:
         if not user:
             raise NotFound("User not found")
 
-        repo = self.repository_repo.get_repository_by_url_and_provider(
-            repo_url, provider
-        )
+        repo = self.repository_repo.get_repository_by_url_and_provider(repo_url, provider)
 
         if not repo:
             raise NotFound(f"Repository {repo_url} not found")

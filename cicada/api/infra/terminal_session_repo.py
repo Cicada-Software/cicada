@@ -21,9 +21,7 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
 
         self.conn.commit()
 
-    def get_by_workflow_id(
-        self, workflow_id: WorkflowId
-    ) -> TerminalSession | None:
+    def get_by_workflow_id(self, workflow_id: WorkflowId) -> TerminalSession | None:
         if terminal := LIVE_TERMINAL_SESSIONS.get(workflow_id):
             return terminal
 

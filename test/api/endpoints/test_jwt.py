@@ -23,9 +23,7 @@ class TestJwtLogic(TestEndpointWrapper):
         with self.inject_dummy_env_vars() as vars:
             user = build(User, username="admin", is_admin=True)
 
-            jwt = create_jwt(
-                subject=user.username, issuer="me", data={"hello": "world"}
-            )
+            jwt = create_jwt(subject=user.username, issuer="me", data={"hello": "world"})
 
             user_repo = MagicMock()
             user_repo.get_user_by_username.return_value = user

@@ -198,9 +198,7 @@ class ListType(Type):
         self.inner_type = inner_type
 
     def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, ListType) and other.inner_type == self.inner_type
-        )
+        return isinstance(other, ListType) and other.inner_type == self.inner_type
 
     def __str__(self) -> str:
         return f"[{self.inner_type}]"

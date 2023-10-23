@@ -1,9 +1,5 @@
 from collections.abc import AsyncGenerator
-from contextlib import (
-    AbstractAsyncContextManager,
-    asynccontextmanager,
-    nullcontext,
-)
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -12,10 +8,7 @@ import gitlab
 from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.gitlab.common import gitlab_clone_url
 from cicada.api.infra.repo_get_ci_files import repo_get_ci_files
-from cicada.api.infra.run_program import (
-    exit_code_to_status_code,
-    get_execution_type,
-)
+from cicada.api.infra.run_program import exit_code_to_status_code, get_execution_type
 from cicada.api.settings import ExecutionSettings, GitlabSettings
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import FileNode

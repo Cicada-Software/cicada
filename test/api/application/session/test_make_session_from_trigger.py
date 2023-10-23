@@ -4,9 +4,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from cicada.application.session.make_session_from_trigger import (
-    MakeSessionFromTrigger,
-)
+from cicada.application.session.make_session_from_trigger import MakeSessionFromTrigger
 from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.session import Session, SessionStatus

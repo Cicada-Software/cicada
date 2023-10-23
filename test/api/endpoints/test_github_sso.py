@@ -37,9 +37,7 @@ class TestGithubSSO(TestEndpointWrapper):
             self.inject_dummy_env_vars(),
             patch("githubkit.GitHub") as github_mock,
         ):
-            github_mock.rest.users.async_get_authenticated = AsyncMock(
-                return_value=FakeUser()
-            )
+            github_mock.rest.users.async_get_authenticated = AsyncMock(return_value=FakeUser())
 
             jwt = await generate_jwt_from_github_sso(code="abc132", di=self.di)
 
@@ -52,9 +50,7 @@ class TestGithubSSO(TestEndpointWrapper):
             assert not user.password_hash
             assert not user.is_admin
 
-            got_user = self.di.user_repo().get_user_by_username(
-                "github_username"
-            )
+            got_user = self.di.user_repo().get_user_by_username("github_username")
 
             assert got_user
             assert got_user.username == "github_username"
@@ -62,9 +58,7 @@ class TestGithubSSO(TestEndpointWrapper):
 
     def test_github_sso_link_injects_proper_env_vars(self) -> None:
         with self.inject_dummy_env_vars() as vars:
-            response = self.client.get(
-                "/api/github_sso_link", follow_redirects=False
-            )
+            response = self.client.get("/api/github_sso_link", follow_redirects=False)
 
             assert response.status_code == 302
 

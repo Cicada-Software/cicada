@@ -17,9 +17,7 @@ MINIMUM_PROTOCOL_VERSION = 1
 
 
 @router.websocket("/ws/runner/connect/{runner_id}")
-async def runner(
-    websocket: WebSocket, di: Di, runner_id: UUID
-) -> None:  # pragma: no cover
+async def runner(websocket: WebSocket, di: Di, runner_id: UUID) -> None:  # pragma: no cover
     runner_repo = di.runner_repo()
     session_repo = di.session_repo()
 
@@ -84,16 +82,12 @@ async def runner(
                 session.status = SessionStatus.PENDING
                 session_repo.update(session)
 
-                workflow_id = session_repo.get_workflow_id_from_session(
-                    session
-                )
+                workflow_id = session_repo.get_workflow_id_from_session(session)
                 assert workflow_id
 
                 terminal_session_repo = di.terminal_session_repo()
 
-                terminal = terminal_session_repo.get_by_workflow_id(
-                    workflow_id
-                )
+                terminal = terminal_session_repo.get_by_workflow_id(workflow_id)
                 assert terminal
 
                 session_running = True

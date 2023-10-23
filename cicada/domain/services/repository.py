@@ -16,6 +16,4 @@ def get_env_vars_for_repo(
     if not repo:
         return {}
 
-    return {
-        env.key: env.value for env in env_repo.get_env_vars_for_repo(repo.id)
-    }
+    return {env.key: env.value for env in env_repo.get_env_vars_for_repo(repo.id)}

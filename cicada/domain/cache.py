@@ -21,14 +21,14 @@ class CacheKey:
 
         if len(key) > self.MAX_LEN:
             raise ValueError(
-                f"Cache key cannot be greater than {self.MAX_LEN} characters, got {len(key)}."  # noqa: E501
+                f"Cache key cannot be greater than {self.MAX_LEN} characters, got {len(key)}."
             )
 
         if set(key).intersection(self.BANNED_CHARS):
             banned = self.BANNED_CHARS.replace('"', r"\"")
 
             raise ValueError(
-                f'Cache key cannot contain any of the following characters: "{banned}"'  # noqa: E501
+                f'Cache key cannot contain any of the following characters: "{banned}"'
             )
 
         self._key = key

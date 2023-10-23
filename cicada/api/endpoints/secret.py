@@ -6,21 +6,11 @@ from fastapi import APIRouter
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser
 from cicada.application.exceptions import InvalidRequest, NotFound
-from cicada.application.secret.delete_installation_secret import (
-    DeleteInstallationSecret,
-)
-from cicada.application.secret.delete_repository_secret import (
-    DeleteRepositorySecret,
-)
-from cicada.application.secret.list_installation_secrets import (
-    ListInstallationSecrets,
-)
-from cicada.application.secret.list_repository_secrets import (
-    ListRepositorySecrets,
-)
-from cicada.application.secret.set_installation_secret import (
-    SetInstallationSecret,
-)
+from cicada.application.secret.delete_installation_secret import DeleteInstallationSecret
+from cicada.application.secret.delete_repository_secret import DeleteRepositorySecret
+from cicada.application.secret.list_installation_secrets import ListInstallationSecrets
+from cicada.application.secret.list_repository_secrets import ListRepositorySecrets
+from cicada.application.secret.set_installation_secret import SetInstallationSecret
 from cicada.application.secret.set_repository_secret import SetRepositorySecret
 from cicada.domain.installation import InstallationId
 from cicada.domain.secret import Secret
@@ -52,9 +42,7 @@ class DeleteSecret:
 
 
 @router.put("/api/secret")
-async def update_secret(
-    di: Di, user: CurrentUser, secret: UpdateSecret
-) -> None:
+async def update_secret(di: Di, user: CurrentUser, secret: UpdateSecret) -> None:
     if secret.scope == "r":
         # TODO: move validation to dataclass
 
@@ -83,9 +71,7 @@ async def update_secret(
         if not secret.installation_id:
             raise InvalidRequest("Expected installation id")
 
-        cmd = SetInstallationSecret(  # type: ignore
-            di.installation_repo(), di.secret_repo()
-        )
+        cmd = SetInstallationSecret(di.installation_repo(), di.secret_repo())  # type: ignore
 
         cmd.handle(
             user,
@@ -157,8 +143,6 @@ async def delete_secret(
         if not secret.installation_id:
             raise InvalidRequest("installation id must be set")
 
-        cmd = DeleteInstallationSecret(  # type: ignore
-            di.installation_repo(), di.secret_repo()
-        )
+        cmd = DeleteInstallationSecret(di.installation_repo(), di.secret_repo())  # type: ignore
 
         cmd.handle(user, secret.installation_id, secret.key)  # type: ignore

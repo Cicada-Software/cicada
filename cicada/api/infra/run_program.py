@@ -19,9 +19,7 @@ from cicada.parse.tokenize import tokenize
 logger = logging.getLogger("cicada")
 
 
-async def process_killer(
-    process: subprocess.Process, terminal: TerminalSession
-) -> None:
+async def process_killer(process: subprocess.Process, terminal: TerminalSession) -> None:
     """If terminal session is killed, kill process."""
 
     await terminal.should_stop.wait()

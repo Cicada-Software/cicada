@@ -14,9 +14,7 @@ from test.common import build
 
 
 @asynccontextmanager
-async def mock_github_workflow_runner() -> AsyncGenerator[
-    dict[str, Mock], None
-]:
+async def mock_github_workflow_runner() -> AsyncGenerator[dict[str, Mock], None]:
     pkg = "cicada.api.infra.github.workflows"
 
     with (
@@ -62,10 +60,7 @@ async def test_run_workflow() -> None:
 
         kwargs = get_execution_type.return_value.call_args.kwargs
 
-        assert (
-            kwargs["url"]
-            == "https://access_token:access_token@github.com/user/repo"
-        )
+        assert kwargs["url"] == "https://access_token:access_token@github.com/user/repo"
         assert kwargs["session"] == session
 
 

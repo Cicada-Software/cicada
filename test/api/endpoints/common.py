@@ -117,16 +117,12 @@ class TestEndpointWrapper:
         if not hasattr(cls, "app"):
             cls.app = FastAPI()
 
-        with patch.dict(
-            os.environ, {"CICADA_ADMIN_PW": cls.test_admin_pw}, clear=True
-        ):
+        with patch.dict(os.environ, {"CICADA_ADMIN_PW": cls.test_admin_pw}, clear=True):
             cls.di = TestDiContainer()
             cls.di.reset()
             cls.app.dependency_overrides[DiContainer] = lambda: cls.di
 
-        cls.app.add_exception_handler(
-            CicadaException, cicada_exception_handler
-        )
+        cls.app.add_exception_handler(CicadaException, cicada_exception_handler)
         cls.client = TestClient(cls.app)
 
     @contextmanager

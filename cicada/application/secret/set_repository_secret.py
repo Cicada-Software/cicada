@@ -24,24 +24,16 @@ class SetRepositorySecret:
         repository_id: RepositoryId,
         secret: Secret,
     ) -> None:
-        repository = self.repository_repo.get_repository_by_repo_id(
-            repository_id
-        )
+        repository = self.repository_repo.get_repository_by_repo_id(repository_id)
 
         if not repository:
             raise NotFound("Repository not found")
 
-        is_owner = self.repository_repo.can_user_access_repo(
-            user, repository, permission="owner"
-        )
+        is_owner = self.repository_repo.can_user_access_repo(user, repository, permission="owner")
 
         if not is_owner:
-            raise Unauthorized(
-                "You are not authorized to view this repository"
-            )
+            raise Unauthorized("You are not authorized to view this repository")
 
-        self.logger.info(
-            f"User {user.id} is setting env var for repository {repository.id}"
-        )
+        self.logger.info(f"User {user.id} is setting env var for repository {repository.id}")
 
         self.secret_repo.set_secrets_for_repo(repository.id, [secret])

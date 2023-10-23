@@ -5,13 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from cicada.application.secret.gather_secrets_from_trigger import (
-    GatherSecretsFromTrigger,
-)
-from cicada.application.session.common import (
-    IWorkflowGatherer,
-    IWorkflowRunner,
-)
+from cicada.application.secret.gather_secrets_from_trigger import GatherSecretsFromTrigger
+from cicada.application.session.common import IWorkflowGatherer, IWorkflowRunner
 from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
@@ -77,14 +72,10 @@ class MakeSessionFromTrigger:
 
             self._inject_env_vars_and_secrets_into_trigger()
 
-            workflows = await self.gather_workflows(
-                self.trigger, self.cloned_repo
-            )
+            workflows = await self.gather_workflows(self.trigger, self.cloned_repo)
 
             # TODO: limit max concurrent workflows
-            return await asyncio.gather(
-                *[self.run_workflow(x) for x in workflows]
-            )
+            return await asyncio.gather(*[self.run_workflow(x) for x in workflows])
 
     async def run_workflow(self, filenode: FileNode) -> Session:
         title = eval_title(filenode.title)
@@ -115,14 +106,10 @@ class MakeSessionFromTrigger:
         self.session_repo.create_workflow(workflow, session)
 
         terminal = self.terminal_session_repo.create(workflow.id)
-        terminal.callback = partial(
-            self.terminal_session_repo.append_to_workflow, workflow.id
-        )
+        terminal.callback = partial(self.terminal_session_repo.append_to_workflow, workflow.id)
 
         try:
-            await self.workflow_runner(
-                session, terminal, self.cloned_repo, filenode
-            )
+            await self.workflow_runner(session, terminal, self.cloned_repo, filenode)
 
         except Exception:
             logger = logging.getLogger("cicada")
@@ -147,9 +134,7 @@ class MakeSessionFromTrigger:
         self.trigger.secret = self._get_secrets()
 
     def _get_env_vars(self) -> dict[str, str]:
-        return get_env_vars_for_repo(
-            self.env_repo, self.repository_repo, self.trigger
-        )
+        return get_env_vars_for_repo(self.env_repo, self.repository_repo, self.trigger)
 
     def _get_secrets(self) -> dict[str, str]:
         cmd = GatherSecretsFromTrigger(

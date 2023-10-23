@@ -61,10 +61,7 @@ class SecretRepo(ISecretRepo, DbConnection):
             data=[x[1] for x in rows],
         )
 
-        return [
-            Secret(key=k, value=v, updated_at=u)
-            for k, v, u in zip(keys, values, updated_at)
-        ]
+        return [Secret(key=k, value=v, updated_at=u) for k, v, u in zip(keys, values, updated_at)]
 
     def get_secrets_for_installation(self, id: InstallationId) -> list[Secret]:
         rows = self.conn.execute(
@@ -88,14 +85,9 @@ class SecretRepo(ISecretRepo, DbConnection):
 
         updated_at = [UtcDatetime.fromisoformat(x[2]) for x in rows]
 
-        return [
-            Secret(key=k, value=v, updated_at=u)
-            for k, v, u in zip(keys, values, updated_at)
-        ]
+        return [Secret(key=k, value=v, updated_at=u) for k, v, u in zip(keys, values, updated_at)]
 
-    def set_secrets_for_repo(
-        self, id: RepositoryId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_repo(self, id: RepositoryId, secrets: list[Secret]) -> None:
         keys = [s.key for s in secrets]
 
         ciphers = self._encrypt(
@@ -124,9 +116,7 @@ class SecretRepo(ISecretRepo, DbConnection):
 
         self.conn.commit()
 
-    def set_secrets_for_installation(
-        self, id: InstallationId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_installation(self, id: InstallationId, secrets: list[Secret]) -> None:
         keys = [s.key for s in secrets]
 
         ciphers = self._encrypt(
@@ -184,9 +174,7 @@ class SecretRepo(ISecretRepo, DbConnection):
         resp = self.client.secrets.transit.encrypt_data(
             key,
             plaintext="",
-            batch_input=[
-                {"plaintext": b64encode(x.encode()).decode()} for x in data
-            ],
+            batch_input=[{"plaintext": b64encode(x.encode()).decode()} for x in data],
         )
 
         return [b["ciphertext"] for b in resp["data"]["batch_results"]]
@@ -196,10 +184,7 @@ class SecretRepo(ISecretRepo, DbConnection):
             key, ciphertext="", batch_input=[{"ciphertext": x} for x in data]
         )
 
-        return [
-            b64decode(b["plaintext"]).decode()
-            for b in resp["data"]["batch_results"]
-        ]
+        return [b64decode(b["plaintext"]).decode() for b in resp["data"]["batch_results"]]
 
     def _installation_key_name(self, id: InstallationId) -> str:
         return f"installation_{id}"

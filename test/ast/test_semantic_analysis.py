@@ -26,10 +26,7 @@ from cicada.ast.nodes import (
     TitleStatement,
     ToStringExpression,
 )
-from cicada.ast.semantic_analysis import (
-    RESERVED_NAMES,
-    SemanticAnalysisVisitor,
-)
+from cicada.ast.semantic_analysis import RESERVED_NAMES, SemanticAnalysisVisitor
 from cicada.ast.types import (
     BooleanType,
     CommandType,
@@ -94,9 +91,7 @@ def test_on_statement_where_clause_must_be_const_expr() -> None:
     msg = "`where` clause must be a constant expression"
 
     with pytest.raises(AstError, match=msg):
-        parse_and_analyze(
-            "let x = false\non abc where x", build_trigger("abc")
-        )
+        parse_and_analyze("let x = false\non abc where x", build_trigger("abc"))
 
 
 def test_on_statement_where_clause_must_be_bool() -> None:
@@ -158,18 +153,10 @@ let d = not b
 
     match tree.exprs:
         case [
-            LetExpression(
-                name="a", expr=Expression(is_constexpr=True), is_constexpr=True
-            ),
-            LetExpression(
-                name="b", expr=Expression(is_constexpr=True), is_constexpr=True
-            ),
-            LetExpression(
-                name="c", expr=Expression(is_constexpr=True), is_constexpr=True
-            ),
-            LetExpression(
-                name="d", expr=Expression(is_constexpr=True), is_constexpr=True
-            ),
+            LetExpression(name="a", expr=Expression(is_constexpr=True), is_constexpr=True),
+            LetExpression(name="b", expr=Expression(is_constexpr=True), is_constexpr=True),
+            LetExpression(name="c", expr=Expression(is_constexpr=True), is_constexpr=True),
+            LetExpression(name="d", expr=Expression(is_constexpr=True), is_constexpr=True),
         ]:
             return
 
@@ -525,9 +512,7 @@ def test_non_string_types_allowed_in_interpolated_strings() -> None:
                     StringExpression("abc"),
                     BinaryOperator.ADD,
                     BinaryExpression(
-                        ToStringExpression(
-                            ParenthesisExpression(NumericExpression(123))
-                        ),
+                        ToStringExpression(ParenthesisExpression(NumericExpression(123))),
                         BinaryOperator.ADD,
                         StringExpression("xyz"),
                     ),
@@ -576,12 +561,8 @@ hashOf("some_file")
 
     match tree.exprs:
         case [
-            FunctionExpression(
-                callee=IdentifierExpression("print"), type=UnitType()
-            ),
-            FunctionExpression(
-                callee=IdentifierExpression("hashOf"), type=StringType()
-            ),
+            FunctionExpression(callee=IdentifierExpression("print"), type=UnitType()),
+            FunctionExpression(callee=IdentifierExpression("hashOf"), type=StringType()),
         ]:
             return
 
@@ -589,7 +570,7 @@ hashOf("some_file")
 
 
 def test_hash_of_requires_at_least_one_arg() -> None:
-    msg = "Function `hashOf` takes at least 1 argument but was called with 0 arguments"  # noqa: E501
+    msg = "Function `hashOf` takes at least 1 argument but was called with 0 arguments"
 
     with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze("hashOf()")
@@ -641,9 +622,7 @@ def test_parse_valid_title_stmt() -> None:
     tree = parse_and_analyze("title Hello world")
 
     match tree.exprs[0]:
-        case TitleStatement(
-            parts=[StringExpression("Hello"), StringExpression("world")]
-        ):
+        case TitleStatement(parts=[StringExpression("Hello"), StringExpression("world")]):
             return
 
     pytest.fail(f"tree does not match: {tree}")
@@ -708,7 +687,7 @@ let x = event.type.starts_with("x")
 
 
 def test_starts_with_must_have_one_arg() -> None:
-    msg = "Function `starts_with` takes 1 argument but was called with 0 arguments"  # noqa: E501
+    msg = "Function `starts_with` takes 1 argument but was called with 0 arguments"
 
     code = """\
 let x = ""
@@ -723,7 +702,7 @@ let x = ""
 let x = x.starts_with("y", "z")
 """
 
-    msg = "Function `starts_with` takes 1 argument but was called with 2 arguments"  # noqa: E501
+    msg = "Function `starts_with` takes 1 argument but was called with 2 arguments"
 
     with pytest.raises(AstError, match=re.escape(msg)):
         parse_and_analyze(code)
@@ -850,9 +829,7 @@ let b = cmd.stdout
     match tree.exprs[0]:
         case LetExpression(
             "cmd",
-            expr=BlockExpression(
-                exprs=[FunctionExpression(type=CommandType())]
-            ),
+            expr=BlockExpression(exprs=[FunctionExpression(type=CommandType())]),
         ):
             return
 

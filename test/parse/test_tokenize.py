@@ -1,11 +1,6 @@
 import pytest
 
-from cicada.parse.token import (
-    BooleanLiteralToken,
-    IdentifierToken,
-    NewlineToken,
-    WhiteSpaceToken,
-)
+from cicada.parse.token import BooleanLiteralToken, IdentifierToken, NewlineToken, WhiteSpaceToken
 from cicada.parse.tokenize import (
     KEYWORD_NAMES,
     TOKEN_SEPARATORS,
@@ -39,9 +34,7 @@ def test_newline_will_increment_line_field() -> None:
 def test_group_basic_chunks() -> None:
     chunks = list(chunk_stream("abc"))
 
-    assert group_chunks(chunks) == [
-        Token("abc", line=1, column_start=1, column_end=3)
-    ]
+    assert group_chunks(chunks) == [Token("abc", line=1, column_start=1, column_end=3)]
 
 
 def test_group_chunks() -> None:

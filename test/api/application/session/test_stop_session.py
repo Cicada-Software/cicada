@@ -71,7 +71,7 @@ async def test_stopping_existing_session_stops_it() -> None:
     assert session_repo.update.call_count == 1
 
 
-async def test_provider_terminator_not_called_if_provider_doesnt_match() -> None:  # noqa: E501
+async def test_provider_terminator_not_called_if_provider_doesnt_match() -> None:
     trigger = CommitTrigger(
         repository_url="",
         sha=GitSha("deadbeef"),

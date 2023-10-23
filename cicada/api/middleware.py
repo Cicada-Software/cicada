@@ -6,12 +6,7 @@ from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from cicada.api.settings import NotificationSettings
-from cicada.application.exceptions import (
-    Forbidden,
-    InvalidRequest,
-    NotFound,
-    Unauthorized,
-)
+from cicada.application.exceptions import Forbidden, InvalidRequest, NotFound, Unauthorized
 
 
 class SlowRequestMiddleware:  # pragma: no cover
@@ -22,9 +17,7 @@ class SlowRequestMiddleware:  # pragma: no cover
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] == "http":
             start = time.time()
             await self.app(scope, receive, send)
@@ -34,9 +27,7 @@ class SlowRequestMiddleware:  # pragma: no cover
                 path = scope.get("path", "<unknown>")
 
                 logger = logging.getLogger("cicada")
-                logger.warning(
-                    "Request for `%s` was slow (%f seconds)", path, elapsed
-                )
+                logger.warning("Request for `%s` was slow (%f seconds)", path, elapsed)
 
         else:
             await self.app(scope, receive, send)
@@ -61,9 +52,7 @@ class UnhandledExceptionHandler:  # pragma: no cover
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 
-    async def __call__(
-        self, scope: Scope, receive: Receive, send: Send
-    ) -> None:
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         try:
             await self.app(scope, receive, send)
 

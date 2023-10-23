@@ -44,9 +44,7 @@ class TempCacheRepo(ICacheRepo):
 
 
 @contextmanager
-def create_cache_object(
-    files: list[Path], dir: Path | None = None
-) -> Iterator[CacheObject]:
+def create_cache_object(files: list[Path], dir: Path | None = None) -> Iterator[CacheObject]:
     session = build(Session)
 
     tarfile_name = Path(mkstemp(suffix=".tar.gz")[1])

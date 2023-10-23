@@ -15,13 +15,7 @@ from cicada.ast.nodes import (
     Value,
 )
 from cicada.ast.semantic_analysis import IgnoreWorkflow, StringCoercibleType
-from cicada.ast.types import (
-    FunctionType,
-    RecordType,
-    StringType,
-    UnitType,
-    VariadicTypeArg,
-)
+from cicada.ast.types import FunctionType, RecordType, StringType, UnitType, VariadicTypeArg
 from cicada.domain.triggers import Trigger
 from cicada.eval.builtins import builtin_print, builtin_shell, hashOf
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
@@ -30,9 +24,7 @@ from cicada.eval.find_files import find_ci_files
 # TODO: deduplicate this
 BUILT_IN_SYMBOLS: dict[str, Value] = {
     "shell": FunctionValue(
-        type=FunctionType(
-            [VariadicTypeArg(StringCoercibleType)], rtype=RecordType()
-        ),
+        type=FunctionType([VariadicTypeArg(StringCoercibleType)], rtype=RecordType()),
         func=builtin_shell,
     ),
     "print": FunctionValue(
@@ -94,9 +86,7 @@ class EvalVisitor(ConstexprEvalVisitor):
 
                 rvalue = func.body.accept(self)
 
-                return (
-                    UnitValue() if symbol.type.rtype == UnitType() else rvalue
-                )
+                return UnitValue() if symbol.type.rtype == UnitType() else rvalue
 
         if callable(symbol.func):
             # TODO: make this type-safe
@@ -105,9 +95,7 @@ class EvalVisitor(ConstexprEvalVisitor):
         return UnreachableValue()
 
     def visit_cache_stmt(self, node: CacheStatement) -> Value:
-        print(  # noqa: T201
-            "Caching is not yet supported for locally ran workflows"
-        )
+        print("Caching is not yet supported for locally ran workflows")  # noqa: T201
 
         return UnitValue()
 

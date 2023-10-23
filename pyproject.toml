@@ -22,6 +22,7 @@ isort = "^5.10.1"
 pytest = "^7.1.2"
 
 [tool.isort]
+line_length = 99
 multi_line_output = 3
 include_trailing_comma = true
 use_parentheses = true
@@ -64,7 +65,7 @@ skip_covered = true
 skip_empty = true
 
 [tool.black]
-line-length = 79
+line-length = 99
 color = true
 
 [tool.pytest.ini_options]
@@ -73,7 +74,7 @@ asyncio_mode = "auto"
 testpaths = ["test"]
 
 [tool.ruff]
-line-length = 79
+line-length = 99
 target-version = "py311"
 
 select = ["ALL"]

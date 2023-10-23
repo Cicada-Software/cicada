@@ -10,9 +10,7 @@ from cicada.domain.triggers import (
 )
 
 
-def gitlab_event_to_commit(  # type: ignore[misc]
-    event: dict[str, Any]
-) -> CommitTrigger:
+def gitlab_event_to_commit(event: dict[str, Any]) -> CommitTrigger:  # type: ignore[misc]
     most_recent_commit: None | dict[str, Any] = None  # type: ignore[misc]
 
     for json_commit in event["commits"]:
@@ -35,18 +33,14 @@ def gitlab_event_to_commit(  # type: ignore[misc]
     )
 
 
-def gitlab_event_to_issue(  # type: ignore[misc]
-    event: dict[str, Any]
-) -> IssueTrigger:
+def gitlab_event_to_issue(event: dict[str, Any]) -> IssueTrigger:  # type: ignore[misc]
     data = {
         "id": str(event["object_attributes"]["iid"]),
         "title": event["object_attributes"]["title"],
         "sha": None,
         "submitted_by": event["user"]["name"],
         "is_locked": bool(event["object_attributes"]["discussion_locked"]),
-        "opened_at": Datetime.fromisoformat(
-            event["object_attributes"]["created_at"]
-        ),
+        "opened_at": Datetime.fromisoformat(event["object_attributes"]["created_at"]),
         "body": event["object_attributes"]["description"],
         "repository_url": event["repository"]["homepage"],
         "provider": "gitlab",
@@ -56,9 +50,7 @@ def gitlab_event_to_issue(  # type: ignore[misc]
         return IssueOpenTrigger(**data)
 
     if "closed_at" in event["changes"]:
-        closed_at = Datetime.fromisoformat(
-            event["object_attributes"]["closed_at"]
-        )
+        closed_at = Datetime.fromisoformat(event["object_attributes"]["closed_at"])
 
         return IssueCloseTrigger(**data, closed_at=closed_at)
 

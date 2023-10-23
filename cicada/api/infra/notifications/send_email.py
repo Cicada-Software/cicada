@@ -78,9 +78,7 @@ def format_elapsed_time(delta: timedelta) -> str:
 
 
 # TODO: move to its own application service
-async def send_failure_notifications(
-    user: User | None, sessions: list[Session]
-) -> None:
+async def send_failure_notifications(user: User | None, sessions: list[Session]) -> None:
     """
     If any of the sessions failed, send the user a notification.
     """
@@ -94,6 +92,4 @@ async def send_failure_notifications(
 
         email_cmd = SendNotification(send_email)
 
-        await email_cmd.handle(
-            Notification(type="email", user=user, session=session)
-        )
+        await email_cmd.handle(Notification(type="email", user=user, session=session))

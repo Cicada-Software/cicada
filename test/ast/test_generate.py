@@ -29,13 +29,7 @@ from cicada.ast.nodes import (
     TitleStatement,
     ToStringExpression,
 )
-from cicada.ast.types import (
-    FunctionType,
-    NumericType,
-    StringType,
-    UnitType,
-    UnknownType,
-)
+from cicada.ast.types import FunctionType, NumericType, StringType, UnitType, UnknownType
 from cicada.parse.tokenize import tokenize
 
 
@@ -545,14 +539,14 @@ def test_disallow_multiple_exprs_on_same_line() -> None:
 
 
 def test_suggestion_is_given_when_identifier_is_used_like_a_function() -> None:
-    expected = "Unexpected identifier `install`. Did you mean `shell npm install ...`?"  # noqa: E501
+    expected = "Unexpected identifier `install`. Did you mean `shell npm install ...`?"
 
     with pytest.raises(AstError, match=re.escape(expected)):
         generate_ast_tree(tokenize("npm install"))
 
 
 def test_suggestion_is_given_when_identifier_is_similar_to_keyword() -> None:
-    expected = "Unexpected identifier `image`. Did you mean `run_on image ...`?"  # noqa: E501
+    expected = "Unexpected identifier `image`. Did you mean `run_on image ...`?"
 
     with pytest.raises(AstError, match=re.escape(expected)):
         generate_ast_tree(tokenize("runs_on image alpine"))
@@ -570,13 +564,9 @@ shell y
     match tree:
         case FileNode(
             [
-                FunctionExpression(
-                    IdentifierExpression("shell"), [StringExpression("x")]
-                ),
+                FunctionExpression(IdentifierExpression("shell"), [StringExpression("x")]),
                 FunctionExpression(IdentifierExpression("shell"), []),
-                FunctionExpression(
-                    IdentifierExpression("shell"), [StringExpression("y")]
-                ),
+                FunctionExpression(IdentifierExpression("shell"), [StringExpression("y")]),
             ]
         ):
             return
@@ -597,9 +587,7 @@ if true:
             [
                 IfExpression(
                     condition=BooleanExpression(True),
-                    body=BlockExpression(
-                        [LetExpression("x", NumericExpression(1))]
-                    ),
+                    body=BlockExpression([LetExpression("x", NumericExpression(1))]),
                 )
             ]
         ):
@@ -680,11 +668,7 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
                 ),
                 FunctionExpression(
                     IdentifierExpression("shell"),
-                    [
-                        ToStringExpression(
-                            ParenthesisExpression(IdentifierExpression("y"))
-                        )
-                    ],
+                    [ToStringExpression(ParenthesisExpression(IdentifierExpression("y")))],
                 ),
             ]
         ):
@@ -1084,9 +1068,7 @@ def test_generate_title() -> None:
     tree = generate_ast_tree(tokenize(code))
 
     match tree.exprs[0]:
-        case TitleStatement(
-            parts=[StringExpression("Hello"), StringExpression("world!")]
-        ):
+        case TitleStatement(parts=[StringExpression("Hello"), StringExpression("world!")]):
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

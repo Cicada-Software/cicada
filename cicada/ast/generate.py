@@ -7,14 +7,7 @@ from itertools import count, groupby
 from typing import NoReturn, Self, cast
 
 from cicada.ast.common import pluralize
-from cicada.ast.types import (
-    FunctionType,
-    StringType,
-    Type,
-    UnitType,
-    UnknownType,
-    string_to_type,
-)
+from cicada.ast.types import FunctionType, StringType, Type, UnitType, UnknownType, string_to_type
 from cicada.parse.token import (
     AtToken,
     BooleanLiteralToken,
@@ -139,7 +132,7 @@ class AstError(ValueError):
 
         condition = "at least " if at_least else ""
 
-        msg = f"Function `{func_name}` takes {condition}{tmp1} but was called with {tmp2}"  # noqa: E501
+        msg = f"Function `{func_name}` takes {condition}{tmp1} but was called with {tmp2}"
 
         return cls(msg, info)
 
@@ -351,9 +344,7 @@ def generate_ast_tree(tokens: Iterable[Token]) -> FileNode:
     return FileNode(generate_block(state))
 
 
-def generate_block(
-    state: ParserState, whitespace: WhiteSpaceToken | None = None
-) -> list[Node]:
+def generate_block(state: ParserState, whitespace: WhiteSpaceToken | None = None) -> list[Node]:
     exprs: list[Node] = []
     expected_whitespace = False
 
@@ -385,9 +376,7 @@ def generate_block(
     return exprs
 
 
-def raise_identifier_suggestion(
-    expr: IdentifierExpression, token: Token
-) -> NoReturn:
+def raise_identifier_suggestion(expr: IdentifierExpression, token: Token) -> NoReturn:
     name = expr.name
 
     if re.search("run.*on", name, re.IGNORECASE):
@@ -395,7 +384,7 @@ def raise_identifier_suggestion(
     else:
         suggestion = f"shell {expr.name} {token.content} ..."
 
-    msg = f"Unexpected identifier `{token.content}`. Did you mean `{suggestion}`?"  # noqa: E501
+    msg = f"Unexpected identifier `{token.content}`. Did you mean `{suggestion}`?"
 
     raise AstError(msg, token)
 
@@ -464,9 +453,7 @@ def generate_member_expr(token: IdentifierToken) -> MemberExpression:
 
         stack.append(
             IdentifierExpression(
-                info=LineInfo(
-                    token.line, location[0], token.line, location[-1]
-                ),
+                info=LineInfo(token.line, location[0], token.line, location[-1]),
                 type=UnknownType(),
                 name=name,
                 is_constexpr=False,
@@ -498,9 +485,7 @@ def generate_member_expr(token: IdentifierToken) -> MemberExpression:
     return stack[0]
 
 
-def generate_interpolated_string(
-    state: ParserState, leading_tokens: list[Token]
-) -> Expression:
+def generate_interpolated_string(state: ParserState, leading_tokens: list[Token]) -> Expression:
     parts: list[Expression] = []
 
     if leading_tokens:
@@ -595,9 +580,7 @@ def generate_c_function_expr(
                 break
 
             if not isinstance(state.current_token, CommaToken):
-                raise AstError.unexpected_token(
-                    state.current_token, expected=","
-                )
+                raise AstError.unexpected_token(state.current_token, expected=",")
 
             state.next_non_whitespace()
 
@@ -738,9 +721,7 @@ def generate_list_expr(state: ParserState) -> ListExpression:
         if isinstance(state.current_token, CommaToken):
             if i == 0:
                 # TODO: non-fatal, should be a warning instead
-                raise AstError(
-                    "Leading commas are not allowed", state.current_token
-                )
+                raise AstError("Leading commas are not allowed", state.current_token)
 
             token: Token = state.current_token
 
@@ -864,9 +845,7 @@ def generate_expr(state: ParserState) -> Expression:
     elif isinstance(token, BooleanLiteralToken):
         expr = BooleanExpression.from_token(token)
 
-    elif isinstance(token, IdentifierToken) and not isinstance(
-        token, KeywordToken
-    ):
+    elif isinstance(token, IdentifierToken) and not isinstance(token, KeywordToken):
         if "." in token.content:
             expr = generate_member_expr(token)
         else:
@@ -941,7 +920,7 @@ def generate_run_on_stmt(state: ParserState) -> RunOnStatement:
         else:
             suggestion = "image"
 
-        msg = f"Invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"  # noqa: E501
+        msg = f"Invalid `run_on` type `{content}`. Did you mean `{suggestion}`?"
 
         raise AstError(msg, run_type_token) from ex
 
@@ -1094,14 +1073,10 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
         raise AstError.expected_token(last=start)
 
     if isinstance(name, KeywordToken):
-        raise AstError(
-            f"Cannot use keyword `{name.content}` as function name", name
-        )
+        raise AstError(f"Cannot use keyword `{name.content}` as function name", name)
 
     if not isinstance(name, IdentifierToken):
-        raise AstError(
-            f"Expected identifier, got `{name.content}` instead", name
-        )
+        raise AstError(f"Expected identifier, got `{name.content}` instead", name)
 
     open_paren = state.next_non_whitespace_or_eof()
     if not isinstance(open_paren, OpenParenToken):
@@ -1115,9 +1090,7 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
         close_paren = state.next_non_whitespace_or_eof()
 
     if not isinstance(close_paren, CloseParenToken):
-        raise AstError.unexpected_token(
-            close_paren or open_paren, expected=")"
-        )
+        raise AstError.unexpected_token(close_paren or open_paren, expected=")")
 
     rtype = parse_func_return_type(state)
 

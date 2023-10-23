@@ -6,12 +6,7 @@ from cicada.api.endpoints.webhook.github.converters import (
     github_event_to_issue,
 )
 from cicada.domain.datetime import Datetime
-from cicada.domain.triggers import (
-    CommitTrigger,
-    GitSha,
-    IssueCloseTrigger,
-    IssueOpenTrigger,
-)
+from cicada.domain.triggers import CommitTrigger, GitSha, IssueCloseTrigger, IssueOpenTrigger
 
 TEST_DATA = Path(__file__).parent / "test_data"
 

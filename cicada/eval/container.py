@@ -34,20 +34,10 @@ from cicada.ast.nodes import (
     Value,
 )
 from cicada.ast.semantic_analysis import StringCoercibleType
-from cicada.ast.types import (
-    CommandType,
-    FunctionType,
-    StringType,
-    UnitType,
-    VariadicTypeArg,
-)
+from cicada.ast.types import CommandType, FunctionType, StringType, UnitType, VariadicTypeArg
 from cicada.domain.cache import CacheKey
 from cicada.domain.triggers import CommitTrigger
-from cicada.eval.constexpr_visitor import (
-    CommandFailed,
-    ConstexprEvalVisitor,
-    WorkflowFailure,
-)
+from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, WorkflowFailure
 
 if TYPE_CHECKING:
     from cicada.domain.session import Session
@@ -100,9 +90,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         # TODO: deduplicate this monstrosity
         built_in_symbols = {
             "shell": FunctionValue(
-                type=FunctionType(
-                    [VariadicTypeArg(StringCoercibleType)], rtype=CommandType()
-                ),
+                type=FunctionType([VariadicTypeArg(StringCoercibleType)], rtype=CommandType()),
                 func=self.builtin_shell,
             ),
             "print": FunctionValue(
@@ -142,19 +130,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         )
 
         if process.returncode != 0:
-            logging.getLogger("cicada").error(
-                f"Could not kill container id: {self.container_id}"
-            )
+            logging.getLogger("cicada").error(f"Could not kill container id: {self.container_id}")
 
     def visit_file_node(self, node: FileNode) -> Value:
         output = super().visit_file_node(node)
 
-        if (
-            isinstance(output, UnitValue)
-            and self.cached_files
-            and self.cache_key
-            and self.trigger
-        ):
+        if isinstance(output, UnitValue) and self.cached_files and self.cache_key and self.trigger:
             cmd = CacheFilesForSession(CacheRepo())
             cmd.handle(
                 self.cached_files,
@@ -252,9 +233,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             raise ContainerTermination(1)
 
-        self.container_id = (
-            process.stdout.strip().split(b"\n")[-1].decode().strip()
-        )
+        self.container_id = process.stdout.strip().split(b"\n")[-1].decode().strip()
 
     def _container_exec(self, args: list[str]) -> tuple[Popen[bytes], bytes]:
         # This command is a hack to make sure we are in cwd from the last
@@ -268,7 +247,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         # like piping, env vars, and so forth can be used.
         cmd = " ;\n".join(
             [
-                f'cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"',  # noqa: E501
+                f'cd "$(cat /tmp/__cicada_cwd 2> /dev/null || echo "{self.temp_dir}")"',
                 " ".join(args),
                 '__cicada_exit_code="$?"',
                 'echo "$PWD" > /tmp/__cicada_cwd',
@@ -290,9 +269,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         env_vars = [
             *get_provider_default_env_vars(self.trigger),
-            *get_env_vars_from_env_record(
-                cast(RecordValue, self.symbols["env"])
-            ),
+            *get_env_vars_from_env_record(cast(RecordValue, self.symbols["env"])),
         ]
 
         # Add "-e" flag before each env var
@@ -393,7 +370,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         lines = process.stdout.decode().splitlines()
 
         if process.returncode:
-            if len(lines) > 1:
+            if len(lines) > 1:  # noqa: SIM108
                 # Strip "cat: " prefix
                 msg = lines[0][5:]
             else:

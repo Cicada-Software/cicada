@@ -5,9 +5,7 @@ from cicada.domain.repository import RepositoryId
 
 
 class EnvironmentRepo(IEnvironmentRepo, DbConnection):
-    def get_env_var_for_repo(
-        self, id: RepositoryId, key: str
-    ) -> EnvironmentVariable | None:
+    def get_env_var_for_repo(self, id: RepositoryId, key: str) -> EnvironmentVariable | None:
         rows = self.conn.execute(
             "SELECT key, value FROM env_vars WHERE repo_id=? AND key=?",
             [id, key],
@@ -18,9 +16,7 @@ class EnvironmentRepo(IEnvironmentRepo, DbConnection):
 
         return EnvironmentVariable(key=rows[0]["key"], value=rows[0]["value"])
 
-    def get_env_vars_for_repo(
-        self, id: RepositoryId
-    ) -> list[EnvironmentVariable]:
+    def get_env_vars_for_repo(self, id: RepositoryId) -> list[EnvironmentVariable]:
         rows = self.conn.execute(
             """
             SELECT key, value
@@ -33,9 +29,7 @@ class EnvironmentRepo(IEnvironmentRepo, DbConnection):
 
         return [EnvironmentVariable(*row) for row in rows]
 
-    def set_env_vars_for_repo(
-        self, id: RepositoryId, env_vars: list[EnvironmentVariable]
-    ) -> None:
+    def set_env_vars_for_repo(self, id: RepositoryId, env_vars: list[EnvironmentVariable]) -> None:
         with self.conn:
             self.conn.execute("DELETE FROM env_vars WHERE repo_id=?", [id])
 

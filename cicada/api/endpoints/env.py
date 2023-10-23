@@ -5,9 +5,7 @@ from fastapi.responses import JSONResponse
 
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import CurrentUser
-from cicada.application.env.add_env_vars_to_repo import (
-    AddEnvironmentVariablesToRepository,
-)
+from cicada.application.env.add_env_vars_to_repo import AddEnvironmentVariablesToRepository
 from cicada.common.json import asjson
 from cicada.domain.env_var import EnvironmentVariable
 
@@ -48,9 +46,7 @@ def get_repo_env_vars(
 
     repository_repo = di.repository_repo()
 
-    repo = repository_repo.get_repository_by_url_and_provider(
-        url=url, provider=provider
-    )
+    repo = repository_repo.get_repository_by_url_and_provider(url=url, provider=provider)
 
     if not repo:
         raise HTTPException(status_code=404)
@@ -59,9 +55,4 @@ def get_repo_env_vars(
         # TODO: test
         raise HTTPException(status_code=401)
 
-    return JSONResponse(
-        [
-            asjson(x)
-            for x in di.environment_repo().get_env_vars_for_repo(repo.id)
-        ]
-    )
+    return JSONResponse([asjson(x) for x in di.environment_repo().get_env_vars_for_repo(repo.id)])

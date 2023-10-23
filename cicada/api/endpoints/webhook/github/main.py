@@ -17,17 +17,10 @@ from cicada.api.infra.github.auth import (
     update_github_repo_perms,
 )
 from cicada.api.infra.github.common import gather_workflows_via_trigger
-from cicada.api.infra.github.workflows import (
-    gather_issue_workflows,
-    run_workflow,
-)
-from cicada.api.infra.notifications.send_email import (
-    send_failure_notifications,
-)
+from cicada.api.infra.github.workflows import gather_issue_workflows, run_workflow
+from cicada.api.infra.notifications.send_email import send_failure_notifications
 from cicada.api.settings import GitHubSettings, GitProviderSettings
-from cicada.application.session.make_session_from_trigger import (
-    MakeSessionFromTrigger,
-)
+from cicada.application.session.make_session_from_trigger import MakeSessionFromTrigger
 from cicada.domain.user import User
 
 from .converters import github_event_to_commit, github_event_to_issue

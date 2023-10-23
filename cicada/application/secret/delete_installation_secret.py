@@ -23,12 +23,10 @@ class DeleteInstallationSecret:
         for installation in installations:
             if installation.id == id:
                 if installation.admin_id != user.id:
-                    raise Unauthorized(
-                        "You do not have access to this installation"
-                    )
+                    raise Unauthorized("You do not have access to this installation")
 
                 self.logger.info(
-                    f"User {user.id} deleting secret for installation {installation.id}"  # noqa: E501
+                    f"User {user.id} deleting secret for installation {installation.id}"
                 )
 
                 self.secret_repo.delete_installation_secret(id, key)

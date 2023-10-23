@@ -138,9 +138,7 @@ def migrate_v6(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=7)
 def migrate_v7(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
-        "ALTER TABLE sessions ADD COLUMN issue_id INTEGER NULL;"
-    )
+    db.cursor().executescript("ALTER TABLE sessions ADD COLUMN issue_id INTEGER NULL;")
 
 
 @auto_migrate(version=8)
@@ -182,9 +180,7 @@ def migrate_v10(db: sqlite3.Connection) -> None:
     pw = MigrationSettings().default_admin_password
     hash = CryptContext(schemes=["bcrypt"]).hash(pw)
 
-    db.cursor().execute(
-        "INSERT INTO users (username, hash) VALUES (?, ?);", ["admin", hash]
-    )
+    db.cursor().execute("INSERT INTO users (username, hash) VALUES (?, ?);", ["admin", hash])
 
 
 @auto_migrate(version=11)
@@ -342,9 +338,7 @@ def migrate_v18(db: sqlite3.Connection) -> None:
         if date.endswith("UTC"):
             # specifically for parsing Gitlab datetimes
             return str(
-                datetime.strptime(date, "%Y-%m-%d %H:%M:%S %Z").replace(
-                    tzinfo=timezone.utc
-                )
+                datetime.strptime(date, "%Y-%m-%d %H:%M:%S %Z").replace(tzinfo=timezone.utc)
             ).replace("+00:00", "Z")
 
         if date.endswith("Z"):
@@ -404,9 +398,7 @@ def migrate_v21(db: sqlite3.Connection) -> None:
     users = db.execute("SELECT id FROM users;").fetchall()
 
     for (user_id,) in users:
-        db.execute(
-            "UPDATE users SET uuid=? WHERE id=?", [str(uuid4()), user_id]
-        )
+        db.execute("UPDATE users SET uuid=? WHERE id=?", [str(uuid4()), user_id])
 
     db.commit()
 
@@ -421,9 +413,7 @@ def migrate_v21(db: sqlite3.Connection) -> None:
         == 0
     )
 
-    db.cursor().executescript(
-        "CREATE UNIQUE INDEX IF NOT EXISTS ux_users_uuid ON users(uuid);"
-    )
+    db.cursor().executescript("CREATE UNIQUE INDEX IF NOT EXISTS ux_users_uuid ON users(uuid);")
 
     db.commit()
 

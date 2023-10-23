@@ -17,14 +17,10 @@ class SecretRepoShim(ISecretRepo):
     def get_secrets_for_installation(self, id: InstallationId) -> list[Secret]:
         return []
 
-    def set_secrets_for_repo(
-        self, id: RepositoryId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_repo(self, id: RepositoryId, secrets: list[Secret]) -> None:
         ...
 
-    def set_secrets_for_installation(
-        self, id: InstallationId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_installation(self, id: InstallationId, secrets: list[Secret]) -> None:
         ...
 
     def delete_repository_secret(self, id: RepositoryId, key: str) -> None:

@@ -5,25 +5,13 @@ from hashlib import sha256
 from pathlib import Path
 from typing import cast
 
-from cicada.ast.nodes import (
-    FunctionExpression,
-    NumericValue,
-    RecordValue,
-    StringValue,
-    UnitValue,
-)
+from cicada.ast.nodes import FunctionExpression, NumericValue, RecordValue, StringValue, UnitValue
 from cicada.ast.types import CommandType
-from cicada.eval.constexpr_visitor import (
-    CommandFailed,
-    ConstexprEvalVisitor,
-    value_to_string,
-)
+from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, value_to_string
 
 
 # TODO: rename function
-def hashOf(  # noqa: N802
-    visitor: ConstexprEvalVisitor, node: FunctionExpression
-) -> StringValue:
+def hashOf(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> StringValue:  # noqa: N802
     files: list[Path] = []
 
     for arg in node.args:
@@ -56,9 +44,7 @@ def hashOf(  # noqa: N802
     return StringValue(hashes.hexdigest())
 
 
-def builtin_print(
-    visitor: ConstexprEvalVisitor, node: FunctionExpression
-) -> UnitValue:
+def builtin_print(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> UnitValue:
     args: list[str] = []
 
     for arg in node.args:
@@ -73,9 +59,7 @@ def builtin_print(
     return UnitValue()
 
 
-def builtin_shell(
-    visitor: ConstexprEvalVisitor, node: FunctionExpression
-) -> RecordValue:
+def builtin_shell(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> RecordValue:
     args: list[str] = []
 
     for arg in node.args:

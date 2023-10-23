@@ -10,9 +10,7 @@ from cicada.domain.triggers import (
 )
 
 
-def github_event_to_commit(  # type: ignore[misc]
-    event: dict[str, Any]
-) -> CommitTrigger:
+def github_event_to_commit(event: dict[str, Any]) -> CommitTrigger:  # type: ignore[misc]
     return CommitTrigger(
         sha=GitSha(event["after"]),
         author=event["head_commit"]["author"]["username"],
@@ -24,9 +22,7 @@ def github_event_to_commit(  # type: ignore[misc]
     )
 
 
-def github_event_to_issue(  # type: ignore[misc]
-    event: dict[str, Any]
-) -> IssueTrigger:
+def github_event_to_issue(event: dict[str, Any]) -> IssueTrigger:  # type: ignore[misc]
     data = {
         "id": str(event["issue"]["number"]),
         "sha": None,

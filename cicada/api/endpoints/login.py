@@ -7,11 +7,7 @@ from cicada.api.endpoints.di import Di, JWTToken, PasswordForm
 from cicada.application.user.change_password import ChangePassword
 from cicada.application.user.local_user_login import LocalUserLogin
 
-from .login_util import (
-    CurrentUser,
-    create_access_token,
-    get_user_and_payload_from_jwt,
-)
+from .login_util import CurrentUser, create_access_token, get_user_and_payload_from_jwt
 
 router = APIRouter()
 

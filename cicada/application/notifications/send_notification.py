@@ -26,9 +26,7 @@ class SendNotification:  # pragma: no cover
         email = NotificationEmail(
             send_to=notification.user.email,
             session=notification.session,
-            context=self.get_context_from_trigger(
-                notification.session.trigger
-            ),
+            context=self.get_context_from_trigger(notification.session.trigger),
         )
 
         await asyncio.to_thread(lambda: self.send_email(email))

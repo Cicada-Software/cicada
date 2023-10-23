@@ -38,9 +38,7 @@ class ISessionRepo(ABC):
         ...
 
     @abstractmethod
-    def get_recent_sessions_for_repo(
-        self, user: User, repository_url: str
-    ) -> list[Session]:
+    def get_recent_sessions_for_repo(self, user: User, repository_url: str) -> list[Session]:
         ...
 
     @abstractmethod
@@ -70,9 +68,7 @@ class ISessionRepo(ABC):
 
     # TODO: placeholder until a better API comes around
     @abstractmethod
-    def get_workflow_id_from_session(
-        self, session: Session
-    ) -> WorkflowId | None:
+    def get_workflow_id_from_session(self, session: Session) -> WorkflowId | None:
         ...
 
     @abstractmethod

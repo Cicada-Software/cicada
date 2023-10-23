@@ -16,9 +16,7 @@ def test_time_formatting() -> None:
         timedelta(days=1, hours=0): "1 day",
         timedelta(days=2, hours=0): "2 days",
         timedelta(days=3, hours=1): "3 days, 1 hour",
-        timedelta(
-            days=1, hours=2, minutes=3, seconds=4
-        ): "1 day, 2 hours, 3 minutes, 4 seconds",
+        timedelta(days=1, hours=2, minutes=3, seconds=4): "1 day, 2 hours, 3 minutes, 4 seconds",
     }
 
     for delta, expected in tests.items():

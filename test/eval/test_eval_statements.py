@@ -4,12 +4,7 @@ from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import RecordValue, StringValue
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType, StringType
-from cicada.domain.triggers import (
-    CommitTrigger,
-    GitSha,
-    IssueOpenTrigger,
-    Trigger,
-)
+from cicada.domain.triggers import CommitTrigger, GitSha, IssueOpenTrigger, Trigger
 from cicada.eval.main import EvalVisitor
 from test.common import build
 
@@ -52,14 +47,10 @@ def test_on_statement_stops_execution_if_trigger_doesnt_match() -> None:
         parse_and_analyze("on x\nlet var = 123", trigger)
 
 
-def test_on_statement_stops_execution_if_trigger_doesnt_match_at_runtime() -> (
-    None
-):
+def test_on_statement_stops_execution_if_trigger_doesnt_match_at_runtime() -> None:
     trigger = make_dummy_issue_open_trigger()
 
-    tree = parse_and_analyze(
-        "on git.push\nlet var = 123", trigger, validate=False
-    )
+    tree = parse_and_analyze("on git.push\nlet var = 123", trigger, validate=False)
 
     visitor = EvalVisitor(trigger)
     tree.accept(visitor)

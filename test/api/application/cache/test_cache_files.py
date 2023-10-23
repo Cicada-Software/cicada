@@ -7,10 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from cicada.application.cache.cache_files import (
-    CacheFilesForSession,
-    InvalidCacheObject,
-)
+from cicada.application.cache.cache_files import CacheFilesForSession, InvalidCacheObject
 from cicada.domain.cache import CacheKey, CacheObject
 from cicada.domain.session import Session
 from test.common import build

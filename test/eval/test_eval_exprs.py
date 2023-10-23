@@ -2,13 +2,7 @@ from decimal import Decimal
 
 from cicada.ast.common import json_to_record
 from cicada.ast.entry import parse_and_analyze
-from cicada.ast.nodes import (
-    BooleanValue,
-    ListValue,
-    NumericValue,
-    RecordValue,
-    StringValue,
-)
+from cicada.ast.nodes import BooleanValue, ListValue, NumericValue, RecordValue, StringValue
 from cicada.ast.types import ListType, NumericType
 from cicada.eval.main import EvalVisitor
 from test.eval.test_eval_statements import make_dummy_commit_trigger

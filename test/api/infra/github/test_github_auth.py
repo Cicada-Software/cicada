@@ -36,9 +36,7 @@ def test_github_user_repo_perms_caching() -> None:
 
     # Check user/repo binding was automatically created
     assert di.connection
-    rows = di.connection.execute(
-        "SELECT user_id, repo_id, perms FROM _user_repos"
-    ).fetchall()
+    rows = di.connection.execute("SELECT user_id, repo_id, perms FROM _user_repos").fetchall()
 
     assert len(rows) == 1
 
@@ -98,9 +96,9 @@ def test_no_new_entries_for_the_same_repository() -> None:
 
     assert di.connection
 
-    user_id = di.connection.execute(
-        "SELECT uuid FROM users WHERE username='new_user'"
-    ).fetchone()[0]
+    user_id = di.connection.execute("SELECT uuid FROM users WHERE username='new_user'").fetchone()[
+        0
+    ]
 
     update_github_repo_perms(di, user_id, event, "any event")
 
@@ -121,12 +119,8 @@ def test_invalid_events_are_ignored() -> None:
 
     update_github_repo_perms(di, uuid4(), {}, "any event")
     update_github_repo_perms(di, uuid4(), {"sender": {}}, "any event")
-    update_github_repo_perms(
-        di, uuid4(), {"sender": {"type": "Robot"}}, "any event"
-    )
-    update_github_repo_perms(
-        di, uuid4(), {"sender": {"type": "User"}}, "any event"
-    )
+    update_github_repo_perms(di, uuid4(), {"sender": {"type": "Robot"}}, "any event")
+    update_github_repo_perms(di, uuid4(), {"sender": {"type": "User"}}, "any event")
 
     event = {
         "sender": {

@@ -1,9 +1,5 @@
 from collections.abc import AsyncGenerator
-from contextlib import (
-    AbstractAsyncContextManager,
-    asynccontextmanager,
-    nullcontext,
-)
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
 from pathlib import Path
 
 from githubkit import GitHub
@@ -40,9 +36,7 @@ async def gather_issue_workflows(
 
     github = await get_github_integration_for_repo(username, repo_name)
 
-    data = await github.rest.repos.async_get_commit(
-        username, repo_name, "HEAD"
-    )
+    data = await github.rest.repos.async_get_commit(username, repo_name, "HEAD")
     commit = data.parsed_data
 
     trigger.sha = GitSha(commit.sha)

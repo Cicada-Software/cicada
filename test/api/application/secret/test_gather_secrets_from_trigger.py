@@ -1,8 +1,6 @@
 from unittest.mock import MagicMock
 
-from cicada.application.secret.gather_secrets_from_trigger import (
-    GatherSecretsFromTrigger,
-)
+from cicada.application.secret.gather_secrets_from_trigger import GatherSecretsFromTrigger
 from cicada.domain.repository import Repository
 from cicada.domain.secret import Secret
 from cicada.domain.triggers import CommitTrigger
@@ -28,9 +26,7 @@ def test_pull_repository_and_installation_secrets() -> None:
     repository = build(Repository)
 
     repository_repo = MagicMock()
-    repository_repo.get_repository_by_url_and_provider.return_value = (
-        repository
-    )
+    repository_repo.get_repository_by_url_and_provider.return_value = repository
 
     secret_repo = MagicMock()
     secret_repo.get_secrets_for_installation.return_value = [
@@ -56,9 +52,7 @@ def test_repository_secrets_override_installation_secrets() -> None:
     repository = build(Repository)
 
     repository_repo = MagicMock()
-    repository_repo.get_repository_by_url_and_provider.return_value = (
-        repository
-    )
+    repository_repo.get_repository_by_url_and_provider.return_value = repository
 
     secret_repo = MagicMock()
     secret_repo.get_secrets_for_installation.return_value = [

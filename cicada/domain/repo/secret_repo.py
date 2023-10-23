@@ -47,15 +47,11 @@ class ISecretRepo(ABC):
         ...
 
     @abstractmethod
-    def set_secrets_for_repo(
-        self, id: RepositoryId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_repo(self, id: RepositoryId, secrets: list[Secret]) -> None:
         ...
 
     @abstractmethod
-    def set_secrets_for_installation(
-        self, id: InstallationId, secrets: list[Secret]
-    ) -> None:
+    def set_secrets_for_installation(self, id: InstallationId, secrets: list[Secret]) -> None:
         ...
 
     @abstractmethod

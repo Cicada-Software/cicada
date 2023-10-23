@@ -1,20 +1,14 @@
 import sqlite3
 
 from cicada.api.infra.db_connection import DbConnection
-from cicada.domain.installation import (
-    Installation,
-    InstallationId,
-    InstallationScope,
-)
+from cicada.domain.installation import Installation, InstallationId, InstallationScope
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repository import Repository, RepositoryId
 from cicada.domain.user import User, UserId
 
 
 class InstallationRepo(IInstallationRepo, DbConnection):
-    def create_or_update_installation(
-        self, installation: Installation
-    ) -> InstallationId:
+    def create_or_update_installation(self, installation: Installation) -> InstallationId:
         installation_id = self.conn.execute(
             """
             INSERT INTO installations (
@@ -72,9 +66,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
 
         return [self._convert(row) for row in rows]
 
-    def get_installation_by_provider_id(
-        self, *, id: str, provider: str
-    ) -> Installation | None:
+    def get_installation_by_provider_id(self, *, id: str, provider: str) -> Installation | None:
         row = self.conn.execute(
             """
             SELECT
@@ -98,9 +90,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
 
         return self._convert(row)
 
-    def add_repository_to_installation(
-        self, repo: Repository, installation: Installation
-    ) -> None:
+    def add_repository_to_installation(self, repo: Repository, installation: Installation) -> None:
         self.conn.execute(
             """
             INSERT INTO _installation_repos (installation_id, repo_id)
@@ -115,9 +105,7 @@ class InstallationRepo(IInstallationRepo, DbConnection):
 
         self.conn.commit()
 
-    def get_installation_id_by_repository_id(
-        self, id: RepositoryId
-    ) -> InstallationId | None:
+    def get_installation_id_by_repository_id(self, id: RepositoryId) -> InstallationId | None:
         installation_id = self.conn.execute(
             """
             SELECT i.uuid

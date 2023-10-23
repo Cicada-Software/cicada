@@ -34,9 +34,7 @@ class TerminalSession:
     callback: Callable[[bytes], None] | None
     should_stop: Event
 
-    def __init__(
-        self, callback: Callable[[bytes], None] | None = None
-    ) -> None:
+    def __init__(self, callback: Callable[[bytes], None] | None = None) -> None:
         self.chunks = []
         self.has_new_chunk = Event()
         self.is_done = False

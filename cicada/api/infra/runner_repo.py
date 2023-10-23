@@ -12,9 +12,7 @@ from cicada.domain.session import Session
 
 
 class RunnerRepo(IRunnerRepo, DbConnection):
-    session_queue: ClassVar[
-        defaultdict[RunnerId, list[tuple[Session, FileNode, str]]]
-    ]
+    session_queue: ClassVar[defaultdict[RunnerId, list[tuple[Session, FileNode, str]]]]
 
     def __init__(self, db: sqlite3.Connection | None = None) -> None:
         super().__init__(db)
@@ -43,9 +41,7 @@ class RunnerRepo(IRunnerRepo, DbConnection):
             id=RunnerId(UUID(runner["uuid"])),
             installation_id=runner["installation_uuid"],
             secret=PasswordHash(runner["secret"]),
-            groups=frozenset(
-                runner["groups"].split(",") if runner["groups"] else ()
-            ),
+            groups=frozenset(runner["groups"].split(",") if runner["groups"] else ()),
         )
 
     def queue_session(
@@ -57,9 +53,7 @@ class RunnerRepo(IRunnerRepo, DbConnection):
         if runner_id := self._get_runner_id_for_session(session):
             self.session_queue[runner_id].append((session, tree, url))
 
-    def get_queued_sessions_for_runner(
-        self, id: RunnerId
-    ) -> list[tuple[Session, FileNode, str]]:
+    def get_queued_sessions_for_runner(self, id: RunnerId) -> list[tuple[Session, FileNode, str]]:
         try:
             return self.session_queue.pop(id)
 

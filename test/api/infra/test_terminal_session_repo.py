@@ -1,10 +1,7 @@
 from uuid import uuid4
 
 from cicada.api.infra.session_repo import SessionRepo
-from cicada.api.infra.terminal_session_repo import (
-    LIVE_TERMINAL_SESSIONS,
-    TerminalSessionRepo,
-)
+from cicada.api.infra.terminal_session_repo import LIVE_TERMINAL_SESSIONS, TerminalSessionRepo
 from cicada.domain.session import Session, Workflow, WorkflowId
 from test.api.common import SqliteTestWrapper
 from test.common import build
@@ -32,9 +29,7 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
 
         new_terminal_session = self.repo.create(workflow.id)
 
-        assert new_terminal_session is self.repo.get_by_workflow_id(
-            workflow.id
-        )
+        assert new_terminal_session is self.repo.get_by_workflow_id(workflow.id)
 
     def test_get_terminal_session_that_has_finished(self) -> None:
         session_id = uuid4()

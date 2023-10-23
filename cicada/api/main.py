@@ -44,17 +44,13 @@ ENABLED_PROVIDERS = GitProviderSettings().enabled_providers
 
 if "github" in ENABLED_PROVIDERS:
     from cicada.api.endpoints.sso.github import router as github_sso_router
-    from cicada.api.endpoints.webhook.github.main import (
-        router as github_webhook_router,
-    )
+    from cicada.api.endpoints.webhook.github.main import router as github_webhook_router
 
     app.include_router(github_webhook_router)
     app.include_router(github_sso_router)
 
 if "gitlab" in ENABLED_PROVIDERS:
-    from cicada.api.endpoints.webhook.gitlab.main import (
-        router as gitlab_webhook_router,
-    )
+    from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook_router
 
     app.include_router(gitlab_webhook_router)
 

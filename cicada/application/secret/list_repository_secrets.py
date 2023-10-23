@@ -15,17 +15,13 @@ class ListRepositorySecrets:
         self.secret_repo = secret_repo
 
     def handle(self, user: User, repository_id: RepositoryId) -> list[str]:
-        repository = self.repository_repo.get_repository_by_repo_id(
-            repository_id
-        )
+        repository = self.repository_repo.get_repository_by_repo_id(repository_id)
 
         if not repository:
             raise NotFound("Repository not found")
 
         # TODO: allow admins in addition to owners
-        is_owner = self.repository_repo.can_user_access_repo(
-            user, repository, permission="owner"
-        )
+        is_owner = self.repository_repo.can_user_access_repo(user, repository, permission="owner")
 
         if not is_owner:
             raise Unauthorized("You don't have access to this repository")

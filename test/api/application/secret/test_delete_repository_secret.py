@@ -3,9 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from cicada.application.exceptions import NotFound, Unauthorized
-from cicada.application.secret.delete_repository_secret import (
-    DeleteRepositorySecret,
-)
+from cicada.application.secret.delete_repository_secret import DeleteRepositorySecret
 from cicada.domain.repository import Repository, RepositoryId
 from cicada.domain.user import User
 from test.common import build

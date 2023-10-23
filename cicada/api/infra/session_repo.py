@@ -8,14 +8,7 @@ from cicada.common.json import asjson
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.repo.repository_repo import Permission
 from cicada.domain.repo.session_repo import ISessionRepo
-from cicada.domain.session import (
-    Session,
-    SessionId,
-    SessionStatus,
-    Status,
-    Workflow,
-    WorkflowId,
-)
+from cicada.domain.session import Session, SessionId, SessionStatus, Status, Workflow, WorkflowId
 from cicada.domain.triggers import GitSha, Trigger, json_to_trigger
 from cicada.domain.user import User
 
@@ -198,9 +191,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 status=SessionStatus(row["status"]),
                 started_at=UtcDatetime.fromisoformat(row["started_at"]),
                 finished_at=(
-                    UtcDatetime.fromisoformat(row["finished_at"])
-                    if row["finished_at"]
-                    else None
+                    UtcDatetime.fromisoformat(row["finished_at"]) if row["finished_at"] else None
                 ),
                 trigger=trigger,
                 run=row["run_number"],
@@ -244,9 +235,7 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         return [self._convert_session(x) for x in rows]
 
-    def get_recent_sessions_for_repo(
-        self, user: User, repository_url: str
-    ) -> list[Session]:
+    def get_recent_sessions_for_repo(self, user: User, repository_url: str) -> list[Session]:
         if user.is_admin:
             rows = self.conn.execute(
                 """
@@ -362,10 +351,7 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         required_level = permission_levels.index(permission)
 
-        return any(
-            permission_levels.index(p) >= required_level
-            for p in rows[0].split(",")
-        )
+        return any(permission_levels.index(p) >= required_level for p in rows[0].split(","))
 
     def get_runs_for_session(
         self,
@@ -411,18 +397,14 @@ class SessionRepo(ISessionRepo, DbConnection):
             id=SessionId(row[0]),
             status=SessionStatus(row[1]),
             started_at=UtcDatetime.fromisoformat(row[2]),
-            finished_at=(
-                UtcDatetime.fromisoformat(row[3]) if row[3] else None
-            ),
+            finished_at=(UtcDatetime.fromisoformat(row[3]) if row[3] else None),
             run=row[4],
             trigger=json_to_trigger(row[5]),
             run_on_self_hosted=bool(row[6]),
             title=row[7] if row[7] else None,
         )
 
-    def get_workflow_id_from_session(
-        self, session: Session
-    ) -> WorkflowId | None:
+    def get_workflow_id_from_session(self, session: Session) -> WorkflowId | None:
         rows = self.conn.execute(
             """
             SELECT uuid FROM workflows WHERE session_id=? AND run_number=?;
@@ -490,9 +472,7 @@ class SessionRepo(ISessionRepo, DbConnection):
             status=Status(row["status"]),
             started_at=UtcDatetime.fromisoformat(row["started_at"]),
             finished_at=(
-                UtcDatetime.fromisoformat(row["finished_at"])
-                if row["finished_at"]
-                else None
+                UtcDatetime.fromisoformat(row["finished_at"]) if row["finished_at"] else None
             ),
             run_on_self_hosted=bool(row["run_on_self_hosted"]),
             title=row["title"] if row["title"] else None,

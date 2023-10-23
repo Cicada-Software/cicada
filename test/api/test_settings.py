@@ -190,7 +190,7 @@ def test_validate_dns_settings() -> None:
         "example.com/": re.escape('Did you mean "example.com"?'),
         "example.com/api": re.escape('Did you mean "example.com"?'),
         "example.com?test=1": re.escape('Did you mean "example.com"?'),
-        "www.example.com": 'should not include "www" .* Did you mean "example.com"',  # noqa: E501
+        "www.example.com": 'should not include "www" .* Did you mean "example.com"',
     }
 
     for url, error in tests.items():

@@ -9,10 +9,7 @@ from cicada.ast.nodes import FileNode
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.domain.triggers import Trigger
 from cicada.eval.find_files import find_ci_files
-from cicada.eval.on_statement_visitor import (
-    OnStatementEvalVisitor,
-    ShouldRunWorkflow,
-)
+from cicada.eval.on_statement_visitor import OnStatementEvalVisitor, ShouldRunWorkflow
 
 
 # TODO: replace `ref` with `sha`
@@ -45,9 +42,7 @@ async def repo_get_ci_files(
             await process.wait()
 
             if process.returncode != 0:
-                logger.error(
-                    f"Could not clone repository {trigger.repository_url}"
-                )
+                logger.error(f"Could not clone repository {trigger.repository_url}")
                 return []
 
         return folder_get_runnable_ci_files(cloned_repo, trigger)

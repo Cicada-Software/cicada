@@ -4,9 +4,7 @@ from uuid import uuid4
 import pytest
 
 from cicada.application.exceptions import NotFound, Unauthorized
-from cicada.application.secret.delete_installation_secret import (
-    DeleteInstallationSecret,
-)
+from cicada.application.secret.delete_installation_secret import DeleteInstallationSecret
 from cicada.domain.installation import Installation
 from cicada.domain.user import User
 from test.common import build

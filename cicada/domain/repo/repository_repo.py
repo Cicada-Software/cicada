@@ -15,9 +15,7 @@ class IRepositoryRepo(ABC):
 
     # TODO: is provider needed for lookups?
     @abstractmethod
-    def get_repository_by_url_and_provider(
-        self, url: str, provider: str
-    ) -> Repository | None:
+    def get_repository_by_url_and_provider(self, url: str, provider: str) -> Repository | None:
         ...
 
     @abstractmethod

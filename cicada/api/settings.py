@@ -73,9 +73,7 @@ class DNSSettings:
         if not self.is_domain_only_url(self.domain):
             domain = self.format_invalid_domain_url(self.domain)
 
-            raise ValueError(
-                f'CICADA_DOMAIN must be domain only. Did you mean "{domain}"?'
-            )
+            raise ValueError(f'CICADA_DOMAIN must be domain only. Did you mean "{domain}"?')
 
         if self.domain.startswith("www."):
             raise ValueError(
@@ -104,10 +102,7 @@ class DNSSettings:
 
         p = urlparse(url)
 
-        return not (
-            any((p.scheme, p.netloc, p.params, p.query, p.fragment))
-            or "/" in p.path
-        )
+        return not (any((p.scheme, p.netloc, p.params, p.query, p.fragment)) or "/" in p.path)
 
     def format_invalid_domain_url(self, url: str) -> str:
         p = urlparse(url)
@@ -127,15 +122,11 @@ class GitProviderSettings(DNSSettings):
         self.repo_white_list = os.getenv("REPO_WHITE_LIST", "").split(",")
 
         if not self.repo_white_list:
-            raise ValueError(
-                "GITHUB_REPO_WHITE_LIST is empty, no workflows will be allowed"
-            )
+            raise ValueError("GITHUB_REPO_WHITE_LIST is empty, no workflows will be allowed")
 
         self.enabled_providers = {
             stripped
-            for provider in os.getenv(
-                "ENABLED_PROVIDERS", "github,gitlab"
-            ).split(",")
+            for provider in os.getenv("ENABLED_PROVIDERS", "github,gitlab").split(",")
             if (stripped := provider.strip())
         }
 
@@ -196,9 +187,7 @@ class GitHubSettings(GitProviderSettings):
         self.key_file = Path(os.getenv("GITHUB_APP_PRIVATE_KEY_FILE", ""))
 
         if not (self.key_file.exists() and self.key_file.is_file()):
-            raise ValueError(
-                "GITHUB_APP_PRIVATE_KEY_FILE must be defined, or file doesn't exist"  # noqa: E501
-            )
+            raise ValueError("GITHUB_APP_PRIVATE_KEY_FILE must be defined, or file doesn't exist")
 
         self.webhook_secret = os.getenv("GITHUB_WEBHOOK_SECRET", "")
 
@@ -224,14 +213,10 @@ class JWTSettings(DNSSettings):
             raise ValueError("JWT_TOKEN_SECRET must be defined")
 
         try:
-            self.expiration_timeout = int(
-                os.getenv("JWT_TOKEN_EXPIRE_SECONDS", "0")
-            )
+            self.expiration_timeout = int(os.getenv("JWT_TOKEN_EXPIRE_SECONDS", "0"))
 
         except ValueError as ex:
-            raise ValueError(
-                "JWT_TOKEN_EXPIRE_SECONDS must be an integer"
-            ) from ex
+            raise ValueError("JWT_TOKEN_EXPIRE_SECONDS must be an integer") from ex
 
         if not self.expiration_timeout:
             raise ValueError("JWT_TOKEN_EXPIRE_SECONDS must be defined")

@@ -40,8 +40,6 @@ class SqliteTestWrapper:
             cls.connection.commit()
 
         else:
-            cls.connection = sqlite3.connect(
-                ":memory:", check_same_thread=False
-            )
+            cls.connection = sqlite3.connect(":memory:", check_same_thread=False)
 
             cls.migrated_connection.backup(cls.connection)

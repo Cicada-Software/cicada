@@ -40,9 +40,7 @@ class TestInstallationRepo(SqliteTestWrapper):
             provider_url="https://example.com",
         )
 
-        installation_id = self.installation_repo.create_or_update_installation(
-            installation
-        )
+        installation_id = self.installation_repo.create_or_update_installation(installation)
 
         assert installation_id == installation.id
 
@@ -69,14 +67,10 @@ class TestInstallationRepo(SqliteTestWrapper):
 
         new_installation = replace(old_installation, id=uuid4())
 
-        old_id = self.installation_repo.create_or_update_installation(
-            old_installation
-        )
+        old_id = self.installation_repo.create_or_update_installation(old_installation)
         assert old_id == old_installation.id
 
-        new_id = self.installation_repo.create_or_update_installation(
-            new_installation
-        )
+        new_id = self.installation_repo.create_or_update_installation(new_installation)
         assert new_id == old_id
 
     def test_get_installation_by_provider_id(self) -> None:
@@ -127,9 +121,7 @@ class TestInstallationRepo(SqliteTestWrapper):
 
             assert self.connection
 
-            ids = self.connection.execute(
-                "SELECT repo_id FROM _installation_repos"
-            ).fetchall()
+            ids = self.connection.execute("SELECT repo_id FROM _installation_repos").fetchall()
 
             assert len(ids) == 1
 

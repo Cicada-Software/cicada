@@ -109,9 +109,7 @@ class StreamSession:
             attempts = 10
 
         for _ in range(attempts):
-            session = self.session_repo.get_session_by_session_id(
-                session_id, run=run
-            )
+            session = self.session_repo.get_session_by_session_id(session_id, run=run)
             assert session
 
             if session.status == ignore:

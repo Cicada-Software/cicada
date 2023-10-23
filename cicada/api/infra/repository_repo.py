@@ -19,9 +19,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
 
         return self._convert(row) if row else None
 
-    def get_repository_by_url_and_provider(
-        self, url: str, provider: str
-    ) -> Repository | None:
+    def get_repository_by_url_and_provider(self, url: str, provider: str) -> Repository | None:
         row = self.conn.execute(
             """
             SELECT id, url, provider, is_public
@@ -110,10 +108,7 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
 
         required_level = permission_levels.index(permission)
 
-        return any(
-            permission_levels.index(p) >= required_level
-            for p in rows[0].split(",")
-        )
+        return any(permission_levels.index(p) >= required_level for p in rows[0].split(","))
 
     def update_user_perms_for_repo(
         self, repo: Repository, user_id: UserId, permissions: list[Permission]

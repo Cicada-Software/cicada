@@ -14,9 +14,7 @@ def create_or_update_github_user(  # type: ignore[misc]
 ) -> User | None:
     match event:
         case {"sender": {"type": "User", "login": sender_username}}:
-            user = User(
-                id=uuid4(), username=sender_username, provider="github"
-            )
+            user = User(id=uuid4(), username=sender_username, provider="github")
 
             user_id = user_repo.create_or_update_user(user)
 
@@ -89,9 +87,7 @@ def update_github_repo_perms(  # type: ignore[misc]
         is_public=not is_private,
     )
 
-    repository_repo.update_user_perms_for_repo(
-        repo, user_id, [perms]  # type: ignore[list-item]
-    )
+    repository_repo.update_user_perms_for_repo(repo, user_id, [perms])  # type: ignore[list-item]
 
     return repository_repo.get_repository_by_repo_id(repo.id)
 
@@ -146,6 +142,4 @@ def add_repository_to_installation(  # type: ignore[misc]
             )
 
             if installation and repository:
-                installation_repo.add_repository_to_installation(
-                    repository, installation
-                )
+                installation_repo.add_repository_to_installation(repository, installation)

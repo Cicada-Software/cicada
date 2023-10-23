@@ -14,9 +14,7 @@ from cicada.api.infra.gitlab.workflows import (
     run_workflow,
 )
 from cicada.api.settings import GitlabSettings, GitProviderSettings
-from cicada.application.session.make_session_from_trigger import (
-    MakeSessionFromTrigger,
-)
+from cicada.application.session.make_session_from_trigger import MakeSessionFromTrigger
 
 from .converters import gitlab_event_to_commit, gitlab_event_to_issue
 
@@ -38,9 +36,7 @@ def verify_webhook_came_from_gitlab(request: Request) -> None:
         )
 
 
-def handle_gitlab_push_event(  # type: ignore[misc]
-    di: DiContainer, event: dict[str, Any]
-) -> None:
+def handle_gitlab_push_event(di: DiContainer, event: dict[str, Any]) -> None:  # type: ignore[misc]
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),

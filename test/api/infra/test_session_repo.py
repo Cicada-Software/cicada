@@ -67,9 +67,7 @@ class TestSessionRepo(SqliteTestWrapper):
         session.finished_at = now
         self.session_repo.update(session)
 
-        updated_session = self.session_repo.get_session_by_session_id(
-            session.id
-        )
+        updated_session = self.session_repo.get_session_by_session_id(session.id)
 
         assert updated_session
         assert updated_session.finished_at == now
@@ -106,12 +104,8 @@ class TestSessionRepo(SqliteTestWrapper):
         self.session_repo.create(run_1)
         self.session_repo.create(run_2)
 
-        assert (
-            self.session_repo.get_session_by_session_id(session_id, 1) == run_1
-        )
-        assert (
-            self.session_repo.get_session_by_session_id(session_id, 2) == run_2
-        )
+        assert self.session_repo.get_session_by_session_id(session_id, 1) == run_1
+        assert self.session_repo.get_session_by_session_id(session_id, 2) == run_2
 
     def test_user_can_only_see_sessions_if_perms_are_valid(self) -> None:
         @dataclass

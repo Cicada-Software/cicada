@@ -39,18 +39,14 @@ class TestMainEndpoints(TestEndpointWrapper):
             assert response.status_code == 401
 
     def test_invalid_email_on_waitlist_page_returns_400_error(self) -> None:
-        response = self.client.post(
-            "/api/join_waitlist", data={"email": "invalid"}
-        )
+        response = self.client.post("/api/join_waitlist", data={"email": "invalid"})
 
         assert response.status_code == 400
 
         assert "Email must contain" in response.text
 
     def test_valid_email_inserts_into_waitlist(self) -> None:
-        response = self.client.post(
-            "/api/join_waitlist", data={"email": "valid@email.com"}
-        )
+        response = self.client.post("/api/join_waitlist", data={"email": "valid@email.com"})
 
         assert response.status_code == 200
 

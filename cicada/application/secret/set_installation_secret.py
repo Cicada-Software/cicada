@@ -18,24 +18,18 @@ class SetInstallationSecret:
         self.secret_repo = secret_repo
         self.logger = logging.getLogger("cicada")
 
-    def handle(
-        self, user: User, installation_id: InstallationId, secret: Secret
-    ) -> None:
+    def handle(self, user: User, installation_id: InstallationId, secret: Secret) -> None:
         installations = self.installation_repo.get_installations_for_user(user)
 
         for installation in installations:
             if installation.id == installation_id:
                 if installation.admin_id != user.id:
-                    raise Unauthorized(
-                        "You do not have access to this installation"
-                    )
+                    raise Unauthorized("You do not have access to this installation")
 
-                msg = f"User {user.id} is setting env var for installation {installation_id}"  # noqa: E501
+                msg = f"User {user.id} is setting env var for installation {installation_id}"
                 self.logger.info(msg)
 
-                self.secret_repo.set_secrets_for_installation(
-                    installation_id, [secret]
-                )
+                self.secret_repo.set_secrets_for_installation(installation_id, [secret])
 
                 return
 

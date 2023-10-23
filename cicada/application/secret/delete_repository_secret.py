@@ -24,16 +24,10 @@ class DeleteRepositorySecret:
             raise NotFound("Repository not found")
 
         # TODO: allow non owners (ie admins) to delete as well
-        is_owner = self.repository_repo.can_user_access_repo(
-            user, repo, permission="owner"
-        )
+        is_owner = self.repository_repo.can_user_access_repo(user, repo, permission="owner")
 
         if not is_owner:
-            raise Unauthorized(
-                "You are not allowed to delete repository secrets"
-            )
+            raise Unauthorized("You are not allowed to delete repository secrets")
 
-        self.logger.info(
-            f"User {user.id} deleting secret for repository id {repo.id}"
-        )
+        self.logger.info(f"User {user.id} deleting secret for repository id {repo.id}")
         self.secret_repo.delete_repository_secret(id, key)

@@ -44,9 +44,7 @@ class TestLoginEndpoints(TestEndpointWrapper):
 
         refresh_jwt = response.json()["access_token"]
 
-        refresh_data = get_user_and_payload_from_jwt(
-            self.di.user_repo(), refresh_jwt
-        )
+        refresh_data = get_user_and_payload_from_jwt(self.di.user_repo(), refresh_jwt)
         assert refresh_data
 
         refresh_user, refresh_payload = refresh_data

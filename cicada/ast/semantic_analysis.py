@@ -118,9 +118,7 @@ Symbol = Value | Expression
 # TODO: make sure this immutable
 BUILT_IN_SYMBOLS: dict[str, Symbol] = {
     "shell": FunctionValue(
-        FunctionType(
-            [VariadicTypeArg(StringCoercibleType)], rtype=CommandType()
-        ),
+        FunctionType([VariadicTypeArg(StringCoercibleType)], rtype=CommandType()),
     ),
     "print": FunctionValue(
         FunctionType(
@@ -129,14 +127,10 @@ BUILT_IN_SYMBOLS: dict[str, Symbol] = {
         ),
     ),
     "hashOf": FunctionValue(
-        FunctionType(
-            [StringType(), VariadicTypeArg(StringType())], rtype=StringType()
-        ),
+        FunctionType([StringType(), VariadicTypeArg(StringType())], rtype=StringType()),
     ),
     **{
-        alias: FunctionValue(
-            FunctionType([StringCoercibleType], rtype=CommandType())
-        )
+        alias: FunctionValue(FunctionType([StringCoercibleType], rtype=CommandType()))
         for alias in SHELL_ALIASES
     },
 }
@@ -238,9 +232,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     node,
                 )
 
-        elif isinstance(
-            node.lhs, IdentifierExpression | MemberExpression
-        ) and (data := MEMBER_FUNCTION_TYPES.get(node.name)):
+        elif isinstance(node.lhs, IdentifierExpression | MemberExpression) and (
+            data := MEMBER_FUNCTION_TYPES.get(node.name)
+        ):
             node.type = data[1].type
 
         else:
@@ -283,7 +277,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             for item in node.items:
                 if item.type != inner_type:
                     raise AstError(
-                        f"Expected type `{inner_type}`, got type `{item.type}` instead",  # noqa: E501
+                        f"Expected type `{inner_type}`, got type `{item.type}` instead",
                         item,
                     )
 
@@ -302,9 +296,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         elif node.oper == UnaryOperator.NEGATE:
             if node.rhs.type != NumericType():
-                raise AstError(
-                    "Cannot use `-` operator with non-numeric value", node
-                )
+                raise AstError("Cannot use `-` operator with non-numeric value", node)
 
         else:
             assert False
@@ -382,10 +374,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         allowed_types = OPERATOR_ALLOWED_TYPES[node.oper]
 
-        if (
-            Type not in allowed_types
-            and type(node.lhs.type) not in allowed_types
-        ):
+        if Type not in allowed_types and type(node.lhs.type) not in allowed_types:
             # TODO: move to AstError class
             wrapped = [f"`{ty()}`" for ty in allowed_types]
 
@@ -436,12 +425,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     info=node,
                 )
 
-            for arg, arg_type in zip(
-                node.args, symbol.type.arg_types, strict=True
-            ):
+            for arg, arg_type in zip(node.args, symbol.type.arg_types, strict=True):
                 if arg.type != arg_type:
                     raise AstError(
-                        f"Expected type `{arg_type}`, got type `{arg.type}` instead",  # noqa: E501
+                        f"Expected type `{arg_type}`, got type `{arg.type}` instead",
                         arg,
                     )
 
@@ -466,14 +453,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         func_arg_types = symbol.type.arg_types
 
-        is_variadic = func_arg_types and isinstance(
-            func_arg_types[-1], VariadicTypeArg
-        )
+        is_variadic = func_arg_types and isinstance(func_arg_types[-1], VariadicTypeArg)
 
         # Ensure only the last func arg is variadic. This should always be true
-        assert not any(
-            isinstance(arg, VariadicTypeArg) for arg in func_arg_types[:-1]
-        )
+        assert not any(isinstance(arg, VariadicTypeArg) for arg in func_arg_types[:-1])
 
         if is_variadic:
             self.type_check_variadic_func_expr(node, symbol)
@@ -517,13 +500,11 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             assert isinstance(var_arg, VariadicTypeArg)
 
             if not self.is_type_compatible(arg.type, var_arg.type):
-                msg = f"Expected type `{var_arg.type}`, got type `{arg.type}` instead"  # noqa: E501
+                msg = f"Expected type `{var_arg.type}`, got type `{arg.type}` instead"
 
                 raise AstError(msg, arg)
 
-    def type_check_normal_func_expr(
-        self, node: FunctionExpression, symbol: FunctionValue
-    ) -> None:
+    def type_check_normal_func_expr(self, node: FunctionExpression, symbol: FunctionValue) -> None:
         assert isinstance(node.callee, IdentifierExpression)
 
         expected = len(symbol.type.arg_types)
@@ -556,9 +537,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.has_ran_function:
             # TODO: include location of offending non-constexpr function
 
-            raise AstError(
-                "Cannot use `on` statement after a function call", node
-            )
+            raise AstError("Cannot use `on` statement after a function call", node)
 
         super().visit_on_stmt(node)
 
@@ -616,7 +595,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             if node.condition.type not in BOOL_LIKE_TYPES:
                 raise AstError(
-                    f"Type `{node.condition.type}` cannot be converted to bool",  # noqa: E501
+                    f"Type `{node.condition.type}` cannot be converted to bool",
                     node.condition,
                 )
 
@@ -653,7 +632,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if node.using.type != StringType():
             raise AstError(
-                f"Expected `{StringType()}` type, got type `{node.using.type}`",  # noqa: E501
+                f"Expected `{StringType()}` type, got type `{node.using.type}`",
                 node.using,
             )
 
@@ -687,9 +666,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         self.check_for_duplicate_arg_names(node)
 
         with self.new_scope():
-            for arg, ty in zip(
-                node.arg_names, node.type.arg_types, strict=True
-            ):
+            for arg, ty in zip(node.arg_names, node.type.arg_types, strict=True):
                 # TODO: this should be just a type since the value is unknown
 
                 if ty == StringType():
@@ -710,7 +687,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         if func_rtype != UnitType() and body_rtype != func_rtype:
             raise AstError(
-                f"Expected type `{func_rtype}`, got type `{body_rtype}` instead",  # noqa: E501
+                f"Expected type `{func_rtype}`, got type `{body_rtype}` instead",
                 node.body.exprs[-1],
             )
 
@@ -766,12 +743,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         rhs: Expression,
     ) -> None:
         if lhs.type != rhs.type:
-            verb = (
-                "assigned to" if oper == BinaryOperator.ASSIGN else "used with"
-            )
+            verb = "assigned to" if oper == BinaryOperator.ASSIGN else "used with"
 
             raise AstError(
-                f"Expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",  # noqa: E501
+                f"Expression of type `{rhs.type}` cannot be {verb} type `{lhs.type}`",
                 rhs,
             )
 

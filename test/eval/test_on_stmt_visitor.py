@@ -1,10 +1,7 @@
 import pytest
 
 from cicada.ast.entry import parse_and_analyze
-from cicada.eval.on_statement_visitor import (
-    OnStatementEvalVisitor,
-    ShouldRunWorkflow,
-)
+from cicada.eval.on_statement_visitor import OnStatementEvalVisitor, ShouldRunWorkflow
 
 from .test_eval_statements import make_dummy_commit_trigger
 

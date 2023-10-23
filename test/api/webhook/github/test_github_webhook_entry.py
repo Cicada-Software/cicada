@@ -40,9 +40,7 @@ class TestGitHubWebhooks(TestEndpointWrapper):
             assert "not signed" in response.text
 
     def test_session_is_created_from_issue_open_trigger(self) -> None:
-        json_file = Path(
-            "test/api/infra/github/test_data/issue_open_event.json"
-        )
+        json_file = Path("test/api/infra/github/test_data/issue_open_event.json")
         event = json.loads(json_file.read_text())
 
         sessions = self.di.session_repo().get_recent_sessions_as_admin()

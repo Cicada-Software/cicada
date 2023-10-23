@@ -14,7 +14,5 @@ class ITerminalSessionRepo(ABC):
         ...
 
     @abstractmethod
-    def get_by_workflow_id(
-        self, workflow_id: WorkflowId
-    ) -> TerminalSession | None:
+    def get_by_workflow_id(self, workflow_id: WorkflowId) -> TerminalSession | None:
         ...

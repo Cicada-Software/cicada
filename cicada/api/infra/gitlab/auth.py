@@ -5,9 +5,7 @@ from cicada.api.di import DiContainer
 from cicada.domain.user import User
 
 
-def update_gitlab_repo_perms(  # type: ignore[misc]
-    di: DiContainer, event: dict[str, Any]
-) -> None:
+def update_gitlab_repo_perms(di: DiContainer, event: dict[str, Any]) -> None:  # type: ignore[misc]
     match event:
         case {
             "object_kind": "issue",

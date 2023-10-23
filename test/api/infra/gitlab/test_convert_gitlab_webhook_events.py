@@ -6,18 +6,11 @@ from cicada.api.endpoints.webhook.gitlab.converters import (
     gitlab_event_to_issue,
 )
 from cicada.domain.datetime import Datetime
-from cicada.domain.triggers import (
-    CommitTrigger,
-    GitSha,
-    IssueCloseTrigger,
-    IssueOpenTrigger,
-)
+from cicada.domain.triggers import CommitTrigger, GitSha, IssueCloseTrigger, IssueOpenTrigger
 
 
 def test_convert_issue_open_event() -> None:
-    data = json.loads(
-        Path("test/api/infra/gitlab/test_data/issue_open.json").read_text()
-    )
+    data = json.loads(Path("test/api/infra/gitlab/test_data/issue_open.json").read_text())
 
     event = gitlab_event_to_issue(data)
 
@@ -44,9 +37,7 @@ print("Hello from gitlab!")
 
 
 def test_convert_issue_close_event() -> None:
-    data = json.loads(
-        Path("test/api/infra/gitlab/test_data/issue_close.json").read_text()
-    )
+    data = json.loads(Path("test/api/infra/gitlab/test_data/issue_close.json").read_text())
 
     event = gitlab_event_to_issue(data)
 
@@ -65,9 +56,7 @@ def test_convert_issue_close_event() -> None:
 
 
 def test_convert_git_push_event() -> None:
-    data = json.loads(
-        Path("test/api/infra/gitlab/test_data/git_push.json").read_text()
-    )
+    data = json.loads(Path("test/api/infra/gitlab/test_data/git_push.json").read_text())
 
     event = gitlab_event_to_commit(data)
 

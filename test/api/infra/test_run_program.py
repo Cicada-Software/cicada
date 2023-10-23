@@ -41,7 +41,7 @@ async def test_non_existent_program_closes_terminal_session() -> None:
     assert terminal_session.is_done
 
 
-async def test_exception_in_terminal_session_handler_cleans_up_session() -> None:  # noqa: E501
+async def test_exception_in_terminal_session_handler_cleans_up_session() -> None:
     terminal_session = TerminalSession()
 
     def callback(_: bytes) -> None:

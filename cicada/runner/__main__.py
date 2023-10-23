@@ -37,11 +37,7 @@ from cicada.ast.types import CommandType
 from cicada.domain.session import SessionStatus
 from cicada.domain.triggers import CommitTrigger, Trigger, json_to_trigger
 from cicada.eval.builtins import hashOf
-from cicada.eval.constexpr_visitor import (
-    CommandFailed,
-    ConstexprEvalVisitor,
-    value_to_string,
-)
+from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, value_to_string
 from cicada.eval.find_files import find_ci_files
 from cicada.logging import CustomFormatter
 
@@ -134,9 +130,7 @@ async def run() -> None:
 
         except ConnectionClosed as ex:
             if ex.rcvd and ex.rcvd.code == 1001:
-                logger.fatal(
-                    "Connection failed: Unauthorized (is RUNNER_SECRET valid?)"
-                )
+                logger.fatal("Connection failed: Unauthorized (is RUNNER_SECRET valid?)")
                 break
 
             logger.warning("Connection closed, reconnecting")
@@ -284,11 +278,7 @@ async def handle_new_workflow_packet(  # type: ignore[misc]
 
 
 async def checkout_branch_from_trigger(trigger: Trigger) -> None:
-    ref = (
-        "/".join(trigger.ref.split("/")[2:])
-        if isinstance(trigger, CommitTrigger)
-        else "HEAD"
-    )
+    ref = "/".join(trigger.ref.split("/")[2:]) if isinstance(trigger, CommitTrigger) else "HEAD"
 
     sha = str(trigger.sha)
 
@@ -508,9 +498,7 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
         return UnitValue()
 
     def visit_cache_stmt(self, node: CacheStatement) -> Value:
-        self.data_stream.append(
-            b"Caching is not yet supported for self-hosted runners"
-        )
+        self.data_stream.append(b"Caching is not yet supported for self-hosted runners")
 
         return UnitValue()
 

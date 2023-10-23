@@ -12,18 +12,10 @@ from cicada.api.endpoints.task_queue import TaskQueue
 from cicada.api.infra.github.common import (
     gather_workflows_via_trigger as gather_github_git_push_workflows,
 )
-from cicada.api.infra.github.workflows import (
-    run_workflow as run_github_workflow,
-)
-from cicada.api.infra.gitlab.workflows import (
-    gather_workflows as gather_gitlab_workflows,
-)
-from cicada.api.infra.gitlab.workflows import (
-    run_workflow as run_gitlab_workflow,
-)
-from cicada.api.infra.notifications.send_email import (
-    send_failure_notifications,
-)
+from cicada.api.infra.github.workflows import run_workflow as run_github_workflow
+from cicada.api.infra.gitlab.workflows import gather_workflows as gather_gitlab_workflows
+from cicada.api.infra.gitlab.workflows import run_workflow as run_gitlab_workflow
+from cicada.api.infra.notifications.send_email import send_failure_notifications
 from cicada.application.exceptions import CicadaException
 from cicada.application.session.rerun_session import RerunSession
 from cicada.application.session.stop_session import StopSession
@@ -35,9 +27,7 @@ router = APIRouter()
 
 
 @router.post("/api/session/{session_id}/stop")
-async def stop_session(
-    session_id: SessionId, di: Di, user: CurrentUser
-) -> None:
+async def stop_session(session_id: SessionId, di: Di, user: CurrentUser) -> None:
     cmd = StopSession(di.session_repo(), di.session_terminators())
 
     await cmd.handle(session_id, user)
@@ -47,18 +37,14 @@ TASK_QUEUE = TaskQueue()
 
 
 @router.post("/api/session/{session_id}/rerun")
-async def rerun_session(
-    session_id: SessionId, di: Di, user: CurrentUser
-) -> None:
+async def rerun_session(session_id: SessionId, di: Di, user: CurrentUser) -> None:
     # TODO: move to application
     # TODO: test this
 
     session_repo = di.session_repo()
 
     # TODO: ensure this fails if user doesnt have write access
-    session = session_repo.get_session_by_session_id(
-        session_id, user=user, permission="write"
-    )
+    session = session_repo.get_session_by_session_id(session_id, user=user, permission="write")
 
     if not session:
         return
@@ -107,9 +93,7 @@ async def get_session_info(
 ) -> JSONResponse:
     # TODO: test failure if user cannot see session
 
-    session = di.session_repo().get_session_by_session_id(
-        uuid, run, user, permission="read"
-    )
+    session = di.session_repo().get_session_by_session_id(uuid, run, user, permission="read")
 
     if session:
         return JSONResponse(asjson(session))
@@ -127,14 +111,10 @@ async def get_recent_sessions(
     session_repo = di.session_repo()
 
     if repo:
-        recent = session_repo.get_recent_sessions_for_repo(
-            user, repository_url=repo
-        )
+        recent = session_repo.get_recent_sessions_for_repo(user, repository_url=repo)
 
     elif session:
-        return JSONResponse(
-            asjson(session_repo.get_runs_for_session(user, session))
-        )
+        return JSONResponse(asjson(session_repo.get_runs_for_session(user, session)))
 
     else:
         recent = session_repo.get_recent_sessions(user)
@@ -143,9 +123,7 @@ async def get_recent_sessions(
 
 
 @router.websocket("/ws/session/watch_status")
-async def watch_status(
-    websocket: WebSocket, di: Di
-) -> None:  # pragma: no cover
+async def watch_status(websocket: WebSocket, di: Di) -> None:  # pragma: no cover
     """
     Open a websocket to listen for status updates for certain sessions. Once
     connected, the user sends their JWT token to authenticate, then they send
@@ -168,9 +146,7 @@ async def watch_status(
         user = get_user_from_jwt(di.user_repo(), jwt)
 
         if not user:
-            await websocket.send_json(
-                {"error": "Websocket connection failed: Unauthorized"}
-            )
+            await websocket.send_json({"error": "Websocket connection failed: Unauthorized"})
             return await websocket.close(code=1001)
 
         # TODO: add timeout here
@@ -181,9 +157,7 @@ async def watch_status(
             session_ids = {SessionId(x) for x in data}
 
         except (TypeError, ValueError):
-            await websocket.send_json(
-                {"error": "Invalid JSON, expected array of UUIDs"}
-            )
+            await websocket.send_json({"error": "Invalid JSON, expected array of UUIDs"})
             return await websocket.close()
 
         session_repo = di.session_repo()
@@ -233,13 +207,9 @@ async def stream_session(
         if not (
             user
             and session
-            and session_repo.can_user_access_session(
-                user, session, permission="read"
-            )
+            and session_repo.can_user_access_session(user, session, permission="read")
         ):
-            await websocket.send_json(
-                {"error": "You do not have access to this session"}
-            )
+            await websocket.send_json({"error": "You do not have access to this session"})
             await websocket.close(code=1001)
             return
 

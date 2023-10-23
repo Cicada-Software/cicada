@@ -63,23 +63,13 @@ class TestRepositoryRepo(SqliteTestWrapper):
         )
 
         assert self.repo.can_user_access_repo(user, repo, permission="read")
-        assert not self.repo.can_user_access_repo(
-            user, repo, permission="write"
-        )
-        assert not self.repo.can_user_access_repo(
-            user, repo, permission="owner"
-        )
+        assert not self.repo.can_user_access_repo(user, repo, permission="write")
+        assert not self.repo.can_user_access_repo(user, repo, permission="owner")
 
     def test_user_cannot_access_nonexistent_repo(self) -> None:
         user = build(User)
         repo = build(Repository, id=1337)
 
-        assert not self.repo.can_user_access_repo(
-            user, repo, permission="read"
-        )
-        assert not self.repo.can_user_access_repo(
-            user, repo, permission="write"
-        )
-        assert not self.repo.can_user_access_repo(
-            user, repo, permission="owner"
-        )
+        assert not self.repo.can_user_access_repo(user, repo, permission="read")
+        assert not self.repo.can_user_access_repo(user, repo, permission="write")
+        assert not self.repo.can_user_access_repo(user, repo, permission="owner")

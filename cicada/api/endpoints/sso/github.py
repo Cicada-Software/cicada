@@ -22,9 +22,7 @@ def get_github_sso_link(url: str | None = None) -> str:
     settings = GitHubSettings()
 
     url = url_escape(
-        f"{settings.sso_redirect_uri}?url={url}"
-        if url
-        else settings.sso_redirect_uri
+        f"{settings.sso_redirect_uri}?url={url}" if url else settings.sso_redirect_uri
     )
 
     # TODO: use an actual URL constructor instead
@@ -127,12 +125,8 @@ async def generate_jwt_from_github_sso(di: DiContainer, code: str) -> str:
     # Ignore exceptions since email permissions might not be setup for GitHub
     # app, or email might not be set (for some reason).
     with suppress(Exception):
-        resp = (
-            await github.rest.users.async_list_emails_for_authenticated_user()
-        )
-        email = next(
-            email.email for email in resp.parsed_data if email.primary
-        )
+        resp = await github.rest.users.async_list_emails_for_authenticated_user()
+        email = next(email.email for email in resp.parsed_data if email.primary)
 
     # TODO: run these in parallel
     user = await github.rest.users.async_get_authenticated()

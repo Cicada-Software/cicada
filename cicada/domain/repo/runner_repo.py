@@ -24,9 +24,7 @@ class IRunnerRepo(ABC):
         """
 
     @abstractmethod
-    def get_queued_sessions_for_runner(
-        self, id: RunnerId
-    ) -> list[tuple[Session, FileNode, str]]:
+    def get_queued_sessions_for_runner(self, id: RunnerId) -> list[tuple[Session, FileNode, str]]:
         """
         Return a list of sessions that have yet to be ran for a given runner.
         Sessions returned by this function must have been enqueued via the

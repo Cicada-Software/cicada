@@ -30,14 +30,10 @@ class RestoreCache:
                         if linked_to.isdir():
                             link_path = Path(member.name, member.linkname)
                         else:
-                            link_path = (
-                                Path(member.name).parent / member.linkname
-                            )
+                            link_path = Path(member.name).parent / member.linkname
 
                         if not link_path.resolve().is_relative_to(Path.cwd()):
-                            raise ValueError(
-                                "Symlink cannot resolve to outside cache"
-                            )
+                            raise ValueError("Symlink cannot resolve to outside cache")
 
                 tf.extractall(extract_to)
 

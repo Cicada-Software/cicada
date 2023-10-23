@@ -20,12 +20,8 @@ class ListInstallationSecrets:
         for installation in installations:
             if installation.id == installation_id:
                 if installation.admin_id != user.id:
-                    raise Unauthorized(
-                        "You are not authorized to this installation"
-                    )
+                    raise Unauthorized("You are not authorized to this installation")
 
-                return self.secret_repo.list_secrets_for_installation(
-                    installation_id
-                )
+                return self.secret_repo.list_secrets_for_installation(installation_id)
 
         raise NotFound("Installation not found")

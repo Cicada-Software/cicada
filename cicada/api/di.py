@@ -68,9 +68,7 @@ class DiContainer:  # pragma: no cover
             return SecretRepo()
 
         except ValueError:
-            logger.warning(
-                "Vault is not installed, secret support will be disabled"
-            )
+            logger.warning("Vault is not installed, secret support will be disabled")
             return SecretRepoShim()
 
     @classmethod

@@ -1,9 +1,4 @@
-from cicada.ast.nodes import (
-    BooleanValue,
-    FunctionExpression,
-    OnStatement,
-    Value,
-)
+from cicada.ast.nodes import BooleanValue, FunctionExpression, OnStatement, Value
 from cicada.eval.constexpr_visitor import ConstexprEvalVisitor
 
 

@@ -3,13 +3,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from cicada.application.secret.gather_secrets_from_trigger import (
-    GatherSecretsFromTrigger,
-)
-from cicada.application.session.common import (
-    IWorkflowGatherer,
-    IWorkflowRunner,
-)
+from cicada.application.secret.gather_secrets_from_trigger import GatherSecretsFromTrigger
+from cicada.application.session.common import IWorkflowGatherer, IWorkflowRunner
 from cicada.ast.nodes import FileNode, RunOnStatement, RunType
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
@@ -63,9 +58,7 @@ class RerunSession:
         with TemporaryDirectory() as cloned_repo:
             return await self._handle(Path(cloned_repo), session)
 
-    async def _handle(
-        self, cloned_repo: Path, session: Session
-    ) -> Session | None:
+    async def _handle(self, cloned_repo: Path, session: Session) -> Session | None:
         session.trigger.env = self.get_env_vars(session.trigger)
         session.trigger.secret = self.get_secrets(session.trigger)
 
@@ -117,9 +110,7 @@ class RerunSession:
         terminal.callback = callback
 
         try:
-            await self.workflow_runner(
-                session, terminal, cloned_repo, filenode
-            )
+            await self.workflow_runner(session, terminal, cloned_repo, filenode)
 
         except Exception:
             logger = logging.getLogger("cicada")
@@ -139,9 +130,7 @@ class RerunSession:
         return session
 
     def get_env_vars(self, trigger: Trigger) -> dict[str, str]:
-        return get_env_vars_for_repo(
-            self.env_repo, self.repository_repo, trigger
-        )
+        return get_env_vars_for_repo(self.env_repo, self.repository_repo, trigger)
 
     def get_secrets(self, trigger: Trigger) -> dict[str, str]:
         cmd = GatherSecretsFromTrigger(

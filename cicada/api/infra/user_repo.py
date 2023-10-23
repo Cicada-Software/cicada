@@ -27,15 +27,11 @@ class UserRepo(IUserRepo, DbConnection):
             return User(
                 id=UserId(row["uuid"]),
                 username=row["username"],
-                password_hash=(
-                    PasswordHash(row["hash"]) if row["hash"] else None
-                ),
+                password_hash=(PasswordHash(row["hash"]) if row["hash"] else None),
                 is_admin=row["is_admin"],
                 provider=row["platform"],
                 last_login=(
-                    UtcDatetime.fromisoformat(row["last_login"])
-                    if row["last_login"]
-                    else None
+                    UtcDatetime.fromisoformat(row["last_login"]) if row["last_login"] else None
                 ),
                 email=row["email"],
             )
@@ -63,15 +59,11 @@ class UserRepo(IUserRepo, DbConnection):
             return User(
                 id=UserId(row["uuid"]),
                 username=row["username"],
-                password_hash=(
-                    PasswordHash(row["hash"]) if row["hash"] else None
-                ),
+                password_hash=(PasswordHash(row["hash"]) if row["hash"] else None),
                 is_admin=row["is_admin"],
                 provider=row["platform"],
                 last_login=(
-                    UtcDatetime.fromisoformat(row["last_login"])
-                    if row["last_login"]
-                    else None
+                    UtcDatetime.fromisoformat(row["last_login"]) if row["last_login"] else None
                 ),
                 email=row["email"],
             )

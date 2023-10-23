@@ -27,9 +27,7 @@ class StopSession:
         self.session_repo = session_repo
         self.provider_session_terminators = provider_session_terminators
 
-    async def handle(
-        self, session_id: SessionId, user: User | None = None
-    ) -> None:
+    async def handle(self, session_id: SessionId, user: User | None = None) -> None:
         # TODO: test failure via user not having perms
         session = self.session_repo.get_session_by_session_id(
             session_id,
@@ -43,9 +41,7 @@ class StopSession:
         if session.finished_at:
             raise InvalidRequest("Session has already finished")
 
-        terminator = self.provider_session_terminators.get(
-            session.trigger.provider
-        )
+        terminator = self.provider_session_terminators.get(session.trigger.provider)
 
         if terminator:
             await terminator(session)

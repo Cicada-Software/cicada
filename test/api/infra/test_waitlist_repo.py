@@ -22,9 +22,7 @@ class TestWaitlistRepo(SqliteTestWrapper):
         with pytest.raises(ValueError, match="Email cannot be empty"):
             self.repo.insert_email("")
 
-        with pytest.raises(
-            ValueError, match='Email must contain a "@" and a "."'
-        ):
+        with pytest.raises(ValueError, match='Email must contain a "@" and a "."'):
             self.repo.insert_email("not valid")
 
         msg = "Email cannot be longer than 256 characters"

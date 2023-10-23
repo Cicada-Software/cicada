@@ -40,11 +40,7 @@ class GatherSecretsFromTrigger:
             return {}
 
         # TODO: should installation always be required?
-        installation_id = (
-            self.installation_repo.get_installation_id_by_repository_id(
-                repo.id
-            )
-        )
+        installation_id = self.installation_repo.get_installation_id_by_repository_id(repo.id)
 
         output: dict[str, str] = {}
 
@@ -53,14 +49,10 @@ class GatherSecretsFromTrigger:
             installation_info = f"installation id {installation_id}"
             self.logger.info(f"Pulling secrets for {installation_info}")
 
-            secrets = self.secret_repo.get_secrets_for_installation(
-                installation_id
-            )
+            secrets = self.secret_repo.get_secrets_for_installation(installation_id)
 
             count = len(secrets) or "No"
-            self.logger.info(
-                f"{count} secrets accessed for {installation_info}"
-            )
+            self.logger.info(f"{count} secrets accessed for {installation_info}")
 
             output = {secret.key: secret.value for secret in secrets}
 

@@ -11,9 +11,7 @@ from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 def get_default_type(field_type: Any) -> Any:  # type: ignore
-    if (
-        origin := getattr(field_type, "__origin__", None)
-    ) and origin == Literal:
+    if (origin := getattr(field_type, "__origin__", None)) and origin == Literal:
         return field_type.__args__[0]
 
     if isinstance(field_type, UnionType):
