@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
@@ -103,11 +104,8 @@ class RerunSession:
         )
         self.session_repo.create_workflow(workflow, session)
 
-        def callback(data: bytes) -> None:
-            self.terminal_session_repo.append_to_workflow(workflow.id, data)
-
         terminal = self.terminal_session_repo.create(workflow.id)
-        terminal.callback = callback
+        terminal.callback = partial(self.terminal_session_repo.append_to_workflow, workflow.id)
 
         try:
             await self.workflow_runner(session, terminal, cloned_repo, filenode)

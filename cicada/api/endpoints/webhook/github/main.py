@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import logging
 from contextlib import suppress
+from functools import partial
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
@@ -36,14 +37,11 @@ logger = logging.getLogger("cicada")
 def handle_github_push_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any], user: User | None
 ) -> None:
-    async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
-        await run_workflow(*args, di=di)  # type: ignore
-
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_workflows_via_trigger,
-        workflow_runner=workflow_wrapper,
+        workflow_runner=partial(run_workflow, di=di),
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
         installation_repo=di.installation_repo(),
@@ -63,14 +61,11 @@ def handle_github_push_event(  # type: ignore[misc]
 def handle_github_issue_event(  # type: ignore[misc]
     di: DiContainer, event: dict[str, Any], user: User | None
 ) -> None:
-    async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
-        await run_workflow(*args, di=di)  # type: ignore
-
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
         gather_workflows=gather_issue_workflows,
-        workflow_runner=workflow_wrapper,
+        workflow_runner=partial(run_workflow, di=di),
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
         installation_repo=di.installation_repo(),

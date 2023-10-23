@@ -1,6 +1,6 @@
 import asyncio
 from asyncio import CancelledError, InvalidStateError, Task, create_task
-from typing import Any
+from functools import partial
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
@@ -53,9 +53,7 @@ async def rerun_session(session_id: SessionId, di: Di, user: CurrentUser) -> Non
 
     if provider == "github":
         gather = gather_github_git_push_workflows
-
-        async def workflow_wrapper(*args: Any) -> None:  # type: ignore[misc]
-            await run_github_workflow(*args, di=di)  # type: ignore
+        workflow_wrapper = partial(run_github_workflow, di=di)
 
     elif provider == "gitlab":
         gather = gather_gitlab_workflows
