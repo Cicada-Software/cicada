@@ -48,7 +48,7 @@ def auto_migrate(version: int) -> Callable[[Migration], Migration]:
 
 @auto_migrate(version=1)
 def migrate_v1(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,7 +75,7 @@ def migrate_v1(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=2)
 def migrate_v2(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         ALTER TABLE sessions ADD COLUMN started_at TEXT NOT NULL;
         ALTER TABLE sessions ADD COLUMN finished_at TEXT;
@@ -85,7 +85,7 @@ def migrate_v2(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=3)
 def migrate_v3(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         ALTER TABLE git_commits
         ADD COLUMN repository TEXT NOT NULL
@@ -96,7 +96,7 @@ def migrate_v3(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=4)
 def migrate_v4(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         UPDATE sessions
         SET status='FAILURE'
@@ -107,7 +107,7 @@ def migrate_v4(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=5)
 def migrate_v5(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         ALTER TABLE sessions
         ADD COLUMN trigger TEXT NOT NULL
@@ -118,7 +118,7 @@ def migrate_v5(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=6)
 def migrate_v6(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE issues (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,12 +138,12 @@ def migrate_v6(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=7)
 def migrate_v7(db: sqlite3.Connection) -> None:
-    db.cursor().executescript("ALTER TABLE sessions ADD COLUMN issue_id INTEGER NULL;")
+    db.executescript("ALTER TABLE sessions ADD COLUMN issue_id INTEGER NULL;")
 
 
 @auto_migrate(version=8)
 def migrate_v8(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         ALTER TABLE issues ADD COLUMN provider TEXT NOT NULL DEFAULT 'github';
         """
@@ -152,7 +152,7 @@ def migrate_v8(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=9)
 def migrate_v9(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE triggers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,7 +167,7 @@ def migrate_v9(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=10)
 def migrate_v10(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -180,18 +180,22 @@ def migrate_v10(db: sqlite3.Connection) -> None:
     pw = MigrationSettings().default_admin_password
     hash = CryptContext(schemes=["bcrypt"]).hash(pw)
 
-    db.cursor().execute("INSERT INTO users (username, hash) VALUES (?, ?);", ["admin", hash])
+    db.execute("INSERT INTO users (username, hash) VALUES (?, ?);", ["admin", hash])
 
 
 @auto_migrate(version=11)
 def migrate_v11(db: sqlite3.Connection) -> None:
-    db.cursor().executescript("ALTER TABLE sessions DROP COLUMN git_sha;")
-    db.cursor().executescript("ALTER TABLE sessions DROP COLUMN issue_id;")
+    db.executescript(
+        """
+        ALTER TABLE sessions DROP COLUMN git_sha;
+        ALTER TABLE sessions DROP COLUMN issue_id;
+        """
+    )
 
 
 @auto_migrate(version=12)
 def migrate_v12(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE github_sso_tokens (
             username TEXT NOT NULL,
@@ -208,7 +212,7 @@ def migrate_v12(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=13)
 def migrate_v13(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE TABLE repositories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,7 +243,7 @@ def migrate_v13(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=14)
 def migrate_v14(db: sqlite3.Connection) -> None:
-    db.cursor().executescript(
+    db.executescript(
         """
         CREATE UNIQUE INDEX ux_repositories_provider_url
         ON repositories(provider, url);
@@ -252,7 +256,7 @@ def migrate_v14(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=15)
 def migrate_v15(db: sqlite3.Connection) -> None:
-    rows = db.cursor().execute("SELECT * FROM triggers;")
+    rows = db.execute("SELECT * FROM triggers;").fetchall()
 
     for row in rows:
         id: int = row[0]
@@ -268,7 +272,7 @@ def migrate_v15(db: sqlite3.Connection) -> None:
 
         data["repository_url"] = repository_url
 
-        db.cursor().execute(
+        db.execute(
             "UPDATE triggers SET data=? WHERE id=?",
             [json.dumps(data), id],
         )
@@ -276,7 +280,7 @@ def migrate_v15(db: sqlite3.Connection) -> None:
 
 @auto_migrate(version=16)
 def migrate_v16(db: sqlite3.Connection) -> None:
-    rows = db.cursor().execute("SELECT * FROM triggers;")
+    rows = db.execute("SELECT * FROM triggers;").fetchall()
 
     for row in rows:
         id: int = row[0]
@@ -285,7 +289,7 @@ def migrate_v16(db: sqlite3.Connection) -> None:
 
         data["type"] = trigger
 
-        db.cursor().execute(
+        db.execute(
             "UPDATE triggers SET data=? WHERE id=?",
             [json.dumps(data), id],
         )
@@ -298,10 +302,9 @@ def migrate_v17(db: sqlite3.Connection) -> None:
     and then add all the unique rows back in.
     """
 
-    # Using list() to eagerly grab all rows (because we are about to wipe them)
-    rows = list(db.cursor().execute("SELECT DISTINCT * FROM _user_repos;"))
+    rows = db.execute("SELECT DISTINCT * FROM _user_repos;").fetchall()
 
-    db.cursor().executescript(
+    db.executescript(
         """
         DELETE FROM _user_repos;
 
@@ -315,7 +318,7 @@ def migrate_v17(db: sqlite3.Connection) -> None:
         repo_id: int = row[1]
         perms: str = row[2]
 
-        db.cursor().execute(
+        db.execute(
             """
             INSERT INTO _user_repos (user_id, repo_id, perms)
             VALUES (?, ?, ?);
@@ -351,7 +354,7 @@ def migrate_v18(db: sqlite3.Connection) -> None:
 
         return str(d).replace("+00:00", "Z")
 
-    rows = db.cursor().execute("SELECT * FROM triggers;")
+    rows = db.execute("SELECT * FROM triggers;")
 
     for row in rows:
         id: int = row[0]
@@ -363,7 +366,7 @@ def migrate_v18(db: sqlite3.Connection) -> None:
             if k in datetime_fields:
                 data[k] = normalize_utc_timezones(v)
 
-        db.cursor().execute(
+        db.execute(
             "UPDATE triggers SET data=? WHERE id=?",
             [json.dumps(data, separators=(",", ":")), id],
         )
@@ -413,7 +416,7 @@ def migrate_v21(db: sqlite3.Connection) -> None:
         == 0
     )
 
-    db.cursor().executescript("CREATE UNIQUE INDEX IF NOT EXISTS ux_users_uuid ON users(uuid);")
+    db.executescript("CREATE UNIQUE INDEX IF NOT EXISTS ux_users_uuid ON users(uuid);")
 
     db.commit()
 
@@ -926,10 +929,9 @@ def migrate_v43(db: sqlite3.Connection) -> None:
 
 def get_version(db: sqlite3.Connection) -> int:
     try:
-        cursor = db.cursor()
-        cursor.execute("SELECT version FROM _migration_version;")
+        version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]
 
-        return int(cursor.fetchone()[0])
+        return int(version)
 
     except sqlite3.OperationalError:
         return 0

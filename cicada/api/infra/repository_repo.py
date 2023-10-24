@@ -34,19 +34,15 @@ class RepositoryRepo(IRepositoryRepo, DbConnection):
     def update_or_create_repository(
         self, *, url: str, provider: str, is_public: bool
     ) -> Repository:
-        repo_id = (
-            self.conn.cursor()
-            .execute(
-                """
-                INSERT INTO repositories (provider, url, is_public)
-                VALUES (?, ?, ?)
-                ON CONFLICT DO UPDATE SET url=url, is_public=is_public
-                RETURNING id;
-                """,
-                [provider, url, int(is_public)],
-            )
-            .fetchone()[0]
-        )
+        repo_id = self.conn.execute(
+            """
+            INSERT INTO repositories (provider, url, is_public)
+            VALUES (?, ?, ?)
+            ON CONFLICT DO UPDATE SET url=url, is_public=is_public
+            RETURNING id;
+            """,
+            [provider, url, int(is_public)],
+        ).fetchone()[0]
 
         self.conn.commit()
 

@@ -7,7 +7,7 @@ class WaitlistRepo(IWaitlistRepo, DbConnection):
     def insert_email(self, email: str) -> None:
         super().insert_email(email)
 
-        self.conn.cursor().execute(
+        self.conn.execute(
             """
             INSERT INTO waitlist ('submitted_at', 'email')
             VALUES (?, ?)
@@ -19,6 +19,6 @@ class WaitlistRepo(IWaitlistRepo, DbConnection):
         self.conn.commit()
 
     def get_emails(self) -> list[tuple[UtcDatetime, str]]:
-        rows = self.conn.cursor().execute("SELECT submitted_at, email FROM waitlist;").fetchall()
+        rows = self.conn.execute("SELECT submitted_at, email FROM waitlist;").fetchall()
 
         return [(UtcDatetime.fromisoformat(row["submitted_at"]), row["email"]) for row in rows]

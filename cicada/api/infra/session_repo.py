@@ -23,8 +23,6 @@ class SessionRepo(ISessionRepo, DbConnection):
         del trigger["env"]
         del trigger["secret"]
 
-        cursor = self.conn.cursor()
-
         # TODO: don't reinsert trigger for re-ran sessions
         trigger_id = self.conn.execute(
             "INSERT INTO triggers (trigger, data) VALUES (?, ?);",
@@ -36,7 +34,7 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         assert trigger_id
 
-        cursor.execute(
+        self.conn.execute(
             """
             INSERT INTO sessions (
                 uuid,
@@ -149,10 +147,8 @@ class SessionRepo(ISessionRepo, DbConnection):
         if not trigger:
             return None
 
-        cursor = self.conn.cursor()
-
         if run == -1:
-            cursor.execute(
+            row = self.conn.execute(
                 """
                 SELECT
                     status,
@@ -167,10 +163,10 @@ class SessionRepo(ISessionRepo, DbConnection):
                 LIMIT 1;
                 """,
                 [uuid],
-            )
+            ).fetchone()
 
         else:
-            cursor.execute(
+            row = self.conn.execute(
                 """
                 SELECT
                     status,
@@ -183,9 +179,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 WHERE uuid=? AND run_number=?;
                 """,
                 [uuid, run],
-            )
+            ).fetchone()
 
-        if row := cursor.fetchone():
+        if row:
             session = Session(
                 id=uuid,
                 status=SessionStatus(row["status"]),
@@ -376,20 +372,17 @@ class SessionRepo(ISessionRepo, DbConnection):
         return session
 
     def _get_trigger(self, uuid: SessionId) -> Trigger | None:
-        cursor = self.conn.execute(
+        row = self.conn.execute(
             """
-            SELECT t.trigger, t.data
+            SELECT t.data
             FROM sessions s
             JOIN triggers t ON t.id = s.trigger_id
             WHERE s.uuid = ?;
             """,
             [uuid],
-        )
+        ).fetchone()
 
-        if row := cursor.fetchone():
-            return json_to_trigger(row[1])
-
-        return None
+        return json_to_trigger(row[0]) if row else None
 
     @staticmethod
     def _convert_session(row: sqlite3.Row) -> Session:

@@ -25,18 +25,16 @@ class TerminalSessionRepo(ITerminalSessionRepo, DbConnection):
         if terminal := LIVE_TERMINAL_SESSIONS.get(workflow_id):
             return terminal
 
-        cursor = self.conn.cursor()
-
-        cursor.execute(
+        row = self.conn.execute(
             """
             SELECT lines FROM terminal_sessions WHERE workflow_uuid=?;
             """,
             [workflow_id],
-        )
+        ).fetchone()
 
-        if rows := cursor.fetchone():
+        if row:
             terminal = TerminalSession()
-            terminal.chunks = [rows[0].encode()]
+            terminal.chunks = [row[0].encode()]
             terminal.finish()
 
             return terminal
