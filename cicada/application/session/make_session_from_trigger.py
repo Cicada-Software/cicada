@@ -15,7 +15,7 @@ from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
-from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowId
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import eval_title
 
@@ -86,22 +86,17 @@ class MakeSessionFromTrigger:
             id=uuid4(),
             trigger=self.trigger,
             status=status,
-            run_on_self_hosted=run_on_self_hosted,
             # TODO: move to workflow object
             title=title,
         )
         self.session_repo.create(session)
 
-        assert self.trigger.sha
         assert filenode.file
 
-        workflow = Workflow(
-            id=WorkflowId(uuid4()),
+        workflow = Workflow.from_session(
+            session,
             filename=filenode.file.relative_to(self.cloned_repo),
-            sha=self.trigger.sha,
-            status=status,
             run_on_self_hosted=run_on_self_hosted,
-            title=title,
         )
         self.session_repo.create_workflow(workflow, session)
 
@@ -109,7 +104,7 @@ class MakeSessionFromTrigger:
         terminal.callback = partial(self.terminal_session_repo.append_to_workflow, workflow.id)
 
         try:
-            await self.workflow_runner(session, terminal, self.cloned_repo, filenode)
+            await self.workflow_runner(session, terminal, self.cloned_repo, filenode, workflow)
 
         except Exception:
             logger = logging.getLogger("cicada")

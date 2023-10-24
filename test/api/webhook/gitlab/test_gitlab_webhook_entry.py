@@ -14,7 +14,6 @@ from cicada.api.endpoints.webhook.gitlab.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook
 from cicada.ast.nodes import FileNode
 from cicada.domain.session import Session, SessionStatus
-from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import GitSha, Trigger
 from test.api.endpoints.common import TestEndpointWrapper
 
@@ -101,12 +100,7 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.mock_gitlab_infra_details() as mocks,
         ):
 
-            async def f(
-                session: Session,
-                _: TerminalSession,
-                __: Path,
-                ___: FileNode,
-            ) -> None:
+            async def f(session: Session, *_) -> None:  # type: ignore
                 session.finish(SessionStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = f

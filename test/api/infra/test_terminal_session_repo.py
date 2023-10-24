@@ -1,3 +1,4 @@
+from pathlib import Path
 from uuid import uuid4
 
 from cicada.api.infra.session_repo import SessionRepo
@@ -24,7 +25,7 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         session = build(Session, id=session_id)
         self.session_repo.create(session)
 
-        workflow = build(Workflow)
+        workflow = Workflow.from_session(session, filename=Path())
         self.session_repo.create_workflow(workflow, session)
 
         new_terminal_session = self.repo.create(workflow.id)
@@ -37,7 +38,7 @@ class TestTerminalSessionRepo(SqliteTestWrapper):
         session = build(Session, id=session_id)
         self.session_repo.create(session)
 
-        workflow = build(Workflow)
+        workflow = Workflow.from_session(session, filename=Path())
         self.session_repo.create_workflow(workflow, session)
 
         terminal_session = self.repo.create(workflow.id)

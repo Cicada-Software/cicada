@@ -927,6 +927,41 @@ def migrate_v43(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=44)
+def migrate_v44(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        DROP VIEW v_user_sessions;
+
+        CREATE VIEW v_user_sessions AS
+        SELECT
+            u.id AS user_id,
+            u.uuid AS user_uuid,
+            u.username AS username,
+            u.platform AS user_provider,
+            r.id AS repo_id,
+            r.url AS repo_url,
+            r.is_public AS repo_is_public,
+            ur.perms AS repo_perms,
+            s.id AS session_id,
+            s.uuid AS session_uuid,
+            s.status AS session_status,
+            s.started_at AS session_started_at,
+            s.finished_at AS session_finished_at,
+            s.run_number AS session_run,
+            t.data AS trigger_data,
+            s.title as session_title
+        FROM _user_repos ur
+        JOIN repositories r ON r.id = ur.repo_id
+        JOIN users u ON u.id = ur.user_id
+        JOIN triggers t ON t.data->>'repository_url' = r.url
+        JOIN sessions s ON s.trigger_id = t.id;
+
+        ALTER TABLE sessions DROP COLUMN run_on_self_hosted;
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]

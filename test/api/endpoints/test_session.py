@@ -1,4 +1,5 @@
 from copy import deepcopy
+from pathlib import Path
 from uuid import uuid4
 
 from cicada.api.endpoints.login_util import create_access_token
@@ -21,7 +22,7 @@ class TestSessionEndpoints(TestEndpointWrapper):
         session = build(Session)
         self.di.session_repo().create(session)
 
-        workflow = build(Workflow)
+        workflow = Workflow.from_session(session, filename=Path())
         self.di.session_repo().create_workflow(workflow, session)
 
         with self.inject_dummy_env_vars():

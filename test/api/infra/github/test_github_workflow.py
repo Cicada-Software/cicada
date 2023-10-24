@@ -8,7 +8,7 @@ import pytest
 
 from cicada.api.infra.github.workflows import run_workflow
 from cicada.ast.nodes import FileNode
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.terminal_session import TerminalSession
 from test.common import build
 
@@ -40,6 +40,7 @@ async def mock_github_workflow_runner() -> AsyncGenerator[dict[str, Mock], None]
 
 async def test_run_workflow() -> None:
     session = build(Session)
+    workflow = Workflow.from_session(session, filename=Path())
 
     async with mock_github_workflow_runner() as mocks:
         get_repo_access_token = mocks["get_repo_access_token"]
@@ -50,7 +51,7 @@ async def test_run_workflow() -> None:
         wrap_in_github_check_run.return_value = nullcontext()
         get_execution_type.return_value.return_value.run.return_value = 0
 
-        await run_workflow(session, TerminalSession(), Path(), FileNode([]))
+        await run_workflow(session, TerminalSession(), Path(), FileNode([]), workflow)
 
         assert session.status == SessionStatus.SUCCESS
         assert session.finished_at
@@ -66,6 +67,7 @@ async def test_run_workflow() -> None:
 
 async def test_session_fails_if_exception_occurs_in_workflow() -> None:
     session = build(Session)
+    workflow = Workflow.from_session(session, filename=Path())
 
     async with mock_github_workflow_runner() as mocks:
         get_repo_access_token = mocks["get_repo_access_token"]
@@ -86,6 +88,7 @@ async def test_session_fails_if_exception_occurs_in_workflow() -> None:
                 TerminalSession(),
                 Path(),
                 FileNode([]),
+                workflow,
             )
 
         assert session.status == SessionStatus.FAILURE

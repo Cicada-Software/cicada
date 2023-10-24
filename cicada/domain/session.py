@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import NewType
-from uuid import UUID
+from typing import NewType, Self
+from uuid import UUID, uuid4
 
 from cicada.domain.datetime import UtcDatetime
 
@@ -69,6 +69,32 @@ class Workflow:
 
     sub_workflows: list["Workflow"] = field(default_factory=list)
 
+    @classmethod
+    def from_session(
+        cls,
+        session: "Session",
+        *,
+        filename: Path,
+        run_on_self_hosted: bool = False,
+    ) -> Self:
+        """
+        Create a workflow object from a session. This is meant as a placeholder until sessions and
+        workflows are more distinct.
+        """
+
+        assert session.trigger.sha
+
+        return cls(
+            id=WorkflowId(uuid4()),
+            filename=filename,
+            sha=session.trigger.sha,
+            status=session.status,
+            started_at=session.started_at,
+            finished_at=session.finished_at,
+            run_on_self_hosted=run_on_self_hosted,
+            title=session.title,
+        )
+
 
 @dataclass
 class Session:
@@ -91,7 +117,6 @@ class Session:
     started_at: UtcDatetime = field(default_factory=UtcDatetime.now)
     finished_at: UtcDatetime | None = None
     run: int = 1
-    run_on_self_hosted: bool = False
     title: str | None = None
 
     # TODO: deprecate run

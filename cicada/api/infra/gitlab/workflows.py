@@ -12,7 +12,7 @@ from cicada.api.infra.run_program import exit_code_to_status_code, get_execution
 from cicada.api.settings import ExecutionSettings, GitlabSettings
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import FileNode
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
@@ -60,6 +60,7 @@ async def run_workflow(
     terminal: TerminalSession,
     cloned_repo: Path,
     filenode: FileNode,
+    _: Workflow,
 ) -> None:
     settings = GitlabSettings()
 

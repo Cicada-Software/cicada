@@ -2,7 +2,6 @@ import logging
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from uuid import uuid4
 
 from cicada.application.secret.gather_secrets_from_trigger import GatherSecretsFromTrigger
 from cicada.application.session.common import IWorkflowGatherer, IWorkflowRunner
@@ -14,7 +13,7 @@ from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
-from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowId
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.triggers import Trigger
 
 
@@ -86,21 +85,16 @@ class RerunSession:
             status=status,
             trigger=session.trigger,
             run=session.run + 1,
-            run_on_self_hosted=run_on_self_hosted,
             title=session.title,
         )
         self.session_repo.create(session)
 
-        assert session.trigger.sha
         assert filenode.file
 
-        workflow = Workflow(
-            id=WorkflowId(uuid4()),
+        workflow = Workflow.from_session(
+            session,
             filename=filenode.file.relative_to(cloned_repo),
-            sha=session.trigger.sha,
-            status=status,
             run_on_self_hosted=run_on_self_hosted,
-            title=session.title,
         )
         self.session_repo.create_workflow(workflow, session)
 
@@ -108,7 +102,7 @@ class RerunSession:
         terminal.callback = partial(self.terminal_session_repo.append_to_workflow, workflow.id)
 
         try:
-            await self.workflow_runner(session, terminal, cloned_repo, filenode)
+            await self.workflow_runner(session, terminal, cloned_repo, filenode, workflow)
 
         except Exception:
             logger = logging.getLogger("cicada")

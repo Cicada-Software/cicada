@@ -14,7 +14,7 @@ from cicada.api.infra.run_program import (
 from cicada.api.settings import DNSSettings, ExecutionSettings
 from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha, IssueTrigger, Trigger
 
@@ -107,6 +107,8 @@ async def run_workflow(
     terminal: TerminalSession,
     cloned_repo: Path,
     file: FileNode,
+    workflow: Workflow,
+    *,
     di: DiContainer | None = None,
 ) -> None:
     username, repo = url_get_user_and_repo(session.trigger.repository_url)
@@ -123,7 +125,7 @@ async def run_workflow(
 
     try:
         async with wrapper:
-            if session.run_on_self_hosted:
+            if workflow.run_on_self_hosted:
                 assert di
 
                 ctx = SelfHostedExecutionContext(

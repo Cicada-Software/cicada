@@ -45,7 +45,6 @@ class TestSessionRepo(SqliteTestWrapper):
         assert got_session.status == session.status
         assert got_session.started_at == session.started_at
         assert got_session.finished_at == session.finished_at
-        assert not got_session.run_on_self_hosted
 
         assert got_session.trigger
         assert got_session.trigger.type == "git.push"
@@ -199,13 +198,7 @@ class TestSessionRepo(SqliteTestWrapper):
 
         self.session_repo.create(session)
 
-        workflow = build(
-            Workflow,
-            sha=session.trigger.sha,
-            started_at=session.started_at,
-            finished_at=session.finished_at,
-        )
-
+        workflow = Workflow.from_session(session, filename=Path())
         self.session_repo.create_workflow(workflow, session)
 
         self.create_dummy_repo_for_user(
@@ -244,16 +237,28 @@ class TestSessionRepo(SqliteTestWrapper):
 
         assert not self.session_repo.get_runs_for_session(user, session.id)
 
-    def test_create_self_hosted_session(self) -> None:
-        session = build(Session, run_on_self_hosted=True)
-
+    def test_create_self_hosted_workflow(self) -> None:
+        session = build(Session)
         self.session_repo.create(session)
+
+        workflow = Workflow.from_session(session, filename=Path(), run_on_self_hosted=True)
+        self.session_repo.create_workflow(workflow, session)
 
         got_session = self.session_repo.get_session_by_session_id(session.id)
 
         assert got_session
+
+        # TODO: make this more elegant
+        assert got_session.runs == [workflow]
+        got_session.runs = []
+
         assert got_session == session
-        assert session.run_on_self_hosted
+
+        got_workflow = self.session_repo.get_workflow_by_id(workflow.id)
+
+        assert got_workflow
+        assert got_workflow == workflow
+        assert got_workflow.run_on_self_hosted
 
     def test_create_session_with_title(self) -> None:
         session = build(Session, title="Hello from Cicada")
