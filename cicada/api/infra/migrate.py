@@ -962,6 +962,18 @@ def migrate_v44(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=45)
+def migrate_v45(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        DELETE FROM cache_objects;
+
+        ALTER TABLE cache_objects DROP COLUMN session_id;
+        ALTER TABLE cache_objects ADD COLUMN workflow_id TEXT NOT NULL;
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]

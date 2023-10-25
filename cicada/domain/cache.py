@@ -4,7 +4,7 @@ from typing import ClassVar, NewType
 from uuid import UUID
 
 from cicada.domain.datetime import UtcDatetime
-from cicada.domain.session import SessionId
+from cicada.domain.session import WorkflowId
 
 CacheObjectId = NewType("CacheObjectId", UUID)
 
@@ -48,9 +48,7 @@ class CacheObject:
     repository_url: str
     key: CacheKey
 
-    # TODO: replace with workflow id
-    session_id: SessionId
-    session_run: int
+    workflow_id: WorkflowId
 
     # Filename that contains the underlying data for the cache object
     file: Path

@@ -9,7 +9,7 @@ from uuid import uuid4
 from cicada.application.exceptions import InvalidRequest
 from cicada.domain.cache import CacheKey, CacheObject, CacheObjectId
 from cicada.domain.repo.cache_repo import ICacheRepo
-from cicada.domain.session import Session
+from cicada.domain.session import WorkflowId
 
 
 class InvalidCacheObject(InvalidRequest):
@@ -20,7 +20,7 @@ class InvalidCacheObject(InvalidRequest):
         return self.msg
 
 
-class CacheFilesForSession:
+class CacheFilesForWorkflow:
     MAX_CACHE_SIZE_IN_BYTES: ClassVar[int] = 250 * 1000 * 1000  # 250MB
 
     def __init__(self, cache_repo: ICacheRepo) -> None:
@@ -32,7 +32,8 @@ class CacheFilesForSession:
         self,
         files: list[Path],
         key: CacheKey,
-        session: Session,
+        repository_url: str,
+        workflow_id: WorkflowId,
         dir: Path,
     ) -> None:
         size = 0
@@ -65,10 +66,9 @@ class CacheFilesForSession:
 
             cache_object = CacheObject(
                 id=CacheObjectId(uuid4()),
-                repository_url=session.trigger.repository_url,
+                repository_url=repository_url,
                 key=key,
-                session_id=session.id,
-                session_run=session.run,
+                workflow_id=workflow_id,
                 file=Path(f.name),
             )
 

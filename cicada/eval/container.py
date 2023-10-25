@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 from cicada.api.infra.cache_repo import CacheRepo
-from cicada.application.cache.cache_files import CacheFilesForSession
+from cicada.application.cache.cache_files import CacheFilesForWorkflow
 from cicada.application.cache.restore_cache import RestoreCache
 from cicada.ast.generate import SHELL_ALIASES
 from cicada.ast.nodes import (
@@ -40,7 +40,7 @@ from cicada.domain.triggers import CommitTrigger
 from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, WorkflowFailure
 
 if TYPE_CHECKING:
-    from cicada.domain.session import Session
+    from cicada.domain.session import Session, Workflow
     from cicada.domain.terminal_session import TerminalSession
     from cicada.domain.triggers import Trigger
 
@@ -73,6 +73,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         terminal: TerminalSession,
         image: str,
         program: str,
+        workflow: Workflow,
     ) -> None:
         super().__init__(session.trigger)
 
@@ -86,6 +87,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         self.cached_files = None
         self.cache_key = None
+
+        self.workflow = workflow
 
         # TODO: deduplicate this monstrosity
         built_in_symbols = {
@@ -136,11 +139,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         output = super().visit_file_node(node)
 
         if isinstance(output, UnitValue) and self.cached_files and self.cache_key and self.trigger:
-            cmd = CacheFilesForSession(CacheRepo())
+            cmd = CacheFilesForWorkflow(CacheRepo())
             cmd.handle(
                 self.cached_files,
                 CacheKey(self.cache_key),
-                self.session,
+                self.session.trigger.repository_url,
+                self.workflow.id,
                 self.cloned_repo,
             )
 

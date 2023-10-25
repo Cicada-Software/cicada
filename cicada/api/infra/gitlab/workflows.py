@@ -60,7 +60,7 @@ async def run_workflow(
     terminal: TerminalSession,
     cloned_repo: Path,
     filenode: FileNode,
-    _: Workflow,
+    workflow: Workflow,
 ) -> None:
     settings = GitlabSettings()
 
@@ -84,6 +84,7 @@ async def run_workflow(
                 session=session,
                 terminal=terminal,
                 cloned_repo=cloned_repo,
+                workflow=workflow,
             )
 
             exit_code = await ctx.run(filenode)

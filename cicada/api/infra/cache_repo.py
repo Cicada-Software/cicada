@@ -14,7 +14,7 @@ from cicada.api.settings import S3CacheSettings
 from cicada.domain.cache import CacheKey, CacheObject, CacheObjectId
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.repo.cache_repo import ICacheRepo
-from cicada.domain.session import SessionId
+from cicada.domain.session import WorkflowId
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
@@ -22,12 +22,11 @@ if TYPE_CHECKING:
 
 class CacheRepo(ICacheRepo, DbConnection):
     def store(self, cache: CacheObject) -> None:
-        session_id = self.conn.execute(
-            "SELECT id FROM sessions WHERE uuid=? AND run_number=?;",
-            [cache.session_id, cache.session_run],
+        workflow_id = self.conn.execute(
+            "SELECT id FROM workflows WHERE uuid=?;", [cache.workflow_id]
         ).fetchone()[0]
 
-        assert session_id
+        assert workflow_id
 
         self.conn.execute(
             """
@@ -35,7 +34,7 @@ class CacheRepo(ICacheRepo, DbConnection):
                 uuid,
                 repository_url,
                 key,
-                session_id,
+                workflow_id,
                 created_at
             ) VALUES (?, ?, ?, ?, ?);
             """,
@@ -43,7 +42,7 @@ class CacheRepo(ICacheRepo, DbConnection):
                 cache.id,
                 cache.repository_url,
                 str(cache.key),
-                session_id,
+                workflow_id,
                 cache.created_at,
             ],
         )
@@ -68,7 +67,7 @@ class CacheRepo(ICacheRepo, DbConnection):
         returned via the `file` field of the cache object.
         """
 
-        row = self._get_cache_key(repository_url, key)
+        row = self._get_cache_object_from_key(repository_url, key)
 
         if row is None:
             return None
@@ -95,8 +94,7 @@ class CacheRepo(ICacheRepo, DbConnection):
                 id=CacheObjectId(UUID(row["uuid"])),
                 repository_url=row["repository_url"],
                 key=CacheKey(row["key"]),
-                session_id=SessionId(row["session_id"]),
-                session_run=row["session_run"],
+                workflow_id=WorkflowId(UUID(row["workflow_uuid"])),
                 file=Path(filename),
                 created_at=UtcDatetime.fromisoformat(row["created_at"]),
             )
@@ -109,7 +107,7 @@ class CacheRepo(ICacheRepo, DbConnection):
             return None
 
     def key_exists(self, repository_url: str, key: str) -> bool:
-        return bool(self._get_cache_key(repository_url, key))
+        return bool(self._get_cache_object_from_key(repository_url, key))
 
     def _generate_full_key_name(self, cache: CacheObject) -> str:
         url = urlparse(cache.repository_url)
@@ -128,7 +126,7 @@ class CacheRepo(ICacheRepo, DbConnection):
             endpoint_url=settings.url,
         )
 
-    def _get_cache_key(
+    def _get_cache_object_from_key(
         self,
         repository_url: str,
         key: str,
@@ -139,11 +137,10 @@ class CacheRepo(ICacheRepo, DbConnection):
                 c.uuid AS uuid,
                 repository_url,
                 key,
-                s.uuid AS session_id,
-                s.run_number AS session_run,
+                w.uuid AS workflow_uuid,
                 created_at
             FROM cache_objects c
-            JOIN sessions s ON s.id = c.session_id
+            JOIN workflows w ON w.id = c.workflow_id
             WHERE c.repository_url=? and c.key=?
             ORDER BY created_at DESC
             LIMIT 1;

@@ -10,7 +10,7 @@ from cicada.ast.nodes import FileNode, RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
 from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
@@ -84,6 +84,7 @@ class ExecutionContext:
     session: Session
     terminal: TerminalSession
     cloned_repo: Path
+    workflow: Workflow
 
     async def run(self, file: FileNode) -> int:
         raise NotImplementedError
@@ -152,6 +153,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
                 self.terminal,
                 image=image,
                 program=self.program,
+                workflow=self.workflow,
             )
 
             tree.accept(visitor)

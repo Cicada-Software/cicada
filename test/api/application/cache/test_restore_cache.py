@@ -11,8 +11,7 @@ import pytest
 from cicada.application.cache.restore_cache import RestoreCache
 from cicada.domain.cache import CacheKey, CacheObject, CacheObjectId
 from cicada.domain.repo.cache_repo import ICacheRepo
-from cicada.domain.session import Session
-from test.common import build
+from cicada.domain.session import WorkflowId
 
 
 def test_unknown_cache_key_returns_false() -> None:
@@ -45,7 +44,7 @@ class TempCacheRepo(ICacheRepo):
 
 @contextmanager
 def create_cache_object(files: list[Path], dir: Path | None = None) -> Iterator[CacheObject]:
-    session = build(Session)
+    workflow_id = WorkflowId(uuid4())
 
     tarfile_name = Path(mkstemp(suffix=".tar.gz")[1])
 
@@ -61,10 +60,9 @@ def create_cache_object(files: list[Path], dir: Path | None = None) -> Iterator[
 
         cache_object = CacheObject(
             id=CacheObjectId(uuid4()),
-            repository_url=session.trigger.repository_url,
             key=CacheKey("any key"),
-            session_id=session.id,
-            session_run=session.run,
+            repository_url="example.com",
+            workflow_id=workflow_id,
             file=Path(f.name),
         )
 

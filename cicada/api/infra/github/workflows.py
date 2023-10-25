@@ -133,6 +133,7 @@ async def run_workflow(
                     session=session,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
+                    workflow=workflow,
                 )
 
                 # TODO: move to ctor
@@ -147,6 +148,7 @@ async def run_workflow(
                     session=session,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
+                    workflow=workflow,
                 )
 
             exit_code = await ctx.run(file)
