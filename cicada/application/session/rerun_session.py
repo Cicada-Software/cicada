@@ -80,12 +80,13 @@ class RerunSession:
                 status = SessionStatus.PENDING
                 run_on_self_hosted = False
 
+        old_session = session
+
         session = Session(
             id=session.id,
             status=status,
             trigger=session.trigger,
             run=session.run + 1,
-            title=session.title,
         )
         self.session_repo.create(session)
 
@@ -95,6 +96,7 @@ class RerunSession:
             session,
             filename=filenode.file.relative_to(cloned_repo),
             run_on_self_hosted=run_on_self_hosted,
+            title=self._get_old_workflow_title(old_session),
         )
         self.session_repo.create_workflow(workflow, session)
 
@@ -132,3 +134,18 @@ class RerunSession:
         )
 
         return cmd.handle(trigger)
+
+    def _get_old_workflow_title(self, session: Session) -> str | None:
+        # TODO: remove/rename this function after session/workflow terminology is ironed out
+
+        workflow_id = self.session_repo.get_workflow_id_from_session(session)
+
+        if not workflow_id:
+            return None
+
+        workflow = self.session_repo.get_workflow_by_id(workflow_id)
+
+        if not workflow:
+            return None
+
+        return workflow.title

@@ -78,17 +78,9 @@ class MakeSessionFromTrigger:
             return await asyncio.gather(*[self.run_workflow(x) for x in workflows])
 
     async def run_workflow(self, filenode: FileNode) -> Session:
-        title = eval_title(filenode.title)
-
         status, run_on_self_hosted = self._get_boot_info(filenode)
 
-        session = Session(
-            id=uuid4(),
-            trigger=self.trigger,
-            status=status,
-            # TODO: move to workflow object
-            title=title,
-        )
+        session = Session(id=uuid4(), trigger=self.trigger, status=status)
         self.session_repo.create(session)
 
         assert filenode.file
@@ -97,6 +89,7 @@ class MakeSessionFromTrigger:
             session,
             filename=filenode.file.relative_to(self.cloned_repo),
             run_on_self_hosted=run_on_self_hosted,
+            title=eval_title(filenode.title),
         )
         self.session_repo.create_workflow(workflow, session)
 

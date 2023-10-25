@@ -42,9 +42,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 started_at,
                 trigger,
                 trigger_id,
-                run_number,
-                title
-            ) VALUES (?, ?, ?, ?, ?, ?, ?);
+                run_number
+            ) VALUES (?, ?, ?, ?, ?, ?);
             """,
             [
                 session.id,
@@ -53,7 +52,6 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session.trigger.type,
                 trigger_id,
                 session.run,
-                session.title,
             ],
         )
 
@@ -152,8 +150,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                     status,
                     started_at,
                     finished_at,
-                    run_number,
-                    title
+                    run_number
                 FROM sessions
                 WHERE uuid=?
                 ORDER BY run_number DESC
@@ -169,8 +166,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                     status,
                     started_at,
                     finished_at,
-                    run_number,
-                    title
+                    run_number
                 FROM sessions
                 WHERE uuid=? AND run_number=?;
                 """,
@@ -187,7 +183,6 @@ class SessionRepo(ISessionRepo, DbConnection):
                 ),
                 trigger=trigger,
                 run=row["run_number"],
-                title=row["title"] if row["title"] else None,
             )
 
             session.runs = self._get_workflows_for_session(uuid)
@@ -213,8 +208,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session_started_at,
                 session_finished_at,
                 MAX(session_run),
-                trigger_data,
-                session_title
+                trigger_data
             FROM v_user_sessions
             WHERE user_uuid=?
             GROUP BY session_uuid
@@ -235,8 +229,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                     s.started_at,
                     s.finished_at,
                     MAX(s.run_number),
-                    t.data,
-                    s.title
+                    t.data
                 FROM sessions s
                 JOIN triggers t ON t.id = s.trigger_id
                 WHERE t.data->>'repository_url'=?
@@ -255,8 +248,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                     session_started_at,
                     session_finished_at,
                     MAX(session_run),
-                    trigger_data,
-                    session_title
+                    trigger_data
                 FROM v_user_sessions
                 WHERE user_uuid=? AND repo_url=?
                 GROUP BY session_uuid
@@ -276,8 +268,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 s.started_at,
                 s.finished_at,
                 MAX(s.run_number),
-                t.data,
-                s.title
+                t.data
             FROM sessions s
             JOIN triggers t ON t.id = s.trigger_id
             GROUP BY uuid
@@ -385,7 +376,6 @@ class SessionRepo(ISessionRepo, DbConnection):
             finished_at=(UtcDatetime.fromisoformat(row[3]) if row[3] else None),
             run=row[4],
             trigger=json_to_trigger(row[5]),
-            title=row[6] if row[6] else None,
         )
 
     def get_workflow_id_from_session(self, session: Session) -> WorkflowId | None:

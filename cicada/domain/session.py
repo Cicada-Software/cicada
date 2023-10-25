@@ -76,6 +76,7 @@ class Workflow:
         *,
         filename: Path,
         run_on_self_hosted: bool = False,
+        title: str | None = None,
     ) -> Self:
         """
         Create a workflow object from a session. This is meant as a placeholder until sessions and
@@ -92,7 +93,7 @@ class Workflow:
             started_at=session.started_at,
             finished_at=session.finished_at,
             run_on_self_hosted=run_on_self_hosted,
-            title=session.title,
+            title=title,
         )
 
 
@@ -117,7 +118,6 @@ class Session:
     started_at: UtcDatetime = field(default_factory=UtcDatetime.now)
     finished_at: UtcDatetime | None = None
     run: int = 1
-    title: str | None = None
 
     # TODO: deprecate run
     runs: list[Workflow] = field(default_factory=list)
