@@ -405,6 +405,10 @@ function getSessionAndCommitInfo(callback) {
         document.getElementById("issue-info").style.display = "block";
       }
 
+      if (currentWorkflow.title) {
+        document.title = currentWorkflow.title;
+      }
+
       const shortUrl = new URL(repository).pathname.substr(1);
       document.getElementById("repo").href = `/repo/${e.trigger.provider}/${shortUrl}`;
       document.getElementById("repo").innerText = shortUrl;

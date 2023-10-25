@@ -54,7 +54,7 @@ STATUS_TO_CHECK_RUN_STATUS: dict[SessionStatus, str] = {
 
 @asynccontextmanager
 async def wrap_in_github_check_run(
-    session: Session, token: str
+    session: Session, workflow: Workflow, token: str
 ) -> AsyncGenerator[None, None]:  # pragma: no cover
     assert isinstance(session.trigger, CommitTrigger)
 
@@ -68,7 +68,7 @@ async def wrap_in_github_check_run(
     data = await github.rest.checks.async_create(
         username,
         repo,
-        name=session.title or "Cicada",
+        name=workflow.title or "Cicada",
         head_sha=str(session.trigger.sha),
         external_id=str(session.id),
         details_url=f"{base_url}/api/github_sso_link?url={redirect_url}",
@@ -119,7 +119,7 @@ async def run_workflow(
     wrapper: AbstractAsyncContextManager[None]
 
     if session.trigger.type == "git.push":
-        wrapper = wrap_in_github_check_run(session, access_token)
+        wrapper = wrap_in_github_check_run(session, workflow, access_token)
     else:
         wrapper = nullcontext()  # pragma: no cover
 
