@@ -169,7 +169,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         lhs = node.lhs.accept(self)
 
-        if node.oper in (BinaryOperator.IS, BinaryOperator.IS_NOT):
+        if node.oper in {BinaryOperator.IS, BinaryOperator.IS_NOT}:
             try:
                 return BooleanValue(
                     lhs.value == rhs.value  # type: ignore

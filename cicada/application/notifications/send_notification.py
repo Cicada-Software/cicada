@@ -31,7 +31,8 @@ class SendNotification:  # pragma: no cover
 
         await asyncio.to_thread(lambda: self.send_email(email))
 
-    def get_context_from_trigger(self, trigger: Trigger) -> str | None:
+    @staticmethod
+    def get_context_from_trigger(trigger: Trigger) -> str | None:
         if isinstance(trigger, CommitTrigger):
             return trigger.message.splitlines()[0].strip()
 

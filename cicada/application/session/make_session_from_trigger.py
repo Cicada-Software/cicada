@@ -131,7 +131,8 @@ class MakeSessionFromTrigger:
 
         return cmd.handle(self.trigger)
 
-    def _get_boot_info(self, filenode: FileNode) -> tuple[SessionStatus, bool]:
+    @staticmethod
+    def _get_boot_info(filenode: FileNode) -> tuple[SessionStatus, bool]:
         match filenode:
             case FileNode(run_on=RunOnStatement(type=RunType.SELF_HOSTED)):
                 status = SessionStatus.BOOTING

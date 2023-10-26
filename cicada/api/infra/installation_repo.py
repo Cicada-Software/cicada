@@ -118,7 +118,8 @@ class InstallationRepo(IInstallationRepo, DbConnection):
 
         return InstallationId(installation_id[0]) if installation_id else None
 
-    def _convert(self, row: sqlite3.Row) -> Installation:
+    @staticmethod
+    def _convert(row: sqlite3.Row) -> Installation:
         return Installation(
             id=InstallationId(row[0]),
             name=row[1],

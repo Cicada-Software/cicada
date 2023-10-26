@@ -91,7 +91,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
         case _:
             return
 
-    if event["object_kind"] in ("push", "issue"):
+    if event["object_kind"] in {"push", "issue"}:
         update_gitlab_repo_perms(di, event)
 
     if event["object_kind"] == "push":

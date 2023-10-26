@@ -109,14 +109,16 @@ class CacheRepo(ICacheRepo, DbConnection):
     def key_exists(self, repository_url: str, key: str) -> bool:
         return bool(self._get_cache_object_from_key(repository_url, key))
 
-    def _generate_full_key_name(self, cache: CacheObject) -> str:
+    @staticmethod
+    def _generate_full_key_name(cache: CacheObject) -> str:
         url = urlparse(cache.repository_url)
 
         extension = "".join(cache.file.suffixes)
 
         return f"caches/{url.netloc}{url.path}/{cache.key}{extension}"
 
-    def _get_s3_client(self) -> "S3Client":
+    @staticmethod
+    def _get_s3_client() -> "S3Client":
         settings = S3CacheSettings()
 
         return boto3.client(

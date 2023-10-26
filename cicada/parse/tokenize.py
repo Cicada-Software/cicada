@@ -216,7 +216,7 @@ def group_chunks(chunks: Sequence[Chunk]) -> list[Token]:
         if chunk.char == "\r":
             group_crlf(state)
 
-        elif chunk.char in ("<", ">"):
+        elif chunk.char in {"<", ">"}:
             group_multichar_operator(state)
 
         elif chunk.char in separators:
@@ -225,7 +225,7 @@ def group_chunks(chunks: Sequence[Chunk]) -> list[Token]:
         elif chunk.char.isspace():
             group_whitespace(state)
 
-        elif chunk.char in ('"', "'"):
+        elif chunk.char in {'"', "'"}:
             group_string(state)
 
         elif chunk.char == "#":
@@ -274,7 +274,7 @@ def tokenize(code: str) -> Generator[Token, None, None]:
         elif token.content.isspace():
             yield WhiteSpaceToken(**asdict(token))
 
-        elif token.content in ("true", "false"):
+        elif token.content in {"true", "false"}:
             yield BooleanLiteralToken(**asdict(token))
 
         elif FLOAT_REGEX.match(token.content):

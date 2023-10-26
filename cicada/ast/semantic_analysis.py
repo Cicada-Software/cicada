@@ -698,10 +698,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 node.expr,
             )
 
-    def check_for_duplicate_arg_names(
-        self,
-        node: FunctionDefStatement,
-    ) -> None:
+    @staticmethod
+    def check_for_duplicate_arg_names(node: FunctionDefStatement) -> None:
         seen = set[str]()
 
         for arg_name in node.arg_names:
@@ -736,12 +734,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         return node.is_constexpr
 
-    def ensure_valid_op_types(
-        self,
-        lhs: Expression,
-        oper: BinaryOperator,
-        rhs: Expression,
-    ) -> None:
+    @staticmethod
+    def ensure_valid_op_types(lhs: Expression, oper: BinaryOperator, rhs: Expression) -> None:
         if lhs.type != rhs.type:
             verb = "assigned to" if oper == BinaryOperator.ASSIGN else "used with"
 
@@ -761,7 +755,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         return None
 
-    def is_type_compatible(self, compare: Type, to: Type) -> bool:
+    @staticmethod
+    def is_type_compatible(compare: Type, to: Type) -> bool:
         if isinstance(to, UnionType):
             return compare in to.types
 

@@ -438,7 +438,8 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         return self._convert_workflow(rows[0])
 
-    def _convert_workflow(self, row: sqlite3.Row) -> Workflow:
+    @staticmethod
+    def _convert_workflow(row: sqlite3.Row) -> Workflow:
         return Workflow(
             id=WorkflowId(UUID(row["uuid"])),
             filename=Path(row["filename"]),

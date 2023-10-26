@@ -171,23 +171,23 @@ class SecretRepo(ISecretRepo, DbConnection):
         # Create key if it doesn't already exist
         self.client.secrets.transit.create_key(key, auto_rotate_period="30d")
 
-        resp = self.client.secrets.transit.encrypt_data(
-            key,
-            plaintext="",
-            batch_input=[{"plaintext": b64encode(x.encode()).decode()} for x in data],
-        )
+        plaintexts = [{"plaintext": b64encode(x.encode()).decode()} for x in data]
+
+        resp = self.client.secrets.transit.encrypt_data(key, batch_input=plaintexts)
 
         return [b["ciphertext"] for b in resp["data"]["batch_results"]]
 
     def _decrypt(self, key: str, data: list[str]) -> list[str]:
-        resp = self.client.secrets.transit.decrypt_data(
-            key, ciphertext="", batch_input=[{"ciphertext": x} for x in data]
-        )
+        ciphers = [{"ciphertext": x} for x in data]
+
+        resp = self.client.secrets.transit.decrypt_data(key, batch_input=ciphers)
 
         return [b64decode(b["plaintext"]).decode() for b in resp["data"]["batch_results"]]
 
-    def _installation_key_name(self, id: InstallationId) -> str:
+    @staticmethod
+    def _installation_key_name(id: InstallationId) -> str:
         return f"installation_{id}"
 
-    def _repo_key_name(self, id: RepositoryId) -> str:
+    @staticmethod
+    def _repo_key_name(id: RepositoryId) -> str:
         return f"repository_{id}"

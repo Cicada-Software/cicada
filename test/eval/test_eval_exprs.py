@@ -196,7 +196,7 @@ if "":
 
         assert isinstance(expr, BooleanValue)
 
-        expect_true = symbol in ("a", "b", "c")
+        expect_true = symbol in {"a", "b", "c"}
 
         assert expr.value == expect_true
 

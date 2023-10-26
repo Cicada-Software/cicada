@@ -180,8 +180,9 @@ class TestGitlabWebhook(TestEndpointWrapper):
 
         assert not sessions
 
+    @staticmethod
     @contextmanager
-    def mock_gitlab_infra_details(self) -> Iterator[dict[str, Mock]]:
+    def mock_gitlab_infra_details() -> Iterator[dict[str, Mock]]:
         # fmt: off
 
         pkg = "cicada.api.endpoints.webhook.gitlab.main"

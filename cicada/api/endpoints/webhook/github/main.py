@@ -130,7 +130,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
         if repo:
             add_repository_to_installation(di.installation_repo(), repo, event)
 
-    if event_type in ("installation", "installation_repositories"):
+    if event_type in {"installation", "installation_repositories"}:
         if user:
             create_or_update_github_installation(di, user.id, event)
 
@@ -139,5 +139,5 @@ async def handle_github_event(request: Request, di: Di) -> None:
             handle_github_push_event(di, event, user)
 
     elif event_type == "issues":
-        if event["action"] in ("opened", "closed"):
+        if event["action"] in {"opened", "closed"}:
             handle_github_issue_event(di, event, user)

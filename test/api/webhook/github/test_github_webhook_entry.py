@@ -182,16 +182,18 @@ class TestGitHubWebhooks(TestEndpointWrapper):
 
         assert not sessions
 
+    @staticmethod
     @contextmanager
-    def disable_github_signing_verification(self) -> Iterator[None]:
+    def disable_github_signing_verification() -> Iterator[None]:
         with patch(
             "cicada.api.endpoints.webhook.github.main.verify_webhook_is_signed_by_github",
             return_value=None,
         ):
             yield
 
+    @staticmethod
     @contextmanager
-    def mock_github_infra_details(self) -> Iterator[dict[str, Mock]]:
+    def mock_github_infra_details() -> Iterator[dict[str, Mock]]:
         # fmt: off
 
         pkg = "cicada.api.endpoints.webhook.github.main"

@@ -94,7 +94,8 @@ class DNSSettings:
         if not self.port:
             raise ValueError("CICADA_PORT must be defined")
 
-    def is_domain_only_url(self, url: str) -> bool:
+    @staticmethod
+    def is_domain_only_url(url: str) -> bool:
         # A domain is considered valid if it is only the domain part of a URL,
         # that is, it does not contain a schema, path, query params, etc. This
         # could be handled more elegantly (and could also be re-written as a
@@ -104,7 +105,8 @@ class DNSSettings:
 
         return not (any((p.scheme, p.netloc, p.params, p.query, p.fragment)) or "/" in p.path)
 
-    def format_invalid_domain_url(self, url: str) -> str:
+    @staticmethod
+    def format_invalid_domain_url(url: str) -> str:
         p = urlparse(url)
 
         return p.netloc if p.netloc else p.path.split("/")[0]
