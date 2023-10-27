@@ -1,3 +1,4 @@
+import shlex
 from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -29,6 +30,7 @@ from cicada.ast.nodes import (
     ParenthesisExpression,
     RecordValue,
     RunOnStatement,
+    ShellEscapeExpression,
     StringExpression,
     StringValue,
     TitleStatement,
@@ -282,6 +284,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         value = node.expr.accept(self)
 
         return value_to_string(value)
+
+    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> Value:
+        value = node.expr.accept(self)
+
+        assert isinstance(value, StringValue)
+
+        return StringValue(shlex.quote(value.value))
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()

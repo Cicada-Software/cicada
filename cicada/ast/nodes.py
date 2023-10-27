@@ -652,6 +652,32 @@ class ToStringExpression(Expression):
 
 
 @dataclass
+class ShellEscapeExpression(Expression):
+    """
+    This is an implicit AST node for escaping potential shell code.
+    """
+
+    __match_args__ = ("expr",)
+
+    expr: Expression
+
+    @classmethod
+    def from_expr(cls, expr: Expression) -> Self:
+        return cls(
+            info=expr.info,
+            expr=expr,
+            type=expr.type,
+            is_constexpr=False,
+        )
+
+    def accept(self, visitor: NodeVisitor[T]) -> T:
+        return visitor.visit_shell_escape_expr(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}: # {self.info}\n  expr={self.expr}"
+
+
+@dataclass
 class Statement(Node):
     """
     Abstract class representing a statement. Statements cannot be used as
@@ -863,6 +889,9 @@ class NodeVisitor(Generic[T]):
     def visit_to_string_expr(self, node: ToStringExpression) -> T:
         raise NotImplementedError
 
+    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> T:
+        raise NotImplementedError
+
     def visit_run_on_stmt(self, node: RunOnStatement) -> T:
         raise NotImplementedError
 
@@ -939,6 +968,9 @@ class TraversalVisitor(NodeVisitor[None]):
             expr.accept(self)
 
     def visit_to_string_expr(self, node: ToStringExpression) -> None:
+        node.expr.accept(self)
+
+    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
         node.expr.accept(self)
 
     def visit_run_on_stmt(self, node: RunOnStatement) -> None:

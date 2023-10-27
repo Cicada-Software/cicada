@@ -25,6 +25,7 @@ from cicada.ast.nodes import (
     ParenthesisExpression,
     RunOnStatement,
     RunType,
+    ShellEscapeExpression,
     StringExpression,
     TitleStatement,
     ToStringExpression,
@@ -360,19 +361,19 @@ def test_generate_func_expr_with_parens() -> None:
                 FunctionExpression(
                     IdentifierExpression("shell"),
                     [
-                        ToStringExpression(
-                            ParenthesisExpression(IdentifierExpression()),
+                        ShellEscapeExpression(
+                            ToStringExpression(ParenthesisExpression(IdentifierExpression())),
                         ),
                         BinaryExpression(
                             StringExpression("lhs"),
                             BinaryOperator.ADD,
-                            ToStringExpression(
-                                ParenthesisExpression(IdentifierExpression()),
+                            ShellEscapeExpression(
+                                ToStringExpression(ParenthesisExpression(IdentifierExpression())),
                             ),
                         ),
                         BinaryExpression(
-                            ToStringExpression(
-                                ParenthesisExpression(IdentifierExpression()),
+                            ShellEscapeExpression(
+                                ToStringExpression(ParenthesisExpression(IdentifierExpression())),
                             ),
                             BinaryOperator.ADD,
                             StringExpression("rhs"),
@@ -396,9 +397,9 @@ def test_generate_func_expr_with_parens2() -> None:
                     IdentifierExpression("shell"),
                     [
                         StringExpression("arg1"),
-                        ToStringExpression(
-                            ParenthesisExpression(
-                                IdentifierExpression("arg2"),
+                        ShellEscapeExpression(
+                            ToStringExpression(
+                                ParenthesisExpression(IdentifierExpression("arg2")),
                             ),
                         ),
                         StringExpression("arg3"),
@@ -661,14 +662,18 @@ def test_interpolated_function_arg_doesnt_gobble_newline() -> None:
                 FunctionExpression(
                     IdentifierExpression("shell"),
                     [
-                        ToStringExpression(
-                            ParenthesisExpression(IdentifierExpression("x")),
-                        )
+                        ShellEscapeExpression(
+                            ToStringExpression(ParenthesisExpression(IdentifierExpression("x")))
+                        ),
                     ],
                 ),
                 FunctionExpression(
                     IdentifierExpression("shell"),
-                    [ToStringExpression(ParenthesisExpression(IdentifierExpression("y")))],
+                    [
+                        ShellEscapeExpression(
+                            ToStringExpression(ParenthesisExpression(IdentifierExpression("y")))
+                        ),
+                    ],
                 ),
             ]
         ):
@@ -1431,6 +1436,26 @@ def test_parse_nested_list() -> None:
 
     match tree.exprs[0]:
         case ListExpression([ListExpression([NumericExpression(1)])]):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_escape_interpolated_args() -> None:
+    code = 'echo ("$ENV_VAR")'
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case FunctionExpression(
+            callee=IdentifierExpression("shell"),
+            args=[
+                StringExpression("echo"),
+                ShellEscapeExpression(
+                    ToStringExpression(ParenthesisExpression(StringExpression("$ENV_VAR")))
+                ),
+            ],
+        ):
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

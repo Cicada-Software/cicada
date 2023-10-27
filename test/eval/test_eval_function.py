@@ -43,6 +43,18 @@ def test_calling_shell_function_with_exprs() -> None:
     assert p.call_args.args[0] == ["/bin/sh", "-c", "echo 123 456 789 true"]
 
 
+def test_calling_shell_function_escapes_shell_code() -> None:
+    m = MagicMock()
+
+    with (
+        patch("subprocess.Popen", return_value=m) as p,
+        patch.object(m, "returncode", 0),
+    ):
+        run_pipeline('shell echo ("$ABC") (";") ("echo hi")')
+
+    assert p.call_args.args[0] == ["/bin/sh", "-c", "echo '$ABC' ';' 'echo hi'"]
+
+
 def test_can_call_multiple_functions() -> None:
     """
     Fixes bug where the eval visitor exited after running the first function.

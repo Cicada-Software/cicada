@@ -28,6 +28,7 @@ from cicada.ast.nodes import (
     ParenthesisExpression,
     RecordValue,
     RunOnStatement,
+    ShellEscapeExpression,
     StringValue,
     TitleStatement,
     ToStringExpression,
@@ -617,6 +618,17 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if node.expr.type not in STRING_COERCIBLE_TYPES:
             raise AstError(
                 f"Cannot convert type `{node.expr.type}` to `{StringType()}`",
+                node.expr,
+            )
+
+        node.type = StringType()
+
+    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
+        super().visit_shell_escape_expr(node)
+
+        if node.expr.type != StringType():
+            raise AstError(
+                f"Expected `{StringType()}` type, got type `{node.expr.type}`",
                 node.expr,
             )
 

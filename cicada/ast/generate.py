@@ -69,6 +69,7 @@ from .nodes import (
     ParenthesisExpression,
     RunOnStatement,
     RunType,
+    ShellEscapeExpression,
     StringExpression,
     TitleStatement,
     ToStringExpression,
@@ -491,7 +492,9 @@ def generate_interpolated_string(state: ParserState, leading_tokens: list[Token]
     if leading_tokens:
         parts.append(StringExpression.from_token(Token.meld(leading_tokens)))
 
-    parts.append(ToStringExpression.from_expr(generate_paren_expr(state)))
+    parts.append(
+        ShellEscapeExpression.from_expr(ToStringExpression.from_expr(generate_paren_expr(state)))
+    )
 
     if isinstance(state.current_token, DanglingToken | IdentifierToken):
         parts.append(StringExpression.from_token(state.current_token))

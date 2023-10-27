@@ -3,10 +3,9 @@
 The `shell` statement is the main way to run commands in Cicada. The `shell` statement allows you
 to run commands and as well as execute inline shell code in your workflow.
 
-> Arguments passed to `shell` are passed directly to `/bin/sh`. This means you get all the features,
-> quirks, and potential security considerations involved with using shell code in your workflows.
-> Please read the [Security Considerations](#security-considerations) for information on how to better
-> secure your workflows.
+> Arguments passed to `shell` are escaped before being passed to `/bin/sh`, though if used incorrectly,
+> you still might be vulnerable to command injections. Please read the [Security Considerations](#security-considerations)
+> section for tips on how to better secure your workflows.
 
 ## Examples
 
@@ -39,7 +38,7 @@ shell echo 1 + 2 = (1 + 2)
 
 The above workflow will print out `1 + 2 = 3`.
 
-### Capture stdout
+### Capture `stdout`
 
 In Cicada you can capture and manipulate the stdout of a command by assigning it to
 a variable and accessing it's properties:
@@ -88,7 +87,7 @@ shell "
   echo running tests
   ./run-tests.sh
 
-  if [ "$?" = "1" ]; then
+  if [ $? = 1 ]; then
     echo tests failed
   else
     echo tests passeed
@@ -125,7 +124,7 @@ These are the current commands that are allowed to be used as aliases, though th
 ## Notes on Environment Variables
 
 By default, Cicada will inject environment variables into each command before running it.
-In addition, environment variables that are set while running a `shell` command will not
+However, environment variables that are set while running a `shell` command will not
 be saved.
 
 For example:
@@ -165,14 +164,30 @@ _=/usr/bin/env
 Notice that the `HELLO` env var is passed to the next commands, but `TESTING`
 is not.
 
+## Using Secrets
+
+For security purposes Cicada does not export secrets as environment variables. This
+means that you have to export secrets that you want to expose as environment variables:
+
+```
+# prints nothing
+echo $API_KEY
+
+env.API_KEY = secret.API_KEY
+
+# prints API_KEY
+echo $API_KEY
+```
+
 ## Security Considerations
 
 Since the `shell` statement allows you to run arbitrary commands, it is
 paramount that you ensure it is safeguarded from malicious users.
 
-Because `shell` will forward commands to `/bin/sh`, any arguments passed
-to it must be trusted and secured. The following is an example of a malicious
-command being passed using a variable:
+The `shell` statement will escape all interpolated arguments you pass to it,
+though this alone does not stop all command injections.
+
+For example, this workflow is safe as `name` is properly escaped via `()`:
 
 ```
 let name = "hacker; echo Command injection"
@@ -183,9 +198,27 @@ shell echo Your name is: (name)
 Running the above workflow results in the following:
 
 ```
-Your name is: hacker
+Your name is: hacker; echo Command injection
+```
+
+As you can see, `name` was escaped and the command injection was not successful.
+However, if we were to change the `shell` command to this:
+
+```
+shell /bin/sh -c (name)
+```
+
+We would get the following result:
+
+```
+/bin/sh: line 1: hacker: command not found
 Command injection
 ```
 
-Ensure that you only pass *trusted input* to commands. Example sources of untrusted
-input are commit author usernames and branch names.
+While `(name)` does escapes the parameter, `/bin/sh -c` will execute the escaped
+shell shell code, rendering the escaping useless.
+
+In short, make sure that you do not directly execute untrusted code! Call commands directly
+like in the first example, and if you do need to call shell scripts, ensure you are
+only passing trusted input that you created, and ensure these scripts are not
+interpreting any inputs as shell code.

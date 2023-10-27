@@ -21,6 +21,7 @@ from cicada.ast.nodes import (
     OnStatement,
     ParenthesisExpression,
     RecordValue,
+    ShellEscapeExpression,
     StringExpression,
     StringValue,
     TitleStatement,
@@ -512,7 +513,9 @@ def test_non_string_types_allowed_in_interpolated_strings() -> None:
                     StringExpression("abc"),
                     BinaryOperator.ADD,
                     BinaryExpression(
-                        ToStringExpression(ParenthesisExpression(NumericExpression(123))),
+                        ShellEscapeExpression(
+                            ToStringExpression(ParenthesisExpression(NumericExpression(123))),
+                        ),
                         BinaryOperator.ADD,
                         StringExpression("xyz"),
                     ),
