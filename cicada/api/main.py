@@ -85,6 +85,11 @@ async def terms() -> FileResponse:
     return FileResponse("./frontend/terms.html")
 
 
+@app.get("/privacy")
+async def privacy() -> FileResponse:
+    return FileResponse("./frontend/privacy.html")
+
+
 @app.get("/cookies")
 async def cookies() -> FileResponse:
     return FileResponse("./frontend/cookies.html")
