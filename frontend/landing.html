@@ -2,220 +2,205 @@
 <html>
 
 <head>
-<title>Cicada: CI/CD For Power Users</title>
+<title>Cicada: Secure Workflows, Simplified</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="apple-touch-icon" sizes="180x180" href="/static/img/icon/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/static/img/icon/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/static/img/icon/favicon-16x16.png">
 <link rel="manifest" href="/static/img/icon/site.webmanifest">
+<link rel="stylesheet" href="/static/common.css">
 <script src="/static/common.js"></script>
 </head>
 
 <body>
 
 <div id="page-1">
-  <a href="/login" id="login"><button>Login</button></a>
+  <div id="login-buttons">
+    <a id="sign-up" href="/login?signup=1">Sign-up</a>
+    <a href="/login"><button id="login">Login</button></a>
+  </div>
 
   <h1>cicada</h1>
-  <h3>CI/CD For Power Users</h3>
 
-  <img class="screenshot" src="/static/img/screenshot.png">
+  <h3 style="margin-top: 0">Secure Workflows, Simplified</h3>
 
-  <div id="demo">
-    <p>Start using Cicada for free today</p>
-    <a href="https://codespaces.new/Cicada-Software/cicada?quickstart=1">
-      <img src="/static/img/codespaces.svg" alt="Open in GitHub Codespaces">
-    </a>
+  <div id="cta-wrapper">
+    <div style="margin: auto">
+      <p id="cta-wrapper-msg">Cicada is a Free and Open Source platform for running software automation workflows.</p>
+
+      <a href="/login?signup=1&cta=1">Start Free Trial →</a>
+      <p class="no-cc">(No credit card required)</p>
+    </div>
+
+    <code><span class="kw">on</span> <span class="const">git.push</span> <span class="kw">where</span> <span class="ident">event.branch</span> <span class="kw">is</span> <span class="str">"main"</span>
+
+<span class="kw">cache</span> node_modules <span class="kw">using</span> <span class="ident">hashOf</span><span class="op">(</span><span class="str">"package-lock.json"</span><span class="op">)</span>
+
+<span class="str">shell</span> npm install
+<span class="str">shell</span> npm run test</code>
   </div>
+
+  <span>Why Cicada?</span>
 </div>
 
 <div id="page-2">
+  <h2>Use A Real Programming Language</h2>
 
-<h2>Write Simpler Workflows</h2>
+  <div id="page-2-code-wrapper">
+    <code><span class="kw">on</span> <span class="const">git.push</span>
 
-<h3>With Cicada, less is more. Write more expressive code in less lines.</h3>
+<span class="kw">fn</span> <span class="str">test</span><span class="op">(</span><span class="ident">compiler</span><span class="op">)</span><span class="op">:</span>
+  <span class="ident">env.CC</span> = <span class="ident">compiler</span>
 
-<div id="workflow-comparison">
-  <div id="cicada-sticky">
-    <span>Cicada</span>
-    <pre>on git.push where event.branch is "main"
+  <span class="str">echo</span> Testing <span class="op">(</span><span class="ident">compiler</span><span class="op">)</span>
+  <span class="str">shell</span> make clean all
 
-shell npm install
-shell npm run test</pre>
-  </div>
 
-  <span id="compare-to">Compare that to GitHub:</span>
+<span class="kw">let</span> <span class="ident">compilers</span> = <span class="op">[</span><span class="str">"gcc"</span>, <span class="str">"clang"</span><span class="op">]</span>
 
-  <div>
-    <span id="github-comparison">GitHub Actions</span>
-    <pre>name: Test
+<span class="kw">for</span> <span class="ident">compiler</span> <span class="kw">in</span> <span class="ident">compilers</span><span class="op">:</span>
+  <span class="str">test</span><span class="op">(</span><span class="ident">compiler</span><span class="op">)</span></code>
 
-on:
-  push:
-    branches:
-      - "main"
+    <div>
+      <p>You deserve better then YAML.</p>
+      <br>
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
+      <p>
+        With Cicada, write infrastructure as code using a programming language specifically
+        designed for automation workflows.
+      </p>
+      <br>
 
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Run tests
-        run: |
-          npm install
-          npm run test</pre>
-
-    <div id="gitlab-comparison">
-      <span>Gitlab CI</span>
-      <pre>stages:
-  - test
-
-run-tests:
-  stage: test
-  script:
-    - npm install
-    - npm run test
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"</pre>
+      <p>Say goodbye to Bash/Python scripts!</p>
     </div>
   </div>
 </div>
 
-</div>
-
 <div id="page-3">
-<h2>Use Your Favorite Git Providers</h2>
+  <h2>Security Made Easy, Not Painful</h2>
+  <h3>Cicada makes writing secure workflows a breeze</h3>
 
-<h3>Cicada supports both GitHub and Gitlab. Azure DevOps, Bitbucket and many more coming soon.</h3>
+  <div>
+    <div>
+      <span>Prevents Command Injection</span>
+      <span>Expressions passed to commands are autotomatically escaped.</span>
+      <code><span class="kw">let</span> <span class="ident">name</span> = <span class="str">"; rm -rf /"</span>
 
-<img id="git-providers" src="/static/img/diagram.svg" >
+<span class="str">echo</span> Hello, <span class="op">(</span><span class="ident">name</span><span class="op">)</span></code>
+      <span>Output:</span>
+      <code>Hello, ; rm -rf /</code>
+    </div>
 
+    <div>
+      <span>Doesn't Expose Secrets</span>
+      <span>By default, secrets are not exposed as environment variables.</span>
+      <code><span class="str">echo</span> TOKEN: <span class="op">(</span><span class="ident">secret.TOKEN</span><span class="op">)</span>
+
+<span class="str">echo</span> TOKEN: $TOKEN</code>
+      <span>Output:</span>
+      <code>TOKEN: SUPER_SECRET
+TOKEN:</code>
+    </div>
+
+    <div>
+      <span>Strict Permissions</span>
+      <span>By default, workflows have read only access to code and nothing else.</span>
+      <code><span class="str">git</span> tag -a v1.2.3 -m <span class="str">"Malicious Tag"</span>
+
+<span class="str">git</span> push v1.2.3</code>
+      <span>Output:</span>
+      <code>remote: Write access to repository not granted.</code>
+    </div>
+  </div>
 </div>
 
 <div id="page-4">
-<h2>No Vendor Lock-in</h2>
+  <h2>Batteries Included</h2>
 
-<ul class="arrows">
-  <li>
-    Triggers in Cicada are platform agnostic, meaning a <code>git.push</code>
-    trigger coming from GitHub will look the same as one from Gitlab.
-  </li>
-
-  <li>
-    Similar to GitHub Actions, Cicada supports many different triggers types including
-    <code>issue.open</code>, <code>issue.close</code>, <code>git.push</code>, and more.
-  </li>
-
-  <li>
-    Say goodbye to porting your workflows from platform to platform!
-  </li>
-</ul>
+  <div>
+    <a href="/docs/ci-lang/caching.html"><span>Caching</span></a>
+    <a href="/docs/ci-lang/secrets.html"><span>Secrets</span></a>
+    <a href="/docs/ci-lang/let-expr.html"><span>Variables</span></a>
+    <a href="/docs/ci-lang/exprs.html"><span>Expressions</span></a>
+    <a href="/docs/ci-lang/functions.html"><span>Functions</span></a>
+    <a href="/docs/ci-lang/if-expr.html"><span>If Statements</span></a>
+    <a href="#"><span>Type Checking</span></a>
+    <a href="#"><span>Concurrent Workflows</span></a>
+    <a href="/docs/ci-lang/run-on-statement.html"><span>Custom Images</span></a>
+    <a href="#"><span>Email Notifications</span></a>
+    <a href="#"><span>Full Color Terminal</span></a>
+    <a href="/docs/self-hosted-runner.html"><span>Self Hosted Runners</span></a>
+  </div>
 
 </div>
 
 <div id="page-5">
+  <h2>Pricing</h2>
 
-<h2 id="pricing">Pricing</h2>
+  <div>
+    <div>
+      <span>Self Host</span>
+      <p>Self host on-prem for free, forever</p>
+      <ul>
+        <li>Unlimited workflows and users</li>
+        <li>SSO via GitHub</li>
+        <li>Community support</li>
+      </ul>
 
-<div id="tiers">
-  <div id="tier-free">
-    <span class="title">Free</span>
+      <a href="/docs"><button>Read The Docs</button></a>
+    </div>
 
-    <ul class="arrows">
-      <li>Self host for free, forever</li>
-      <li>Unlimited users</li>
-    </ul>
+    <div>
+      <span>Cloud</span>
+      <p>$100/month ($90/month billed annually)</p>
+      <ul>
+        <li>Cloud hosted, zero maintenance</li>
+        <li>Unlimited users</li>
+        <li>Unlimited secrets</li>
+        <li>2,000 workflow minutes/month</li>
+        <li>2GB of cache/month</li>
+        <li>Feature request priority</li>
+        <li>Customer support</li>
+      </ul>
 
-    <a href="https://github.com/Cicada-Software/cicada"><button>View on GitHub</button></a>
+      <a href="/login?signup=1&cloud=1"><button>Start Free Trial</button></a>
+      <p class="no-cc no-cc-cloud">(No credit card required)</p>
+    </div>
+
+    <div>
+      <span>Custom</span>
+      <p>Need something custom? Let's get in touch</p>
+      <div style="height: 3em"></div>
+
+      <a href="mailto:contact@cicada.sh"><button>Contact Us</button></a>
+    </div>
   </div>
-
-  <div id="tier-starter">
-    <span>
-      <span class="title">Starter</span>
-      <span class="cost">$5/month</span>
-    </span>
-
-    <ul class="arrows">
-      <li>Fully managed, maintenance free</li>
-      <li>Unlimited users</li>
-      <li>50 minutes a month</li>
-    </ul>
-
-    <a href="/login"><button>Sign Up Today</button></a>
-  </div>
-
-  <div id="tier-pro">
-    <span>
-      <span class="title">Pro</span>
-      <span class="cost">$50/month</span>
-    </span>
-
-    <ul class="arrows">
-      <li>Fully managed, maintenance free</li>
-      <li>Unlimited users</li>
-      <li>2,000 minutes a month</li>
-    </ul>
-
-    <a href="/login"><button>Sign Up Today</button></a>
-  </div>
-
 </div>
-
-<span id="custom">
-  Need something custom? Let's <a href="mailto:contact@cicada.sh">get in touch</a>.
-</span>
-
-</div>
-
-<div id="page-6">
 
 <footer>
-  <span>
-    <a href="https://github.com/Cicada-Software">Open Source</a>
-    <span class="divider">│</span>
-    <a href="mailto:contact@cicada.sh">Contact Us</a>
-    <span class="divider">│</span>
-    <a href="/privacy">Privacy</a>
-    <span class="divider">│</span>
-    <a href="/terms">Terms</a>
-    <span class="divider">│</span>
-    <a href="/cookies">Cookies</a>
-  </span>
-
-  <br>
-
-  <p>&copy; 2023 Cicada Software, Inc.</p>
+  <div>
+    <div>
+      <p class="logotype">cicada</p>
+      <p>&copy; 2023 Cicada Software, Inc.</p>
+    </div>
+    <ol>
+      <li><a href="https://github.com/Cicada-Software">Open Source</a></li>
+      <li><a href="mailto:contact@cicada.sh">Contact Us</a></li>
+      <li><a href="/privacy">Privacy</a></li>
+      <li><a href="/terms">Terms</a></li>
+      <li><a href="/cookies">Cookies</a></li>
+    </ol>
+  </div>
 </footer>
-
-</div>
 
 <style>
 :root {
-  --background: #eee;
-  --foreground: #111;
-  --subtext: #555;
+  --green: #51dc4e;
+  --border-radius: 1em;
 }
 
-@font-face {
-  font-family: "dejavu";
-  src: url("/static/fonts/DejaVuSans.ttf");
-}
-
-@font-face {
-  font-family: "roboto-black";
-  src: url("/static/fonts/Roboto-Black.ttf");
-}
-
-@font-face {
-  font-family: "roboto";
-  src: url("/static/fonts/Roboto-Regular.ttf");
-}
-
-@font-face {
-  font-family: "jetbrains";
-  src: url("/static/fonts/JetBrainsMono.ttf");
+* {
+  font-family: jetbrains;
 }
 
 @font-face {
@@ -223,392 +208,447 @@ run-tests:
   src: url("/static/fonts/Tschichold Alt Bold.ttf");
 }
 
-body, html {
-  background: var(--background);
-  color: var(--foreground);
+#login-buttons {
+  position: absolute;
+  right: 1em;
+  top: 1em;
+  display: flex;
+  gap: 1.5em;
+}
 
-  margin: 0;
-
-  font-family: roboto;
+#sign-up {
+  color: var(--black);
+  text-decoration: none;
+  margin: auto;
 }
 
 #login {
-  position: absolute;
-  right: 0.5em;
-  top: 0.5em;
+  background: var(--black);
+  color: var(--green);
+  border-radius: 1em;
 }
 
-h1, #logotype {
+h1, .logotype {
   font-family: logotype;
-  color: var(--foreground);
   user-select: none;
 }
 
 h1 {
+  margin: 0;
   font-size: 6em;
+  margin-top: 0.65em;
 }
 
 h2 {
-  font-family: roboto-black;
-  font-size: 2.5em;
-
-  color: #111;
-  padding: 1em !important;
-}
-
-.screenshot {
-  display: flex;
-  aspect-ratio: 16/9;
-  margin: 3em auto;
-  background: #ddd;
-  max-height: 50vh;
-  max-width: 75vw;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
-  border-radius: 0.5em;
-}
-
-h3 {
-  font-size: 1.5em;
-  margin-top: 0.5em;
-}
-
-h1, h2, h3 {
-  text-align: center;
   margin: 0;
-  padding: 0;
+  padding: 1em;
 }
 
 #page-1 {
-  background: linear-gradient(to bottom right, #b7fb3f, #6fe357);
-  height: calc(100vh - 13em);
+  background: var(--green);
+  color: var(--black);
   padding: 2em;
-}
-
-#page-1 h3 {
-  color: #353535;
-}
-
-#login button {
-  color: #b7fb3f;
-  padding: 0.75em;
-  margin: 0;
-}
-
-#demo {
+  width: calc(100% - 4em);
+  height: calc(100% - 4em);
+  display: flex;
+  flex-direction: column;
   text-align: center;
 }
 
-#demo img {
-  border-radius: 6px;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+#cta-wrapper {
+  display: flex;
+  gap: 4em;
+  width: 65%;
+  min-width: 55em;
+  margin: auto;
+  padding-bottom: 4em;
+  text-align: left;
+
+  font-size: calc(1em + 0.1vw);
 }
 
-#demo p {
+#cta-wrapper-msg {
+  font-style: italic;
+  margin-top: 0;
+}
+
+#cta-wrapper a {
+  color: var(--black);
   font-weight: bold;
+}
+
+.no-cc {
+  margin: 0;
+  margin-top: 4px;
+  font-size: 0.75em;
+}
+
+#page-1 > span {
+  font-size: 1.75em;
+  padding-bottom: 1em;
+}
+
+code {
+  white-space: pre;
+  border-radius: var(--border-radius);
+  background: var(--black);
+  color: var(--white);
+  filter: saturate(75%);
+
+  padding: 2.5em;
+  text-align: left;
+  display: inherit;
+  width: min-content;
+  margin: auto;
 }
 
 #page-2 {
-  background: linear-gradient(to bottom right, #8bfb3f, #2ed240);
-  padding: 1em;
-  padding-bottom: 2em;
+  background: var(--gray);
+  color: var(--white);
+  height: 100%;
+  padding: 4em 2em;
+  display: flex;
+  flex-direction: column;
+  font-size: calc(0.8em + 0.7vw);
 }
 
-#page-2 h3 {
-  margin-bottom: 2em;
+#page-2 h2 {
+  text-align: center;
+  color: var(--green);
+  padding: 2em;
+}
+
+#page-2-code-wrapper {
+  display: flex;
+  gap: 8vw;
+  margin: auto;
+}
+
+#page-2-code-wrapper div {
+  margin: 1em 1em auto 1em;
 }
 
 #page-3 {
-  background: linear-gradient(to bottom right, #68fb3f, #3ffb80);
-  padding: 3em;
+  width: 100%;
+  height: 100%;
+  padding: 4em 0;
+
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  background: var(--white);
+  color: var(--black);
+
+  font-size: calc(0.5em + 0.5vw);
 }
 
-#page-3 > h3 {
-  margin-bottom: 2em;
+#page-3 h2 {
+  text-align: center;
+  color: var(--black);
+  padding: 2em;
+  padding-bottom: 0;
+  font-size: calc(2em + 0.1vw);
+}
+
+#page-3 h3 {
+  padding: 0 4em;
+  font-weight: normal;
+}
+
+#page-3 > div {
+  display: flex;
+  flex-direction: row;
+  gap: 1vw;
+  margin: auto 4em;
+}
+
+#page-3 div div {
+  display: flex;
+  flex-direction: column;
+  gap: 2em;
+  width: 100%;
+}
+
+#page-3 div > span:first-child {
+  font-weight: bold;
+}
+
+#page-3 div div > span:nth-of-type(3) {
+  font-style: italic;
+}
+
+#page-3 div div > code:nth-of-type(1) {
+  width: calc(100% - 5em);
+}
+
+#page-3 div div > code:nth-of-type(2) {
+  color: var(--black);
+  background: var(--green);
+  height: 2em;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 #page-4 {
-  background: linear-gradient(to bottom right, #3ffb65, #3ffbbd);
-  padding: 2em;
-}
-
-#page-4 ul {
-  font-size: 1.5em;
-  font-family: roboto;
-  line-height: 2em;
-  list-style: none;
-}
-
-#page-4 ul li {
-  padding: 0.5em;
-}
-
-ul.arrows li::marker {
-  content: '→ ';
-  font-weight: bold;
-  padding-right: 1em;
-}
-
-#page-4 code {
-  background: rgba(0, 0, 0, 0.2);
-  font-family: jetbrains;
-  font-size: 0.9em;
-  padding: 0.15em;
-  border-radius: 0.25em;
-}
-
-#cicada-sticky {
-  position: sticky;
-  top: 1em;
-  height: min-content;
-}
-
-#workflow-comparison {
+  width: 100%;
+  height: 100%;
+  background: var(--black);
+  color: var(--white);
   display: flex;
+  flex-direction: column;
+  padding: 4em 0;
 }
 
-#workflow-comparison > div {
-  flex: 1;
-  font-size: 1.25em;
-}
-
-#workflow-comparison span {
-  font-family: roboto-black;
-  font-size: 1.25em;
-  margin-left: 1em;
-  display: block;
-  margin: auto;
+#page-4 h2 {
   text-align: center;
+  color: var(--green);
+  padding: 2em;
+  font-size: calc(1em + 1vw);
 }
 
-#workflow-comparison pre {
-  background: rgba(0, 0, 0, 0.05);
-  margin: 1em;
-  padding: 1em;
+#page-4 div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  row-gap: 2em;
+  column-gap: 2em;
 
+  margin: 8em;
+  height: 100%;
+  text-align: center;
+  margin-top: 0;
+}
+
+#page-4 a {
+  color: var(--white);
+  text-decoration: none;
+  background: var(--medium-gray);
   border-radius: 0.5em;
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
 }
 
-#gitlab-comparison {
-  margin-top: 2em !important;
-}
-
-#compare-to {
-  display: none !important;
-}
-
-#git-providers {
+#page-4 a span {
   display: flex;
-  width: 35vw;
-  margin: auto;
-  border-radius: 1em;
-
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
-}
-
-.filler {
-  flex: 1;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
 }
 
 #page-5 {
-  background: linear-gradient(to bottom right, #31fda7, #3fd8fb);
-  padding: 2em;
-  padding-bottom: 10em;
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--green);
+  font-size: calc(0.3em + 0.4vw);
+  padding: 4em 0;
 }
 
-#page-6 {
-  background: linear-gradient(to bottom right, #3fd8fb, #779df4);
-  padding: 2em;
-  padding-top: 10em;
+#page-5 h2 {
+  font-size: 3.5em;
+  text-align: center;
+  color: var(--black);
+  padding: 1em;
+  padding-bottom: 0;
 }
 
-#logotype {
+#page-5 p {
+  color: #8c8c8c;
+  text-align: center;
+  padding: 0;
+}
+
+#page-5 > div {
+  display: flex;
+  gap: 4vw;
+  margin: auto;
+}
+
+#page-5 > div > div {
+  background: var(--medium-gray);
+  color: var(--white);
+  min-width: 25em;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: auto;
+  padding: 4em;
+  border-radius: 1em;
+}
+
+#page-5 > div > div > span:first-child {
   font-size: 2em;
-  margin: 0.5em 0;
-}
-
-footer {
   text-align: center;
 }
 
-footer a {
-  white-space: nowrap;
+#page-5 > div > div ul {
+  line-height: 3em;
+  padding-left: 1em;
+  padding-bottom: 2em;
+
+  font-size: 1.25em;
 }
 
-footer .divider {
-  color: #0000008f;
+#page-5 > div > div a {
+  margin: auto;
+  margin-bottom: 0;
 }
 
-#page-6 ul {
-  margin: 0;
+#page-5 > div > div button {
+  text-align: center;
+  background: var(--green);
+  color: var(--black);
+  border-radius: 1em;
+  padding: 2em;
+  font-weight: bold;
+}
+
+.no-cc-cloud {
+  position: relative;
+  top: 1em;
+  height: 0px;
+  margin: 0 auto;
+}
+
+footer {
+  background: var(--medium-gray);
+  color: var(--white);
+  font-size: calc(0.8em + 0.1vw);
+}
+
+footer .logotype {
+  font-size: 3em;
+  margin: 1em 0 0 0;
+}
+
+footer > div {
+  display: flex;
+  padding: 2em;
+  gap: 4em;
+}
+
+footer > div > * {
+  margin: auto;
+}
+
+footer ol {
   padding: 0;
   list-style: none;
-  line-height: 2em;
-}
 
-.links {
-  font-family: roboto-black;
-  margin-bottom: 1.5em;
-  display: block;
-}
-
-#page-6 a {
-  color: var(--foreground);
-}
-
-#pricing {
-  padding-bottom: 2em !important;
-}
-
-#tiers {
   display: flex;
   gap: 2em;
 }
 
-#tier-starter {
-  height: calc(30vh + 0.5em);
-  padding-top: 3em !important;
-  padding-bottom: 3em !important;
-  margin-top: -1em;
-  background: #ecececa6 !important;
+footer a {
+  color: var(--white);
 }
 
-#tiers > div {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 30vh;
-  background: rgba(213, 235, 236, 0.6);
-  padding: 2em 1em;
-  border-radius: 0.5em;
-  text-align: center;
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
+.kw { color: #ee3838 }
+.const { color: #bf57bf }
+.ident { color: #4ca3ff }
+.str { color: #58e658 }
+.op { color: #ca5d1b }
+
+code span {
+  height: min-content;
+  display: contents;
 }
 
-#tiers a {
-  margin: auto auto 0 auto;
-  width: min-width;
+@media (min-width: 1500px) {
+  #page-3 > div {
+    gap: 5vw;
+  }
 }
 
-#tiers button {
-  box-shadow: rgba(0, 0, 0, 0.25) 0px 14px 28px, rgba(0, 0, 0, 0.22) 0px 10px 10px;
-}
-
-#tiers .title {
-  font-family: roboto-black;
-  font-size: 2em;
-}
-
-#tiers .cost {
-  color: var(--foreground);
-  vertical-align: bottom;
-  line-height: 2em;
-  padding-left: 0.15em;
-}
-
-#tiers ul {
-  color: var(--foreground);
-  text-align: left;
-  line-height: 3em;
-  margin-top: 1.5em;
-  margin-bottom: 1.5em;
-}
-
-#custom {
-  color: var(--foreground);
-  text-align: center;
-  display: block;
-  margin-top: 3em;
-}
-
-#custom a {
-  color: var(--foreground);
-}
-
-button {
-  background: var(--foreground);
-  color: var(--background);
-  border: 0;
-  padding: 1em;
-  border-radius: 0.3em;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-@media (max-width: 48em) {
-  #page-1 {
-    height: max-content;
+@media (max-width: 1000px) {
+  #cta-wrapper {
+    flex-direction: column-reverse;
+    min-width: 100%;
   }
 
-  h2 {
-    padding: 1em 0 !important;
+  #cta-wrapper code {
+    width: calc(100% - 5em);
+    overflow-x: auto;
   }
 
-  #cicada-sticky {
-    position: initial;
-  }
-
-  #github-comparison {
-    display: block !important;
-  }
-
-  #gitlab-comparison {
-    display: none !important;
-  }
-
-  #github-comparison {
-    margin-top: 2em;
-  }
-
-  #compare-to {
-    display: block !important;
-    font-family: roboto !important;
-    margin: 0 !important;
-    margin-bottom: 1em !important;
-  }
-
-  #workflow-comparison {
+  #page-2-code-wrapper {
     flex-direction: column;
+    gap: 1em;
   }
 
-  #git-providers {
-    width: 75vw;
+  #page-2-code-wrapper code {
+    margin: 0;
+    width: calc(100% - 5em);
+    overflow-x: auto;
   }
 
-  #tiers {
-    gap: 3em;
+  #page-3 {
+    height: unset;
+    padding-bottom: 2em;
+  }
+
+  #page-3 h3 {
+    font-size: calc(2em + .1vw);
+  }
+
+  #page-3 > div {
     flex-direction: column;
-  }
-
-  #tiers ul {
-    padding-left: 1.5em;
-  }
-
-  #tiers li {
-    padding-left: 1em;
-  }
-
-  #tiers > div {
-    padding: 2em;
     margin: 0 2em;
+    text-align: left;
+    gap: 4em;
   }
 
-  #tier-starter {
-    padding: 2em 1em !important;
-  }
-}
-
-@media (min-width: 60em) {
-  #page-4 ul {
-    padding: 0 10vw;
+  #page-3 div > span:first-child {
+    text-align: center;
+    font-size: 1.5em;
   }
 
-  #tiers {
-    padding: 0 15vw;
+  #page-3 div div > code:nth-of-type(2) {
+    height: unset;
+    width: calc(100% - 5em);
   }
 
-  #workflow-comparison {
-    padding: 0 15vw;
+  #page-4 div {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    row-gap: 2em;
+    column-gap: 2em;
+
+    margin: 2em;
+    height: 100%;
+    text-align: center;
+    margin-top: 0;
+  }
+
+  #page-5 {
+    font-size: calc(0.5em + 0.5vw);
+    height: unset;
+    padding-bottom: 4em;
+  }
+
+  #page-5 h2 {
+    padding-bottom: 2em;
+  }
+
+  #page-5 > div {
+    flex-direction: column;
+    width: calc(100% - 8em);
+    gap: 4em;
+  }
+
+  #page-5 > div > div {
+    width: calc(100% - 8em);
+  }
+
+  #page-5 > div > div ul {
+    padding-left: 0em;
+    margin: auto;
+  }
+
+  footer ol {
+    display: unset;
+    flex: 1;
   }
 }
 </style>
