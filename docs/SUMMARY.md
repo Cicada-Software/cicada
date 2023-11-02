@@ -9,6 +9,8 @@
   - [The `title` Statement](./ci-lang/title-statement.md)
   - [The `shell` Statement](./ci-lang/shell-stmt.md)
   - [Expressions](./ci-lang/exprs.md)
+    - [Types and Literals](./ci-lang/types.md)
+    - [Operators](./ci-lang/opers.md)
     - [The `let` Expression](./ci-lang/let-expr.md)
     - [The `if` Expression](./ci-lang/if-expr.md)
     - [List Expressions](./ci-lang/lists.md)

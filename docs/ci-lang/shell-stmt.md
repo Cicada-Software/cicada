@@ -205,17 +205,17 @@ As you can see, `name` was escaped and the command injection was not successful.
 However, if we were to change the `shell` command to this:
 
 ```
-shell /bin/sh -c (name)
+shell eval (name)
 ```
 
 We would get the following result:
 
 ```
-/bin/sh: line 1: hacker: command not found
+Your name is: hacker
 Command injection
 ```
 
-While `(name)` does escapes the parameter, `/bin/sh -c` will execute the escaped
+While `(name)` does escapes the parameter, `eval` will execute the escaped
 shell shell code, rendering the escaping useless.
 
 In short, make sure that you do not directly execute untrusted code! Call commands directly

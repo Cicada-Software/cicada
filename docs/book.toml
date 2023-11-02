@@ -3,4 +3,4 @@ authors = ["dosisod"]
 language = "en"
 multilingual = false
 src = "."
-title = "Cicada: CI/CD For Power Users"
+title = "Cicada: Secure Workflows, Simplified"
