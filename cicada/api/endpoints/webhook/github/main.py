@@ -99,6 +99,9 @@ async def verify_webhook_is_signed_by_github(request: Request) -> None:
     raise HTTPException(status_code=401, detail="HMAC is not signed by GitHub")
 
 
+INSTALLATION_EVENTS = {"installation", "installation_repositories"}
+
+
 @router.post("/api/github_webhook")
 async def handle_github_event(request: Request, di: Di) -> None:
     await verify_webhook_is_signed_by_github(request)
@@ -118,7 +121,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
                 logger.warning(f'GitHub repo "{repo_name}" not in whitelist')
                 return
 
-        case _:
+        case _ if event_type not in INSTALLATION_EVENTS:
             return
 
     user = create_or_update_github_user(di.user_repo(), event)
@@ -130,7 +133,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
         if repo:
             add_repository_to_installation(di.installation_repo(), repo, event)
 
-    if event_type in {"installation", "installation_repositories"}:
+    if event_type in INSTALLATION_EVENTS:
         if user:
             create_or_update_github_installation(di, user.id, event)
 

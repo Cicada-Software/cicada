@@ -97,7 +97,7 @@ def create_or_update_github_installation(  # type: ignore[misc]
 ) -> Installation | None:
     match event:
         case {
-            "action": "added" | "created",
+            "action": "added" | "created" | "removed",
             "installation": {
                 "account": {"login": str(name)},
                 "target_type": "User" | "Organization" as target_type,
