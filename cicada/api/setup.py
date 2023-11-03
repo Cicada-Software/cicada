@@ -99,8 +99,10 @@ async def create_deploy_button() -> HTMLResponse:
 
 <script>
 if (new URLSearchParams(window.location.search).get("success")) {{
-    document.querySelector("h1").innerText = "Setup is complete! Restart server for changes to take effect.";
+    document.querySelector("h1").innerText = "Setup is complete! Please wait while server is rebooting. This page will refresh automatically.";
     document.querySelector("input[type=submit]").style.display = "none";
+
+    setTimeout(() => window.location.reload(true), 10_000);
 }} else {{
     document.getElementById("manifest").value = JSON.stringify({manifest});
 }}

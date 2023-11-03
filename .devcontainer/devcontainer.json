@@ -1,7 +1,5 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile"
-  },
+  "image": "ghcr.io/cicada-software/codespaces:latest",
   "forwardPorts": [80],
   "portsAttributes": {
     "80": {

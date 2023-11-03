@@ -317,7 +317,6 @@ def verify_env_vars() -> None:
     DBSettings()
     ExecutionSettings()
     GitHubSettings()
-    GitlabSettings()
     JWTSettings()
     MigrationSettings()
     NotificationSettings()
