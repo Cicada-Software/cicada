@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cicada-core"
-version = "0.0.0"
+version = "1.0.0"
 description = "The Next Generation of CI/CD"
 authors = ["dosisod"]
 license = "GPL-3.0-only"

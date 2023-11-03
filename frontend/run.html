@@ -19,7 +19,7 @@
     <a href="" id="repo" class="hide-by-default"></a>
     <a href="" class="hide-by-default" id="run-number">run #1</a>
     <span class="triggered-wrapper hide-by-default">Triggered by <span id="trigger"></span></span>
-    <span class="navbar-filler" id="navbar-filler">Cicada (pre-alpha)</span>
+    <span class="navbar-filler" id="version"></span>
     <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
   </div>
 
@@ -89,6 +89,10 @@
 <style>
 p, pre {
   margin: 0;
+}
+
+.navbar-filler {
+  color: var(--lightgray);
 }
 
 #commit-info, #issue-info, #terminal {

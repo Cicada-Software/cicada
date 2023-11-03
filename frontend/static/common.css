@@ -162,10 +162,6 @@ button:disabled {
   border-radius: var(--border-radius);
 }
 
-#navbar-filler {
-  color: var(--lightgray);
-}
-
 .navbar-filler {
   flex: 1;
   text-align: right;
@@ -184,4 +180,8 @@ button:disabled {
   flex: 1;
   text-align: right;
   cursor: default;
+}
+
+#version:after {
+  content: "Cicada v1.0.0"
 }
