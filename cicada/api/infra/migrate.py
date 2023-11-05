@@ -1008,6 +1008,24 @@ def migrate_v46(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=47)
+def migrate_v47(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        UPDATE workflows
+        SET sha=x.sha
+        FROM (
+            SELECT w2.uuid AS workflow_id, t.data->>'sha' AS sha
+            FROM workflows w2
+            JOIN sessions s ON s.uuid = w2.session_id
+            JOIN triggers t ON t.id = s.id
+            WHERE LENGTH(w2.sha) < 10
+        ) AS x
+        WHERE uuid = x.workflow_id;
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]
