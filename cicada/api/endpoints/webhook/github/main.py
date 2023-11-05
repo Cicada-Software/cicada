@@ -13,6 +13,7 @@ from cicada.api.endpoints.task_queue import TaskQueue
 from cicada.api.endpoints.webhook.common import is_repo_in_white_list
 from cicada.api.infra.github.auth import (
     add_repository_to_installation,
+    create_installation_if_non_existent,
     create_or_update_github_installation,
     create_or_update_github_user,
     update_github_repo_perms,
@@ -124,23 +125,26 @@ async def handle_github_event(request: Request, di: Di) -> None:
         case _ if event_type not in INSTALLATION_EVENTS:
             return
 
+    # TODO: require user
     user = create_or_update_github_user(di.user_repo(), event)
 
     if user:
+        if event_type in INSTALLATION_EVENTS:
+            create_or_update_github_installation(di, user.id, event)
+
+        else:
+            await create_installation_if_non_existent(di.installation_repo(), user.id, event)
+
         repo = update_github_repo_perms(di, user.id, event, event_type)
 
         # TODO: update this without the need to have a repo/user
         if repo:
             add_repository_to_installation(di.installation_repo(), repo, event)
 
-    if event_type in INSTALLATION_EVENTS:
-        if user:
-            create_or_update_github_installation(di, user.id, event)
-
-    elif event_type == "push":
+    if event_type == "push":
         if event["deleted"] is not True:
             handle_github_push_event(di, event, user)
 
-    elif event_type == "issues":
+    if event_type == "issues":
         if event["action"] in {"opened", "closed"}:
             handle_github_issue_event(di, event, user)

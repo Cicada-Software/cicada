@@ -1,7 +1,10 @@
 from typing import Any
 from uuid import uuid4
 
+from githubkit.rest import SimpleUser
+
 from cicada.api.di import DiContainer
+from cicada.api.infra.github.common import get_github_integration
 from cicada.domain.installation import Installation, InstallationScope
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.user_repo import IUserRepo
@@ -126,6 +129,44 @@ def create_or_update_github_installation(  # type: ignore[misc]
             return installation
 
     return None
+
+
+async def create_installation_if_non_existent(  # type: ignore[misc]
+    repo: IInstallationRepo, user_id: UserId, event: dict[str, Any]
+) -> None:
+    match event:
+        case {"installation": {"id": int(installation_id)}}:
+            pass
+
+        case _:
+            return
+
+    if repo.get_installation_by_provider_id(id=str(installation_id), provider="github"):
+        return
+
+    gh = get_github_integration()
+
+    resp = await gh.rest.apps.async_get_installation(installation_id)
+    data = resp.parsed_data
+
+    assert isinstance(data.account, SimpleUser)
+    assert data.id == installation_id
+
+    installation = Installation(
+        id=uuid4(),
+        name=data.account.login,
+        provider="github",
+        scope=(
+            InstallationScope.USER
+            if data.target_type == "User"
+            else InstallationScope.ORGANIZATION
+        ),
+        admin_id=user_id,
+        provider_id=str(data.id),
+        provider_url=data.html_url,
+    )
+
+    repo.create_or_update_installation(installation)
 
 
 # TODO: test this
