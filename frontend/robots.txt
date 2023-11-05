@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /api
+
+Sitemap: https://cicada.sh/sitemap.xml

@@ -105,6 +105,16 @@ async def repo(_: str) -> FileResponse:
     return FileResponse("./frontend/repo.html")
 
 
+@app.get("/sitemap.xml")
+async def sitemap() -> FileResponse:
+    return FileResponse("./frontend/sitemap.xml")
+
+
+@app.get("/robots.txt")
+async def robots() -> FileResponse:
+    return FileResponse("./frontend/robots.txt")
+
+
 @app.get("/api/ping")
 async def ping(_: CurrentUser) -> str:
     """
