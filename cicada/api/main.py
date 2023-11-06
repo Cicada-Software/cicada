@@ -14,6 +14,7 @@ from cicada.api.endpoints.runner import router as runner_router
 from cicada.api.endpoints.secret import router as secret_router
 from cicada.api.endpoints.session import router as session_router
 from cicada.api.middleware import (
+    DisableIframeMiddleware,
     SlowRequestMiddleware,
     UnhandledExceptionHandler,
     cicada_exception_handler,
@@ -37,6 +38,7 @@ app.include_router(secret_router)
 app.add_middleware(UnhandledExceptionHandler)
 app.add_middleware(SlowRequestMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=512)
+app.add_middleware(DisableIframeMiddleware)
 app.add_exception_handler(CicadaException, cicada_exception_handler)
 
 

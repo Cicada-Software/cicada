@@ -4,6 +4,7 @@ import time
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from cicada.api.settings import NotificationSettings
 from cicada.application.exceptions import Forbidden, InvalidRequest, NotFound, Unauthorized
@@ -31,6 +32,17 @@ class SlowRequestMiddleware:  # pragma: no cover
 
         else:
             await self.app(scope, receive, send)
+
+
+class DisableIframeMiddleware(BaseHTTPMiddleware):  # pragma: no cover
+    """Disable using Cicada in an iframe"""
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        resp = await call_next(request)
+
+        resp.headers["Content-Security-Policy"] = "frame-ancestors 'deny';"
+
+        return resp
 
 
 async def cicada_exception_handler(_: Request, exc: Exception) -> Response:
