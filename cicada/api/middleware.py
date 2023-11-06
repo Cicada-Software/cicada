@@ -3,8 +3,8 @@ import time
 
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
-from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from cicada.api.settings import NotificationSettings
 from cicada.application.exceptions import Forbidden, InvalidRequest, NotFound, Unauthorized
