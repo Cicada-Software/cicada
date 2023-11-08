@@ -23,6 +23,7 @@ def test_convert_commit_event() -> None:
         committed_on=Datetime.fromisoformat("2022-12-12T14:18:02-08:00"),
         repository_url="https://github.com/dosisod/ci-test-stuff",
         provider="github",
+        default_branch="master",
     )
 
 
@@ -51,6 +52,7 @@ print("hello world!")
         repository_url="https://github.com/dosisod/cicada-testing2",
         provider="github",
         sha=None,
+        default_branch="master",
     )
 
 
@@ -80,4 +82,5 @@ print("hello world!")
         provider="github",
         closed_at=Datetime.fromisoformat("2023-02-03T06:06:15Z"),
         sha=None,
+        default_branch="master",
     )

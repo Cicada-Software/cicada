@@ -33,6 +33,7 @@ print("Hello from gitlab!")
         opened_at=Datetime.fromisoformat("2022-12-13 19:16:27 UTC"),
         body=body,
         sha=None,
+        default_branch="master",
     )
 
 
@@ -52,6 +53,7 @@ def test_convert_issue_close_event() -> None:
         opened_at=Datetime.fromisoformat("2023-02-05 21:26:55 UTC"),
         closed_at=Datetime.fromisoformat("2023-02-05 21:27:17 UTC"),
         sha=None,
+        default_branch="master",
     )
 
 
@@ -68,4 +70,5 @@ def test_convert_git_push_event() -> None:
         committed_on=Datetime.fromisoformat("2022-12-02T12:22:05-08:00"),
         ref="refs/heads/master",
         provider="gitlab",
+        default_branch="master",
     )

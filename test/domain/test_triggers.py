@@ -17,6 +17,7 @@ def test_convert_trigger_to_and_from_json() -> None:
         author="dosisod",
         message="",
         committed_on=UtcDatetime.now(),
+        default_branch="master",
     )
 
     json_str = json.dumps(asjson(trigger))

@@ -36,6 +36,7 @@ class Trigger:
     sha: GitSha | None = None
     env: dict[str, str] = field(default_factory=dict)
     secret: dict[str, str] = field(default_factory=dict)
+    default_branch: str | None = None
 
     @classmethod
     def from_dict(cls, **kw: str) -> Self:

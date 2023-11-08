@@ -30,6 +30,7 @@ def gitlab_event_to_commit(event: dict[str, Any]) -> CommitTrigger:  # type: ign
         repository_url=event["repository"]["homepage"],
         provider="gitlab",
         ref=event["ref"],
+        default_branch=event["project"]["default_branch"],
     )
 
 
@@ -44,6 +45,7 @@ def gitlab_event_to_issue(event: dict[str, Any]) -> IssueTrigger:  # type: ignor
         "body": event["object_attributes"]["description"],
         "repository_url": event["repository"]["homepage"],
         "provider": "gitlab",
+        "default_branch": event["project"]["default_branch"],
     }
 
     if "created_at" in event["changes"]:

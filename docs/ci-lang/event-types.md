@@ -12,6 +12,8 @@ Every event has the following fields:
 
 **`repository_url`**: The URL of the repository that the workflow is running for.
 
+**`default_branch`**: The default branch of the repository.
+
 ## `git.push`
 
 **`author`**: Username of the commit author.

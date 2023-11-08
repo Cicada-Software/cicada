@@ -19,6 +19,7 @@ def github_event_to_commit(event: dict[str, Any]) -> CommitTrigger:  # type: ign
         repository_url=event["repository"]["html_url"],
         provider="github",
         ref=event["ref"],
+        default_branch=event["repository"]["default_branch"],
     )
 
 
@@ -33,6 +34,7 @@ def github_event_to_issue(event: dict[str, Any]) -> IssueTrigger:  # type: ignor
         "body": event["issue"]["body"] or "",
         "repository_url": event["repository"]["html_url"],
         "provider": "github",
+        "default_branch": event["repository"]["default_branch"],
     }
 
     if event["action"] == "opened":
