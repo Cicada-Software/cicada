@@ -40,7 +40,7 @@ class DisableIframeMiddleware(BaseHTTPMiddleware):  # pragma: no cover
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         resp = await call_next(request)
 
-        resp.headers["Content-Security-Policy"] = "frame-ancestors 'deny';"
+        resp.headers["Content-Security-Policy"] = "frame-ancestors 'none';"
 
         return resp
 
