@@ -127,11 +127,6 @@ async def ping(_: CurrentUser) -> str:
     return "pong"
 
 
-@app.get("/docs")
-async def github_sso_link() -> RedirectResponse:
-    return RedirectResponse("docs/index.html", status_code=302)
-
-
 @app.post("/api/join_waitlist")
 async def join_waitlist(di: Di, email: Annotated[str, Form()] = "") -> None:
     try:
@@ -143,4 +138,4 @@ async def join_waitlist(di: Di, email: Annotated[str, Form()] = "") -> None:
 
 # The static files must be mounted after all the endpoints have been defined,
 # otherwise the static files would take precedence.
-app.mount("/", StaticFiles(directory="frontend/"), "static")
+app.mount("/", StaticFiles(directory="frontend/", html=True), "static")
