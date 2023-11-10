@@ -1,9 +1,12 @@
+import logging
+import time
 from contextlib import suppress
 from functools import cache
+from secrets import token_hex
 from urllib.parse import quote as url_escape
 from uuid import uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from githubkit import GitHub, OAuthWebAuthStrategy, TokenAuthStrategy
 
@@ -11,13 +14,18 @@ from cicada.api.di import DiContainer
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import create_jwt
 from cicada.api.infra.github.common import get_github_integration
-from cicada.api.settings import GitHubSettings
+from cicada.api.settings import DNSSettings, GitHubSettings
 from cicada.domain.user import User
 
 router = APIRouter()
 
 
-@cache
+# An in-memory list of CSRF tokens. These are created while generating an SSO url for the user
+# and removed when the user is redirected back to the application. These have a short expiration
+# time to limit the amount of time the token/link is valid for.
+LOGIN_CSRF_TOKENS: dict[str, float] = {}
+
+
 def get_github_sso_link(url: str | None = None) -> str:
     settings = GitHubSettings()
 
@@ -25,9 +33,12 @@ def get_github_sso_link(url: str | None = None) -> str:
         f"{settings.sso_redirect_uri}?url={url}" if url else settings.sso_redirect_uri
     )
 
+    csrf_token = token_hex(16)
+    LOGIN_CSRF_TOKENS[csrf_token] = time.time()
+
     # TODO: use an actual URL constructor instead
     params = {
-        "state": "state",
+        "state": csrf_token,
         "allow_signup": "false",
         "client_id": settings.client_id,
         "redirect_uri": url,
@@ -64,8 +75,28 @@ async def github_app_install_link() -> RedirectResponse:
 async def github_sso(
     di: Di,
     code: str,
+    state: str,
     url: str | None = None,
 ) -> HTMLResponse:  # pragma: no cover
+    try:
+        expiration = LOGIN_CSRF_TOKENS[state]
+
+        if time.time() > (expiration + 60):
+            raise HTTPException(401, "CSRF token expired")
+
+    except KeyError:
+        msg = "CSRF token validation failure"
+
+        logger = logging.getLogger("cicada")
+        logger.warning(msg)
+
+        raise HTTPException(401, msg) from None
+
+    settings = DNSSettings()
+
+    if url and not url.startswith((f"https://{settings.domain}/", "/")):
+        raise HTTPException(400, f"URL must start with `https://{settings.domain}/` or `/`")
+
     # TODO: if "setup_action" query param is set to "install" redirect user to
     # docs/setup/onboarding info.
 
@@ -73,8 +104,6 @@ async def github_sso(
 
     url = url or "/dashboard"
 
-    # TODO: set this via cookie instead of doing SSR?
-    # TODO: add "from" field to direct user to where they came from
     return HTMLResponse(
         f"""\
 <!DOCTYPE html>

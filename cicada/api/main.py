@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, Form, HTTPException
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from cicada.api.endpoints.di import Di
