@@ -50,11 +50,14 @@ class TestGithubSSO(TestEndpointWrapper):
             assert not user.password_hash
             assert not user.is_admin
 
-            got_user = self.di.user_repo().get_user_by_username("github_username")
+            got_user = self.di.user_repo().get_user_by_username_and_provider(
+                "github_username", provider="github"
+            )
 
             assert got_user
             assert got_user.username == "github_username"
             assert got_user.last_login
+            assert got_user.provider == "github"
 
     def test_github_sso_link_injects_proper_env_vars(self) -> None:
         with self.inject_dummy_env_vars() as vars:

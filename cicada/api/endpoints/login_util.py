@@ -40,6 +40,9 @@ def create_jwt(  # type: ignore[misc]
     return jwt.encode(payload, settings.secret, algorithm="HS256")
 
 
+IDENTITY_PROVIDERS = ("github", "gitlab", "cicada")
+
+
 def get_user_and_payload_from_jwt(  # type: ignore[misc]
     user_repo: IUserRepo, token: str
 ) -> tuple[User, dict[str, Any]] | None:
@@ -52,20 +55,20 @@ def get_user_and_payload_from_jwt(  # type: ignore[misc]
             audience=settings.domain,
             algorithms=["HS256"],
         )
+
         username: str = payload.get("sub", "")
+        provider: str = payload.get("iss", "")
 
-        if payload.get("iss") == "github":
-            # TODO: add provider along with username
-            user = user_repo.get_user_by_username(username)
-            assert user
-            assert user.provider == "github"
+        assert provider in IDENTITY_PROVIDERS
 
-            return user, payload
+        user = user_repo.get_user_by_username_and_provider(username, provider=provider)
 
-        if username and (user := user_repo.get_user_by_username(username)):
-            user.password_hash = None
+        if not user:
+            return None
 
-            return user, payload
+        user.password_hash = None
+
+        return user, payload
 
     return None
 

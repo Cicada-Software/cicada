@@ -12,7 +12,7 @@ from test.common import build
 def test_login_as_unknown_user_fails() -> None:
     user_repo = MagicMock()
 
-    user_repo.get_user_by_username.return_value = None
+    user_repo.get_user_by_username_and_provider.return_value = None
 
     cmd = LocalUserLogin(user_repo)
 
@@ -25,7 +25,7 @@ def test_non_local_user_login_fails() -> None:
 
     sso_user = build(User, username="bob")
 
-    user_repo.get_user_by_username.return_value = sso_user
+    user_repo.get_user_by_username_and_provider.return_value = sso_user
 
     cmd = LocalUserLogin(user_repo)
 
@@ -42,7 +42,7 @@ def test_incorrect_password_fails() -> None:
         password_hash=PasswordHash.from_password("123456"),
     )
 
-    user_repo.get_user_by_username.return_value = user
+    user_repo.get_user_by_username_and_provider.return_value = user
 
     cmd = LocalUserLogin(user_repo)
 
@@ -61,7 +61,7 @@ def test_login_with_correct_password_works() -> None:
         password_hash=PasswordHash.from_password(password),
     )
 
-    user_repo.get_user_by_username.return_value = user
+    user_repo.get_user_by_username_and_provider.return_value = user
 
     cmd = LocalUserLogin(user_repo)
 

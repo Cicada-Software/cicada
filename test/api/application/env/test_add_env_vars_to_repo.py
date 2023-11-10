@@ -15,7 +15,7 @@ def test_user_not_found_throws_error() -> None:
     repository_repo = MagicMock()
     env_repo = MagicMock()
 
-    user_repo.get_user_by_username.return_value = None
+    user_repo.get_user_by_username_and_provider.return_value = None
 
     cmd = AddEnvironmentVariablesToRepository(
         user_repo=user_repo,
@@ -31,7 +31,7 @@ def test_user_not_found_throws_error() -> None:
             env_vars=[EnvironmentVariable("HELLO", "world")],
         )
 
-    user_repo.get_user_by_username.assert_called_once_with("bob")
+    user_repo.get_user_by_username_and_provider.assert_called_once_with("bob", provider="anything")
     repository_repo.get_repository_by_url_and_provider.assert_not_called()
     repository_repo.can_user_access_repo.assert_not_called()
     env_repo.set_env_vars_for_repo.assert_not_called()
@@ -42,7 +42,7 @@ def test_repo_not_found_raises_error() -> None:
     repository_repo = MagicMock()
     env_repo = MagicMock()
 
-    user_repo.get_user_by_username.return_value = build(User, username="bob")
+    user_repo.get_user_by_username_and_provider.return_value = build(User, username="bob")
     repository_repo.get_repository_by_url_and_provider.return_value = None
 
     cmd = AddEnvironmentVariablesToRepository(
@@ -59,7 +59,7 @@ def test_repo_not_found_raises_error() -> None:
             env_vars=[EnvironmentVariable("HELLO", "world")],
         )
 
-    user_repo.get_user_by_username.assert_called_once_with("bob")
+    user_repo.get_user_by_username_and_provider.assert_called_once_with("bob", provider="anything")
     repository_repo.get_repository_by_url_and_provider.assert_called_once()
     repository_repo.can_user_access_repo.assert_not_called()
     env_repo.set_env_vars_for_repo.assert_not_called()
@@ -71,7 +71,7 @@ def test_adding_env_var_works() -> None:
     env_repo = MagicMock()
 
     user = build(User, username="bob")
-    user_repo.get_user_by_username.return_value = user
+    user_repo.get_user_by_username_and_provider.return_value = user
 
     repo = Repository(id=1, url="http://example.com", provider="example")
     repository_repo.get_repository_by_url_and_provider.return_value = repo
@@ -91,7 +91,9 @@ def test_adding_env_var_works() -> None:
         env_vars=[env_var],
     )
 
-    user_repo.get_user_by_username.assert_called_once_with("bob")
+    user_repo.get_user_by_username_and_provider.assert_called_once_with(
+        "bob", provider=repo.provider
+    )
     repository_repo.get_repository_by_url_and_provider.assert_called_once_with(
         repo.url, repo.provider
     )
@@ -105,7 +107,7 @@ def test_user_who_cannot_see_repo_is_denied() -> None:
     env_repo = MagicMock()
 
     user = build(User, username="bob")
-    user_repo.get_user_by_username.return_value = user
+    user_repo.get_user_by_username_and_provider.return_value = user
 
     repo = Repository(id=1, url="http://example.com", provider="example")
     repository_repo.get_repository_by_url_and_provider.return_value = repo
@@ -130,7 +132,9 @@ def test_user_who_cannot_see_repo_is_denied() -> None:
             env_vars=[env_var],
         )
 
-    user_repo.get_user_by_username.assert_called_once_with("bob")
+    user_repo.get_user_by_username_and_provider.assert_called_once_with(
+        "bob", provider=repo.provider
+    )
     repository_repo.get_repository_by_url_and_provider.assert_called_once_with(
         repo.url, repo.provider
     )

@@ -26,7 +26,6 @@ class AddEnvironmentVariablesToRepository:
         self.repository_repo = repository_repo
         self.env_repo = env_repo
 
-    # TODO: use user id instead of platform-dependant username
     def handle(
         self,
         username: str,
@@ -34,7 +33,8 @@ class AddEnvironmentVariablesToRepository:
         provider: str,
         env_vars: list[EnvironmentVariable],
     ) -> None:
-        user = self.user_repo.get_user_by_username(username)
+        # TODO: use user id instead of username+provider
+        user = self.user_repo.get_user_by_username_and_provider(username, provider=provider)
 
         if not user:
             raise NotFound("User not found")

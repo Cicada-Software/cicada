@@ -105,6 +105,8 @@ class TestEndpointWrapper:
         "GITHUB_WEBHOOK_SECRET": "secret",
         "GITLAB_WEBHOOK_SECRET": "secret",
         "GITLAB_ACCESS_TOKEN": "access-token",
+        "GITLAB_CLIENT_ID": "id",
+        "GITLAB_CLIENT_SECRET": "secret",
         "JWT_TOKEN_SECRET": "jwt secret",
         "JWT_TOKEN_EXPIRE_SECONDS": "60",
         "VAULT_ADDR": "vault_addr",

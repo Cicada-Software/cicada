@@ -52,9 +52,11 @@ if "github" in ENABLED_PROVIDERS:
     app.include_router(github_sso_router)
 
 if "gitlab" in ENABLED_PROVIDERS:
+    from cicada.api.endpoints.sso.gitlab import router as gitlab_sso_router
     from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook_router
 
     app.include_router(gitlab_webhook_router)
+    app.include_router(gitlab_sso_router)
 
 
 @app.get("/runs")

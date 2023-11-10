@@ -5,7 +5,7 @@ from cicada.domain.user import User, UserId
 
 class IUserRepo(ABC):
     @abstractmethod
-    def get_user_by_username(self, username: str) -> User | None:
+    def get_user_by_username_and_provider(self, username: str, *, provider: str) -> User | None:
         pass
 
     @abstractmethod

@@ -142,6 +142,9 @@ class GitlabSettings(GitProviderSettings):
     access_token: str
     webhook_secret: str
 
+    client_id: str
+    client_secret: str
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -154,6 +157,18 @@ class GitlabSettings(GitProviderSettings):
 
         if not self.webhook_secret:
             raise ValueError("GITLAB_WEBHOOK_SECRET must be defined")
+
+        self.client_id = os.getenv("GITLAB_CLIENT_ID", "")
+
+        if not self.client_id:
+            raise ValueError("GITLAB_CLIENT_ID must be defined")
+
+        self.client_secret = os.getenv("GITLAB_CLIENT_SECRET", "")
+
+        if not self.client_secret:
+            raise ValueError("GITLAB_CLIENT_SECRET must be defined")
+
+        self.redirect_uri = f"https://{self.domain}/api/gitlab_sso"
 
 
 class GitHubSettings(GitProviderSettings):

@@ -21,22 +21,22 @@ class TestJwtLogic(TestEndpointWrapper):
 
     def test_jwt_creation_logic(self) -> None:
         with self.inject_dummy_env_vars() as vars:
-            user = build(User, username="admin", is_admin=True)
+            user = build(User, username="admin", is_admin=True, provider="cicada")
 
-            jwt = create_jwt(subject=user.username, issuer="me", data={"hello": "world"})
+            jwt = create_jwt(subject=user.username, issuer="cicada", data={"hello": "world"})
 
             user_repo = MagicMock()
-            user_repo.get_user_by_username.return_value = user
+            user_repo.get_user_by_username_and_provider.return_value = user
 
             data = get_user_and_payload_from_jwt(user_repo, jwt)
             assert data
 
             new_user, payload = data
 
-            user_repo.get_user_by_username.assert_called_once()
+            user_repo.get_user_by_username_and_provider.assert_called_once()
 
             assert new_user == user
-            assert payload["iss"] == "me"
+            assert payload["iss"] == "cicada"
             assert payload["sub"] == "admin"
             assert payload["aud"] == vars["CICADA_DOMAIN"]
 
@@ -67,7 +67,7 @@ class TestJwtLogic(TestEndpointWrapper):
             )
 
             user_repo = MagicMock()
-            user_repo.get_user_by_username.return_value = github_user
+            user_repo.get_user_by_username_and_provider.return_value = github_user
 
             data = get_user_and_payload_from_jwt(user_repo, jwt)
             assert data

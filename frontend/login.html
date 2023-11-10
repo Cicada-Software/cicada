@@ -24,9 +24,16 @@
         <button type="submit" disabled>Login</button>
       </form>
 
-      <p class="lightgray m-auto">or</p>
+      <p class="lightgray m-auto">or login with</p>
 
-      <a href="/api/github_sso_link" id="github-sso" onclick="handleSSO(event)">Login with GitHub</a>
+      <a class="sso" href="/api/github_sso_link" onclick="handleSSO(event, '/api/github_sso_link')">
+        <span>GitHub</span>
+        <img src="/static/img/github-logo.svg" />
+      </a>
+      <a class="sso" href="/api/gitlab_sso_link" onclick="handleSSO(event, '/api/gitlab_sso_link')">
+        <span>Gitlab</span>
+        <img src="/static/img/gitlab-logo.svg" />
+      </a>
 
       <span id="error-msg" style="display: none"></span>
     </div>
@@ -34,14 +41,26 @@
 </main>
 
 <style>
-#github-sso {
+.sso {
   color: var(--black);
-  background: var(--green);
+  background: var(--white);
 
   padding: 1em;
   margin: auto;
   width: max-content;
   text-decoration: none;
+
+  display: flex;
+  gap: 1em;
+}
+
+.sso img {
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.sso span {
+  margin: auto;
 }
 
 .wrapper {
@@ -108,7 +127,7 @@ button[type=submit]:disabled {
   cursor: default;
 }
 
-button[type=submit], #github-sso, input {
+button[type=submit], .sso, input {
   border-radius: var(--border-radius);
 }
 
@@ -170,10 +189,8 @@ const handleInput = () => {
   document.querySelector("button[type=submit]").disabled = !username || !password;
 };
 
-const handleSSO = (e) => {
+const handleSSO = (e, url) => {
   e.preventDefault();
-
-  let url = "/api/github_sso_link";
 
   const redirectUrl = new URLSearchParams(window.location.search).get("url");
   if (redirectUrl) url += `?url=${redirectUrl}`;

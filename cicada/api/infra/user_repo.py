@@ -6,8 +6,7 @@ from cicada.domain.user import User, UserId
 
 
 class UserRepo(IUserRepo, DbConnection):
-    # TODO: require username and provider combo
-    def get_user_by_username(self, username: str) -> User | None:
+    def get_user_by_username_and_provider(self, username: str, *, provider: str) -> User | None:
         row = self.conn.execute(
             """
             SELECT
@@ -18,9 +17,9 @@ class UserRepo(IUserRepo, DbConnection):
                 platform,
                 last_login,
                 email
-            FROM users WHERE username=?
+            FROM users WHERE username=? AND platform=?
             """,
-            [username],
+            [username, provider],
         ).fetchone()
 
         if row:
