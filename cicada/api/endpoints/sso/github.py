@@ -1,8 +1,5 @@
-import logging
-import time
 from contextlib import suppress
 from functools import cache
-from secrets import token_hex
 from urllib.parse import quote as url_escape
 from uuid import uuid4
 
@@ -11,6 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from githubkit import GitHub, OAuthWebAuthStrategy, TokenAuthStrategy
 
 from cicada.api.di import DiContainer
+from cicada.api.endpoints.csrf import CsrfTokenCache
 from cicada.api.endpoints.di import Di
 from cicada.api.endpoints.login_util import create_jwt
 from cicada.api.infra.github.common import get_github_integration
@@ -20,10 +18,7 @@ from cicada.domain.user import User
 router = APIRouter()
 
 
-# An in-memory list of CSRF tokens. These are created while generating an SSO url for the user
-# and removed when the user is redirected back to the application. These have a short expiration
-# time to limit the amount of time the token/link is valid for.
-LOGIN_CSRF_TOKENS: dict[str, float] = {}
+CSRF_TOKENS = CsrfTokenCache()
 
 
 def get_github_sso_link(url: str | None = None) -> str:
@@ -33,12 +28,9 @@ def get_github_sso_link(url: str | None = None) -> str:
         f"{settings.sso_redirect_uri}?url={url}" if url else settings.sso_redirect_uri
     )
 
-    csrf_token = token_hex(16)
-    LOGIN_CSRF_TOKENS[csrf_token] = time.time()
-
     # TODO: use an actual URL constructor instead
     params = {
-        "state": csrf_token,
+        "state": CSRF_TOKENS.generate(),
         "allow_signup": "false",
         "client_id": settings.client_id,
         "redirect_uri": url,
@@ -78,19 +70,7 @@ async def github_sso(
     state: str,
     url: str | None = None,
 ) -> HTMLResponse:  # pragma: no cover
-    try:
-        expiration = LOGIN_CSRF_TOKENS[state]
-
-        if time.time() > (expiration + 60):
-            raise HTTPException(401, "CSRF token expired")
-
-    except KeyError:
-        msg = "CSRF token validation failure"
-
-        logger = logging.getLogger("cicada")
-        logger.warning(msg)
-
-        raise HTTPException(401, msg) from None
+    CSRF_TOKENS.validate(state)
 
     settings = DNSSettings()
 
