@@ -362,10 +362,7 @@ async def run_workflow(
     try:
         visitor = SelfHostedVisitor(data_stream, should_stop, trigger)
 
-        fut = asyncio.get_event_loop().run_in_executor(
-            None,
-            partial(tree.accept, visitor),  # type: ignore
-        )
+        fut = asyncio.get_event_loop().run_in_executor(None, partial(tree.accept, visitor))
 
         async def workflow_stopper() -> None:
             await should_stop.wait()
