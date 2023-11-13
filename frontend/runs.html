@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/static/common.css">
 <script src="/static/common.js"></script>
 <script src="/static/vendor/vanjs/vanjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuzzysort@2.0.4/fuzzysort.min.js"></script>
 </head>
 
 <body>
@@ -18,6 +19,14 @@
     <span id="version"></span>
     <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
   </div>
+  
+  <div>
+    <form onInput="handleSearchInput(event)" class = "search-bar">
+      <input id="search-input" type="text" placeholder="Search runs..">
+      <img src="./static/img/search.svg" />
+    </form>
+    
+  </div>
 
   <span class="runs-title">Recent Runs</span>
 
@@ -27,6 +36,29 @@
 </main>
 
 <style>
+
+.search-bar{
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  border-radius: var(--border-radius);
+  padding: 7px 12px;
+}
+
+.search-bar input{
+  background: transparent;
+  flex : 1;
+  border: 0;
+  outline: none;
+  padding: 15px 12px;
+  font-size: 16px;
+  color: var(--white);
+}
+
+.search-bar img{
+  padding: 15px 12px;
+}
+
 ol {
   padding: 0;
   margin: 0;
@@ -91,15 +123,49 @@ ol.list-view {
 .elapsed-time {
   color: var(--lightgray);
 }
+
 </style>
 
 <script>
 const {li, div, span, a} = van.tags;
-
 const timerData = {};
 const sessionStatuses = [];
+let searchObjects = [];
+const SEARCH_SENSITIVITY = -20000;
 
 refreshTokenLoop();
+
+const handleSearchInput = e => {
+  const text = document.getElementById('search-input').value;
+  showSessions(text);
+};
+
+const showSessions = text => {
+  const sessions = document.querySelector("ol");
+
+  if(searchObjects.length == 0){
+    sessions.innerHTML = '<span class="no-recents">No recent sessions!</span>';
+    return;
+  }
+
+  if(text === ""){
+    for(const searchElement of searchObjects){
+      searchElement.element.style.display = 'block';
+    }
+  }else{
+    
+    for(const searchElement of searchObjects){
+      searchElement.element.style.display = 'none';
+    }
+
+    const results = fuzzysort
+      .go(text, searchObjects, {key:'searchString'})
+      .filter(result => result.score > SEARCH_SENSITIVITY);
+    for(const result of results){
+      result.obj.element.style.display = 'block';
+    }
+  }
+};
 
 cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
   if (!e.ok) {
@@ -134,12 +200,21 @@ cicadaFetch(`/api/session/recent${window.location.search}`).then(e => {
 
     for (const session of e) {
       const triggerType = session.trigger.type;
+      
+      const shortUrl = new URL(session.trigger.repository_url).pathname.substr(1);
+      const searchTermsList = [session.trigger.author, session.trigger.message, 
+      session.trigger.sha, shortUrl, triggerType];
+      const searchString = searchTermsList.join(" ");
 
       if (triggerType == "git.push") {
-        van.add(sessions, CommitSession(session));
+        element = CommitSession(session);
+        searchObjects.push({element, searchString});
+        van.add(sessions, element);
       }
       else if (["issue.open", "issue.close"].includes(triggerType)) {
-        van.add(sessions, IssueSession(session));
+        element = IssueSession(session);
+        searchObjects.push({element, searchString});
+        van.add(sessions, element);
       }
     }
 
