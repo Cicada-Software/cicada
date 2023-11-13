@@ -31,7 +31,7 @@ def get_gitlab_sso_link(url: str | None = None) -> str:
         "state": CSRF_TOKENS.generate(),
         "client_id": settings.client_id,
         "response_type": "code",
-        "scope": "read_repository+email+profile+read_user",
+        "scope": "api",
         "redirect_uri": url,
     }
 
@@ -99,14 +99,16 @@ async def generate_jwt_from_gitlab_sso(di: DiContainer, code: str) -> str:
 
     async with httpx.AsyncClient() as client:
         resp = await client.post("https://gitlab.com/oauth/token", params=params)
-        data = resp.json()
 
-        access_token = data["access_token"]
+    data = resp.json()
 
-        gl = Gitlab(oauth_token=access_token)
-        gl.auth()
+    token_store = di.gitlab_token_store()
+    token = token_store.oauth_response_to_token(data)
 
-        assert gl.user
+    gl = Gitlab(oauth_token=token.access_token)
+    gl.auth()
+
+    assert gl.user
 
     attrs = gl.user.asdict()
 
@@ -125,5 +127,7 @@ async def generate_jwt_from_gitlab_sso(di: DiContainer, code: str) -> str:
     new_gitlab_user.id = user_repo.create_or_update_user(new_gitlab_user)
 
     user_repo.update_last_login(new_gitlab_user)
+
+    token_store.save_token(new_gitlab_user, token)
 
     return create_jwt(subject=username, issuer="gitlab")

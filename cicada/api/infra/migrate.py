@@ -1026,6 +1026,20 @@ def migrate_v47(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=48)
+def migrate_v48(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE gitlab_oauth_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INT NOT NULL UNIQUE,
+            expires_at INT NOT NULL,
+            data TEXT NOT NULL
+        );
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]

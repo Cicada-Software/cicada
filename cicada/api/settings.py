@@ -145,6 +145,8 @@ class GitlabSettings(GitProviderSettings):
     client_id: str
     client_secret: str
 
+    token_store_secret: str
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -167,6 +169,11 @@ class GitlabSettings(GitProviderSettings):
 
         if not self.client_secret:
             raise ValueError("GITLAB_CLIENT_SECRET must be defined")
+
+        self.token_store_secret = os.getenv("GITLAB_TOKEN_STORE_SECRET", "")
+
+        if not self.token_store_secret:
+            raise ValueError("GITLAB_TOKEN_STORE_SECRET must be defined")
 
         self.redirect_uri = f"https://{self.domain}/api/gitlab_sso"
 

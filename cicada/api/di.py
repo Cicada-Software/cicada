@@ -1,5 +1,6 @@
 import logging
 
+from cicada.api.endpoints.oauth_util import GitlabOAuthTokenStore
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.github.stop_session import github_session_terminator
 from cicada.api.infra.installation_repo import InstallationRepo
@@ -74,3 +75,12 @@ class DiContainer:  # pragma: no cover
     @classmethod
     def session_terminators(cls) -> dict[str, SessionTerminator]:
         return {"github": github_session_terminator}
+
+    token_store: GitlabOAuthTokenStore | None = None
+
+    @classmethod
+    def gitlab_token_store(cls) -> GitlabOAuthTokenStore:
+        if cls.token_store is None:
+            cls.token_store = GitlabOAuthTokenStore()
+
+        return cls.token_store

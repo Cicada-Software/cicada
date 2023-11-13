@@ -45,6 +45,7 @@ DEFAULT_ENV_VARS = {
     "GITLAB_WEBHOOK_SECRET": "password123",
     "GITLAB_CLIENT_ID": "id",
     "GITLAB_CLIENT_SECRET": "secret",
+    "GITLAB_TOKEN_STORE_SECRET": "secret",
     "JWT_TOKEN_EXPIRE_SECONDS": "123",
     "JWT_TOKEN_SECRET": "password123",
 }

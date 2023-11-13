@@ -52,6 +52,8 @@ omit = [
   "cicada/runner/*",
   # Pending e2e testing setup
   "cicada/api/infra/secret_repo.py",
+  # SSO related
+  "cicada/api/endpoints/oauth_util.py",
 ]
 
 [tool.coverage.report]
