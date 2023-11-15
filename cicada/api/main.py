@@ -52,11 +52,13 @@ if "github" in ENABLED_PROVIDERS:
     app.include_router(github_sso_router)
 
 if "gitlab" in ENABLED_PROVIDERS:
+    from cicada.api.endpoints.gitlab.projects import router as gitlab_projects_router
     from cicada.api.endpoints.sso.gitlab import router as gitlab_sso_router
     from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook_router
 
     app.include_router(gitlab_webhook_router)
     app.include_router(gitlab_sso_router)
+    app.include_router(gitlab_projects_router)
 
 
 @app.get("/runs")
@@ -117,6 +119,11 @@ async def sitemap() -> FileResponse:
 @app.get("/robots.txt")
 async def robots() -> FileResponse:
     return FileResponse("./frontend/robots.txt")
+
+
+@app.get("/connect/gitlab")
+async def gitlab_connect() -> FileResponse:
+    return FileResponse("./frontend/connect/gitlab.html")
 
 
 @app.get("/api/ping")

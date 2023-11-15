@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from asyncio import CancelledError, InvalidStateError, Task, create_task
 from functools import partial
 
@@ -24,6 +25,9 @@ from cicada.common.json import asjson
 from cicada.domain.session import Session, SessionId, SessionStatus
 
 router = APIRouter()
+
+
+logger = logging.getLogger("cicada")
 
 
 @router.post("/api/session/{session_id}/stop")
@@ -56,8 +60,15 @@ async def rerun_session(session_id: SessionId, di: Di, user: CurrentUser) -> Non
         workflow_wrapper = partial(run_github_workflow, di=di)
 
     elif provider == "gitlab":
-        gather = gather_gitlab_workflows
-        workflow_wrapper = run_gitlab_workflow  # type: ignore
+        token = await di.gitlab_token_store().load_token(user)
+
+        if not token:
+            logger.error(f"Cannot rerun session {session_id}")
+            return
+
+        gather = partial(gather_gitlab_workflows, access_token=token.access_token)
+        workflow_wrapper = partial(run_gitlab_workflow, access_token=token.access_token)
+
     else:
         assert False
 

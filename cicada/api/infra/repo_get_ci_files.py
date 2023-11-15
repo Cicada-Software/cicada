@@ -28,6 +28,7 @@ async def repo_get_ci_files(
             ["git", "remote", "add", "origin", shlex.quote(url)],
             ["git", "fetch", "--depth", "1", "origin", shlex.quote(ref)],
             ["git", "checkout", "FETCH_HEAD"],
+            ["git", "remote", "set-url", "origin", shlex.quote(trigger.repository_url)],
         ]
 
         for args in cmds:

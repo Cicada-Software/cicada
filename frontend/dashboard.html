@@ -19,6 +19,8 @@
 
   <div id="error-msg" style="display: none"></div>
 
+  <div id="success-msg" style="display: none"></div>
+
   <h1>Home</h1>
 
   <div class="cards">
@@ -34,8 +36,7 @@
 
       <span class="button-wrapper">
         <a href="/api/github_app_install_link" class="connect">GitHub</a>
-        <button class="connect" disabled title="Coming soon!">Gitlab</button>
-        <button class="connect" disabled title="Coming soon!">AzureDevOps</button>
+        <a href="/connect/gitlab.html" class="connect">Gitlab</a>
       </span>
     </div>
 
@@ -194,6 +195,20 @@ a.coming-soon {
 <script>
 ping();
 refreshTokenLoop();
+
+const url = new URL(window.location);
+const successMsg = url.searchParams.get("success");
+
+url.searchParams.delete("success");
+
+if (successMsg) {
+  document.getElementById("success-msg").innerText = successMsg;
+  document.getElementById("success-msg").style.display = "block";
+}
+
+// Removes the success param (if present). Since there aren't any other params
+// being stored here we could just wipe it out, but this is a bit more robust.
+history.pushState({}, document.title, url.toString());
 </script>
 
 </body>

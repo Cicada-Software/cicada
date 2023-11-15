@@ -1040,6 +1040,22 @@ def migrate_v48(db: sqlite3.Connection) -> None:
     )
 
 
+@auto_migrate(version=49)
+def migrate_v49(db: sqlite3.Connection) -> None:
+    db.executescript(
+        """
+        CREATE TABLE gitlab_repo_webhooks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uuid TEXT NOT NULL UNIQUE,
+            created_by_user_id INT NOT NULL,
+            project_id INT NOT NULL,
+            hook_id INT NOT NULL,
+            hashed_secret TEXT NOT NULL
+        );
+        """
+    )
+
+
 def get_version(db: sqlite3.Connection) -> int:
     try:
         version = db.execute("SELECT version FROM _migration_version;").fetchone()[0]

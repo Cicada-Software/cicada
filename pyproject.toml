@@ -54,6 +54,8 @@ omit = [
   "cicada/api/infra/secret_repo.py",
   # SSO related
   "cicada/api/endpoints/oauth_util.py",
+  # Requires Gitlab API
+  "cicada/api/endpoints/gitlab/projects.py",
 ]
 
 [tool.coverage.report]
@@ -84,7 +86,7 @@ select = ["ALL"]
 
 extend-ignore = [
   "A001", "A002", "A003",
-  "ANN101", "ANN002", "ANN102", "ANN202", "ANN401",
+  "ANN101", "ANN002", "ANN003", "ANN102", "ANN202", "ANN401",
   "ARG002",
   "B011",
   "COM812",

@@ -78,6 +78,13 @@ a[disabled] {
   border-radius: var(--border-radius);
 }
 
+#success-msg {
+  color: var(--green);
+  background: var(--dark-green);
+  padding: 0.5em;
+  border-radius: var(--border-radius);
+}
+
 #logout {
   cursor: pointer;
   padding: 0.4em !important;

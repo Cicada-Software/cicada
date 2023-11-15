@@ -51,7 +51,7 @@ class TestEndabledProviders(TestEndpointWrapper):
             client = TestClient(app)
 
             response = client.post("/api/gitlab_webhook")
-            assert response.status_code == 401
+            assert response.status_code == 400
 
             response = client.post("/api/github_webhook")
 

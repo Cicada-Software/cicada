@@ -139,9 +139,6 @@ class GitProviderSettings(DNSSettings):
 
 
 class GitlabSettings(GitProviderSettings):
-    access_token: str
-    webhook_secret: str
-
     client_id: str
     client_secret: str
 
@@ -149,16 +146,6 @@ class GitlabSettings(GitProviderSettings):
 
     def __init__(self) -> None:
         super().__init__()
-
-        self.access_token = os.getenv("GITLAB_ACCESS_TOKEN", "")
-
-        if not self.access_token:
-            raise ValueError("GITLAB_ACCESS_TOKEN must be defined")
-
-        self.webhook_secret = os.getenv("GITLAB_WEBHOOK_SECRET", "")
-
-        if not self.webhook_secret:
-            raise ValueError("GITLAB_WEBHOOK_SECRET must be defined")
 
         self.client_id = os.getenv("GITLAB_CLIENT_ID", "")
 

@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from cicada.api.di import DiContainer
 from cicada.api.infra.environment_repo import EnvironmentRepo
+from cicada.api.infra.gitlab.webhook_repo import GitlabWebhookRepo
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.runner_repo import RunnerRepo
@@ -21,6 +22,7 @@ from cicada.api.middleware import cicada_exception_handler
 from cicada.application.exceptions import CicadaException
 from cicada.application.session.stop_session import SessionTerminator
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.gitlab_webhook_repo import IGitlabWebhookRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.runner_repo import IRunnerRepo
@@ -89,6 +91,12 @@ class TestDiContainer(SqliteTestWrapper, DiContainer):
     def session_terminators(cls) -> dict[str, SessionTerminator]:
         return {}
 
+    @classmethod
+    def gitlab_webhook_repo(cls) -> IGitlabWebhookRepo:
+        cls._setup()
+
+        return GitlabWebhookRepo(cls.connection)
+
 
 class TestEndpointWrapper:
     app: FastAPI
@@ -103,8 +111,6 @@ class TestEndpointWrapper:
         "GITHUB_APP_CLIENT_SECRET": "secret",
         "GITHUB_APP_PRIVATE_KEY_FILE": "README.md",
         "GITHUB_WEBHOOK_SECRET": "secret",
-        "GITLAB_WEBHOOK_SECRET": "secret",
-        "GITLAB_ACCESS_TOKEN": "access-token",
         "GITLAB_CLIENT_ID": "id",
         "GITLAB_CLIENT_SECRET": "secret",
         "GITLAB_TOKEN_STORE_SECRET": "secret",

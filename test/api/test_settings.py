@@ -41,8 +41,6 @@ DEFAULT_ENV_VARS = {
     "GITHUB_APP_ID": "1234",
     "GITHUB_APP_PRIVATE_KEY_FILE": "README.md",
     "GITHUB_WEBHOOK_SECRET": "password123",
-    "GITLAB_ACCESS_TOKEN": "password123",
-    "GITLAB_WEBHOOK_SECRET": "password123",
     "GITLAB_CLIENT_ID": "id",
     "GITLAB_CLIENT_SECRET": "secret",
     "GITLAB_TOKEN_STORE_SECRET": "secret",

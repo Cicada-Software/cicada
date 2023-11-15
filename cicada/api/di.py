@@ -3,6 +3,7 @@ import logging
 from cicada.api.endpoints.oauth_util import GitlabOAuthTokenStore
 from cicada.api.infra.environment_repo import EnvironmentRepo
 from cicada.api.infra.github.stop_session import github_session_terminator
+from cicada.api.infra.gitlab.webhook_repo import GitlabWebhookRepo
 from cicada.api.infra.installation_repo import InstallationRepo
 from cicada.api.infra.repository_repo import RepositoryRepo
 from cicada.api.infra.runner_repo import RunnerRepo
@@ -15,6 +16,7 @@ from cicada.api.infra.waitlist_repo import WaitlistRepo
 from cicada.api.settings import VaultSettings
 from cicada.application.session.stop_session import SessionTerminator
 from cicada.domain.repo.environment_repo import IEnvironmentRepo
+from cicada.domain.repo.gitlab_webhook_repo import IGitlabWebhookRepo
 from cicada.domain.repo.installation_repo import IInstallationRepo
 from cicada.domain.repo.repository_repo import IRepositoryRepo
 from cicada.domain.repo.runner_repo import IRunnerRepo
@@ -84,3 +86,7 @@ class DiContainer:  # pragma: no cover
             cls.token_store = GitlabOAuthTokenStore()
 
         return cls.token_store
+
+    @classmethod
+    def gitlab_webhook_repo(cls) -> IGitlabWebhookRepo:
+        return GitlabWebhookRepo()

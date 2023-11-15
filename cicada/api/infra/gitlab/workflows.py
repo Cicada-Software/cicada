@@ -19,7 +19,7 @@ from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 @asynccontextmanager
 async def wrap_in_gitlab_status_check(
-    session: Session,
+    session: Session, access_token: str
 ) -> AsyncGenerator[None, None]:  # pragma: no cover
     settings = GitlabSettings()
 
@@ -27,10 +27,10 @@ async def wrap_in_gitlab_status_check(
 
     assert isinstance(session.trigger, CommitTrigger)
 
-    project_id = urlparse(session.trigger.repository_url).path[1:]
+    namespace = urlparse(session.trigger.repository_url).path[1:]
 
-    gl = gitlab.Gitlab(private_token=settings.access_token)
-    project = gl.projects.get(project_id, lazy=True)
+    gl = gitlab.Gitlab(oauth_token=access_token)
+    project = gl.projects.get(namespace, lazy=True)
     commit = project.commits.get(str(session.trigger.sha))
 
     payload = {
@@ -61,19 +61,18 @@ async def run_workflow(
     cloned_repo: Path,
     filenode: FileNode,
     workflow: Workflow,
+    access_token: str,
 ) -> None:
-    settings = GitlabSettings()
-
     wrapper: AbstractAsyncContextManager[None]
 
     if session.trigger.type == "git.push":
-        wrapper = wrap_in_gitlab_status_check(session)
+        wrapper = wrap_in_gitlab_status_check(session, access_token)
     else:
         wrapper = nullcontext()
 
     username, repo_name = url_get_user_and_repo(session.trigger.repository_url)
 
-    url = gitlab_clone_url(username, repo_name, settings.access_token)
+    url = gitlab_clone_url(username, repo_name, access_token)
 
     try:
         async with wrapper:
@@ -100,29 +99,28 @@ async def run_workflow(
 async def gather_issue_workflows(
     trigger: Trigger,
     cloned_repo: Path,
+    access_token: str,
 ) -> list[FileNode]:
-    settings = GitlabSettings()
     user, repo = url_get_user_and_repo(trigger.repository_url)
 
-    gl = gitlab.Gitlab(private_token=settings.access_token)
+    gl = gitlab.Gitlab(oauth_token=access_token)
 
     project = gl.projects.get(f"{user}/{repo}", lazy=True)
     commit = project.commits.get("HEAD")
 
     trigger.sha = GitSha(str(commit.get_id()))
 
-    return await gather_workflows(trigger, cloned_repo)
+    return await gather_workflows(trigger, cloned_repo, access_token)
 
 
 async def gather_workflows(
     trigger: Trigger,
     cloned_repo: Path,
+    access_token: str,
 ) -> list[FileNode]:
     username, repo_name = url_get_user_and_repo(trigger.repository_url)
 
-    settings = GitlabSettings()
-
-    url = gitlab_clone_url(username, repo_name, settings.access_token)
+    url = gitlab_clone_url(username, repo_name, access_token)
 
     assert trigger.sha
 

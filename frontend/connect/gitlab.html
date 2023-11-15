@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Connect Gitlab to Cicada</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="stylesheet" href="/static/common.css">
+<script src="/static/common.js"></script>
+<script src="/static/vendor/vanjs/vanjs.min.js"></script>
+</head>
+
+<body>
+
+<main>
+  <div id="navbar">
+    <a href="/dashboard" id="back">&#8592; Back</a>
+    <span id="version"></span>
+    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  </div>
+
+  <div id="error-msg" style="display: none"></div>
+
+  <h1>Connect Gitlab to Cicada</h1>
+
+  <span>
+    In order to use Cicada we need to attach some webhooks to your repositories.
+    You can update this at any time.
+  </span>
+
+  <fieldset>
+    <div>
+      <input type="radio" id="all-repos" name="select-type" value="all-repos" onclick="updateRadios()" />
+      <label for="all-repos">Connect all existing repositories to Cicada. New repositories will not be added automatically.</label>
+    </div>
+
+    <div>
+      <input type="radio" id="select-repos" name="select-type" value="select-repos" onclick="updateRadios()" />
+      <label for="select-repos">Connect only specific repositories</label>
+
+      <div id="repo-wrapper">
+        <p>Available repositories:</p>
+
+        <span id="repo-list-msg">Loading...</span>
+
+        <ul id="repos" style="display: none"></ul>
+      </div>
+    </div>
+  </fieldset>
+
+  <button id="connect" onclick="connectRepos(this)" disabled>Connect</button>
+</main>
+
+<style>
+h1 {
+  color: var(--white);
+  margin: 0;
+  font-size: 1.5em;
+  padding-bottom: 1em;
+}
+
+fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+span, p, label {
+  color: var(--white);
+}
+
+label {
+  cursor: pointer;
+}
+
+#repo-wrapper {
+  padding-left: 2em;
+}
+
+#repo-wrapper.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+#repo-list-msg {
+  font-style: italic;
+}
+
+#repos {
+  list-style: none;
+  padding: 0;
+  width: 40em;
+  max-height: 10em;
+  min-height: 1.5em;
+  overflow-y: auto;
+  resize: vertical;
+  margin-bottom: -1em;
+}
+
+#repos[style*="height"] {
+  max-height: unset;
+}
+
+li {
+  display: flex;
+  gap: 1em;
+}
+
+.description {
+  font-style: italic;
+  color: var(--lightgray);
+}
+
+button {
+  background: var(--green);
+  color: var(--gray);
+  padding: 0.75em;
+  border-radius: var(--border-radius);
+  width: min-content;
+  margin-top: 2em;
+}
+
+button:disabled {
+  background: var(--dark-green);
+  color: var(--black);
+}
+</style>
+
+<script>
+const {div, input, label, li, span} = van.tags;
+
+updateRadios();
+
+refreshTokenLoop();
+
+cicadaFetch("/api/gitlab/projects")
+  .then(resp => {
+    if (!resp.ok) return;
+
+    resp.json().then(projects => {
+      for (const project of projects) {
+        van.add(
+          document.getElementById("repos"),
+          Project(project),
+        );
+      }
+
+      if (projects.length === 0) {
+        document.getElementById("repo-list-msg").innerText = "No repositories found";
+      } else {
+        document.getElementById("repo-list-msg").style.display = "none";
+        document.getElementById("repos").style.display = "block";
+      }
+    });
+  });
+
+function updateRadios() {
+  const selected = getSelectionType();
+  const shouldDisable = selected !== "select-repos";
+
+  document.getElementById("repo-wrapper").classList[shouldDisable ? "add" : "remove"]("disabled")
+
+  if (selected !== undefined) {
+    document.getElementById("connect").disabled = false;
+  }
+}
+
+function Project(project) {
+  const { id, path, description } = project;
+
+  return div(
+    li(
+      input({type: "checkbox", "data-project-id": id, "id": `project-id-${id}`}),
+      label(
+        {for: `project-id-${id}`},
+        span(path),
+        span({"class": "description"}, description ? `(${description})` : ""),
+      ),
+    )
+  );
+}
+
+function getSelectionType() {
+  return document.querySelector("input[type=radio]:checked")?.id;
+}
+
+const connectRepos = (element) => {
+  element.disabled = true;
+
+  let data = {};
+
+  if (getSelectionType() === "select-repos") {
+    const checkedBoxes = [...document.querySelectorAll("input[data-project-id]:checked")]
+
+    data.project_ids = checkedBoxes.map(x => Number(x.dataset.projectId));
+  } else {
+    data.all = true;
+  }
+
+  cicadaFetch(
+    "/api/gitlab/projects/add_webhooks",
+    {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(data)},
+  ).then(resp => {
+    if (!resp.ok) {
+      resp.json().then(e => {
+        const errorMsg = document.getElementById("error-msg");
+
+        errorMsg.style.display = "block";
+        errorMsg.innerText = e.detail;
+      });
+    } else {
+      window.location.href = "/dashboard?success=Gitlab+repositories+successfully+connected!";
+    }
+  });
+};
+</script>
+
+</body>
+
+</html>

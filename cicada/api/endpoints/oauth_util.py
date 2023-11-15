@@ -41,7 +41,8 @@ class GitlabOAuthTokenStore(DbConnection):
         self.fernet = Fernet(self.settings.token_store_secret.encode())
 
     def save_token(self, user: User, token: Token) -> None:
-        assert user.provider == "gitlab"
+        if user.provider != "gitlab":
+            return
 
         self.tokens[user.username] = token
 
@@ -61,7 +62,8 @@ class GitlabOAuthTokenStore(DbConnection):
         self.conn.commit()
 
     async def load_token(self, user: User) -> Token | None:
-        assert user.provider == "gitlab"
+        if user.provider != "gitlab":
+            return None
 
         token = self.tokens.get(user.username)
 
