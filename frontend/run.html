@@ -14,14 +14,11 @@
 <body>
 
 <main>
-  <div id="navbar">
-    <a href="/runs" id="back">&#8592; Back</a>
+  <top-navbar>
     <a href="" id="repo" class="hide-by-default"></a>
     <a href="" class="hide-by-default" id="run-number">run #1</a>
     <span class="triggered-wrapper hide-by-default">Triggered by <span id="trigger"></span></span>
-    <span class="navbar-filler" id="version"></span>
-    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
-  </div>
+  </top-navbar>
 
   <div id="error-msg" style="display: none"></div>
 
@@ -93,6 +90,8 @@ p, pre {
 
 .navbar-filler {
   color: var(--lightgray);
+  flex: 1;
+  text-align: right;
 }
 
 #commit-info, #issue-info, #terminal {

@@ -12,10 +12,7 @@
 <body>
 
 <main>
-  <div id="navbar">
-    <span id="version"></span>
-    <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
-  </div>
+  <top-navbar></top-navbar>
 
   <div id="error-msg" style="display: none"></div>
 
@@ -113,7 +110,11 @@ h1 {
   font-size: 1.5em;
 }
 
-#version {
+top-navbar::part(back) {
+  display: none;
+}
+
+top-navbar::part(version) {
   text-align: left;
 }
 

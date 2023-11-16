@@ -163,3 +163,81 @@ function displayCookieBanner() {
 function disableCookieBanner() {
   document.getElementById("cookie-banner-wrapper").style.display = "none";
 }
+
+class Navbar extends HTMLElement {
+  constructor() {
+    super();
+  }
+
+  connectedCallback() {
+    const template = document.createElement("template");
+
+    const version = "Cicada v1.0.0";
+
+    template.innerHTML = `
+<div id="navbar">
+  <a href="/dashboard" id="back" part="back">&#8592; Back</a>
+  <slot></slot>
+  <span id="version" part="version">${version}</span>
+  <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+</div>
+
+<style>
+#navbar {
+  display: flex;
+  flex-direction: row;
+  gap: 1em;
+  margin: 0;
+  color: var(--white);
+  font-weight: bold;
+}
+
+#navbar > *, ::slotted(*) {
+  padding: 0.5em;
+  background: var(--gray);
+  border-radius: var(--border-radius);
+}
+
+.navbar-filler {
+  flex: 1;
+  text-align: right;
+}
+
+#back {
+  transition: background 150ms;
+}
+
+#back:hover {
+  background: var(--medium-gray);
+}
+
+#version {
+  color: var(--lightgray);
+  flex: 1;
+  text-align: right;
+  cursor: default;
+}
+
+#logout {
+  cursor: pointer;
+  padding: 0.4em !important;
+  height: min-content;
+  transition: background 150ms;
+}
+
+#logout:hover {
+  background: var(--medium-gray);
+}
+
+a {
+  color: var(--blue);
+}
+</style>
+    `;
+
+    const shadow = this.attachShadow({ mode: "open" });
+    shadow.appendChild(template.content.cloneNode(true));
+  }
+}
+
+customElements.define("top-navbar", Navbar)
