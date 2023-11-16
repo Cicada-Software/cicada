@@ -27,7 +27,7 @@ class CustomFormatter(logging.Formatter):
 
         self.fmt = " ".join(
             [
-                "[%(asctime)s.%(msecs)d]",
+                "[%(asctime)s]",
                 "[%(levelname)s]",
                 "[%(pathname)s:%(lineno)d]:",
                 "%(message)s",
