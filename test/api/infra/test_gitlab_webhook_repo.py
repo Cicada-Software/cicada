@@ -1,8 +1,8 @@
 from hashlib import sha3_256
 from secrets import token_hex
 from uuid import uuid4
-from cicada.api.infra.gitlab.webhook_repo import GitlabWebhookRepo
 
+from cicada.api.infra.gitlab.webhook_repo import GitlabWebhookRepo
 from cicada.api.infra.user_repo import UserRepo
 from cicada.domain.repo.gitlab_webhook_repo import GitlabWebhook
 from cicada.domain.user import User
