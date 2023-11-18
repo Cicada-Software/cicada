@@ -53,12 +53,12 @@ def test_stringify_list() -> None:
     assert asjson(Events([Event(now)])) == {"events": [{"at": str(now)}]}
 
 
-def test_stringified_none_field_will_be_dropped() -> None:
+def test_stringified_none_field_are_included() -> None:
     @dataclass
     class Event:
         at: datetime | None = None
 
-    assert asjson(Event()) == {}
+    assert asjson(Event()) == {"at": None}
 
 
 def test_stringify_class_var_fields_of_class() -> None:

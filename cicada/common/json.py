@@ -6,6 +6,9 @@ from typing import Any
 
 def asjson(obj: Any) -> Any:  # type: ignore[misc]
     # TODO: this isnt JSON, rename function
+    if obj is None:
+        return None
+
     if isinstance(obj, dict):
         return {str(asjson(k)): asjson(v) for k, v in obj.items()}
 
@@ -21,8 +24,7 @@ def asjson(obj: Any) -> Any:  # type: ignore[misc]
             if "__" in name or callable(attr):
                 continue
 
-            if attr is not None:
-                out[name] = asjson(attr)
+            out[name] = asjson(attr)
 
         return out
 

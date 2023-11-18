@@ -27,6 +27,15 @@ def test_convert_commit_event() -> None:
     )
 
 
+def test_convert_commit_event_without_username() -> None:
+    event = json.loads((TEST_DATA / "push_event.json").read_text())
+    del event["head_commit"]["author"]["username"]
+
+    commit = github_event_to_commit(event)
+
+    assert commit.author is None
+
+
 def test_convert_issue_open_event() -> None:
     event = json.loads((TEST_DATA / "issue_open_event.json").read_text())
     issue = github_event_to_issue(event)

@@ -13,7 +13,7 @@ from cicada.domain.triggers import (
 def github_event_to_commit(event: dict[str, Any]) -> CommitTrigger:  # type: ignore[misc]
     return CommitTrigger(
         sha=GitSha(event["after"]),
-        author=event["head_commit"]["author"]["username"],
+        author=event["head_commit"]["author"].get("username"),
         message=event["head_commit"]["message"],
         committed_on=Datetime.fromisoformat(event["head_commit"]["timestamp"]),
         repository_url=event["repository"]["html_url"],

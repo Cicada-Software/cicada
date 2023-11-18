@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from cicada.ast.nodes import NumericValue, RecordValue, StringValue, Value
+from cicada.ast.nodes import NumericValue, RecordValue, StringValue, UnitValue, Value
 from cicada.ast.types import RecordType
 from cicada.common.json import asjson
 from cicada.domain.triggers import Trigger
@@ -14,6 +14,9 @@ def trigger_to_record(trigger: Trigger) -> Value:
 
 # TODO: turn this into a Trigger to Record function
 def json_to_record(j: object) -> Value:
+    if j is None:
+        return UnitValue()
+
     if isinstance(j, dict):
         types = RecordType()
         items: dict[str, Value] = {}

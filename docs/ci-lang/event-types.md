@@ -16,7 +16,7 @@ Every event has the following fields:
 
 ## `git.push`
 
-**`author`**: Username of the commit author.
+**`author`**: GitHub/Gitlab username of the commit author, or unit (`()`) if a username can't be collelated (ie, bots).
 
 **`message`**: The commit message of the most recent commit that was pushed.
 

@@ -46,7 +46,7 @@ class Trigger:
 @dataclass(kw_only=True)
 class CommitTrigger(Trigger):
     type = "git.push"
-    author: str
+    author: str | None
     message: str
     # TODO: add authored_date
     committed_on: Datetime
