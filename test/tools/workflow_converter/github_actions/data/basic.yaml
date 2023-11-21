@@ -40,3 +40,14 @@ jobs:
 
       - name: Mypy
         run: make mypy
+
+      - name: Multi-line command
+        run: |
+          echo \
+            hello \
+            world
+
+      - name: Comments
+        run: |
+          # This is a comment
+          echo hello world

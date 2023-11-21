@@ -24,3 +24,9 @@ make lint
 
 # Mypy
 make mypy
+
+# Multi-line command
+echo hello world
+
+# Comments
+echo hello world

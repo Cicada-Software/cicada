@@ -84,7 +84,7 @@ def convert_issues_event(issues: dict[str, Any]) -> str:  # type: ignore
 
     issue_type = GITHUB_ISSUE_TYPE_MAPPINGS.get(types[0])
 
-    assert issue_type, "only opened/closed issues are supported currently"
+    assert issue_type, "Only opened/closed issues are supported currently"
 
     return f"on issue.{issue_type}\n"
 
@@ -129,10 +129,13 @@ def convert_steps(steps: list[Any]) -> str:  # type: ignore
             commands += f"# {name}\n"
 
         if cmd := step.get("run"):
-            cmd = cmd.strip()
+            cmd = cmd.strip().replace("\\\n", " ")
 
             for line in cmd.split("\n"):
-                exprs = [convert_github_expr(x) for x in shlex.split(line)]
+                exprs = [convert_github_expr(x) for x in shlex.split(line, comments=True)]
+
+                if not exprs:
+                    continue
 
                 parts = [expr if is_safe else shlex.quote(expr) for expr, is_safe in exprs]
 
@@ -219,7 +222,9 @@ def convert(contents: str) -> str:
     workflow file. This API is subject to change, and is very be error prone.
     """
 
-    data = YAML(typ="safe").load(contents)
+    yaml = YAML(typ="safe")
+    yaml.allow_duplicate_keys = True
+    data = yaml.load(contents)
 
     workflow = ""
 
