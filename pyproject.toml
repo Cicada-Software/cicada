@@ -56,6 +56,8 @@ omit = [
   "cicada/api/endpoints/oauth_util.py",
   # Requires Gitlab API
   "cicada/api/endpoints/gitlab/projects.py",
+  # Manually tested
+  "cicada/cli.py",
 ]
 
 [tool.coverage.report]

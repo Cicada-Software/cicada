@@ -1,3 +1,4 @@
+GitPython==3.1.40
 attrs==23.1.0
 black==23.11.0
 boto3-stubs==1.28.71
@@ -5,6 +6,7 @@ botocore-stubs==1.31.71
 colorama==0.4.6
 coverage==7.3.2
 exceptiongroup==1.1.3
+gitdb==4.0.11
 iniconfig==2.0.0
 isort==5.12.0
 mypy-boto3-s3==1.28.55
@@ -18,6 +20,7 @@ pytest-asyncio==0.21.1
 pytest-cov==4.1.0
 pytest==7.4.3
 ruff==0.1.5
+smmap==5.0.1
 tomli==2.0.1
 types-awscrt==0.19.3
 types-passlib==1.7.7.13
