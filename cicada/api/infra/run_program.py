@@ -12,6 +12,7 @@ from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
+from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
 from cicada.parse.tokenize import tokenize
@@ -80,8 +81,7 @@ def exit_code_to_status_code(exit_code: int) -> SessionStatus:
 
 @dataclass
 class ExecutionContext:
-    url: str
-    session: Session
+    trigger: Trigger
     terminal: TerminalSession
     cloned_repo: Path
     workflow: Workflow
@@ -126,7 +126,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
             tokens = tokenize(file.read_text())
             tree = generate_ast_tree(tokens)
 
-            semantics = SemanticAnalysisVisitor(self.session.trigger)
+            semantics = SemanticAnalysisVisitor(self.trigger)
             tree.accept(semantics)
 
         except AstError as exc:
@@ -149,7 +149,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
         try:
             visitor = RemoteContainerEvalVisitor(
                 self.cloned_repo,
-                self.session,
+                self.trigger,
                 self.terminal,
                 image=image,
                 program=self.program,
@@ -192,6 +192,7 @@ class RemoteDockerExecutionContext(RemoteDockerLikeExecutionContext):
     executor_name = "remote-docker"
 
 
+@dataclass
 class SelfHostedExecutionContext(ExecutionContext):
     """
     This is an executor that facilitates communication with a self-hosted
@@ -203,6 +204,8 @@ class SelfHostedExecutionContext(ExecutionContext):
     finished.
     """
 
+    url: str
+    session: Session
     session_repo: ISessionRepo
     runner_repo: IRunnerRepo
 

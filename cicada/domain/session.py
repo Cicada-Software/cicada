@@ -67,6 +67,7 @@ class Workflow:
     run_on_self_hosted: bool = False
     title: str | None = None
 
+    parent: WorkflowId | None = None
     sub_workflows: list["Workflow"] = field(default_factory=list)
 
     @classmethod

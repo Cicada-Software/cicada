@@ -70,17 +70,12 @@ async def run_workflow(
     else:
         wrapper = nullcontext()
 
-    username, repo_name = url_get_user_and_repo(session.trigger.repository_url)
-
-    url = gitlab_clone_url(username, repo_name, access_token)
-
     try:
         async with wrapper:
             executor_type = ExecutionSettings().executor
 
             ctx = get_execution_type(executor_type)(
-                url=url,
-                session=session,
+                trigger=session.trigger,
                 terminal=terminal,
                 cloned_repo=cloned_repo,
                 workflow=workflow,

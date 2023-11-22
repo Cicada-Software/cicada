@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shutil
 from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -75,9 +76,25 @@ class MakeSessionFromTrigger:
             workflows = await self.gather_workflows(self.trigger, self.cloned_repo)
 
             # TODO: limit max concurrent workflows
-            return await asyncio.gather(*[self.run_workflow(x) for x in workflows])
+            return await asyncio.gather(*[self.copy_and_run(x) for x in workflows])
 
-    async def run_workflow(self, filenode: FileNode) -> Session:
+    async def copy_and_run(self, filenode: FileNode) -> Session:
+        """
+        Create a fresh copy of the cloned repository and run a workflow from the new directory so
+        that each workflow has an isolated copy of the repository.
+        """
+
+        with TemporaryDirectory() as dir:
+            copy = Path(dir)
+
+            shutil.copytree(self.cloned_repo, copy, dirs_exist_ok=True)
+
+            assert filenode.file
+            filenode.file = copy / filenode.file.relative_to(self.cloned_repo)
+
+            return await self.run_workflow(filenode, copy)
+
+    async def run_workflow(self, filenode: FileNode, dir: Path) -> Session:
         status, run_on_self_hosted = self._get_boot_info(filenode)
 
         session = Session(id=uuid4(), trigger=self.trigger, status=status)
@@ -87,7 +104,7 @@ class MakeSessionFromTrigger:
 
         workflow = Workflow.from_session(
             session,
-            filename=filenode.file.relative_to(self.cloned_repo),
+            filename=filenode.file.relative_to(dir),
             run_on_self_hosted=run_on_self_hosted,
             title=eval_title(filenode.title),
         )
@@ -97,7 +114,7 @@ class MakeSessionFromTrigger:
         terminal.callback = partial(self.terminal_session_repo.append_to_workflow, workflow.id)
 
         try:
-            await self.workflow_runner(session, terminal, self.cloned_repo, filenode, workflow)
+            await self.workflow_runner(session, terminal, dir, filenode, workflow)
 
         except Exception:
             logger = logging.getLogger("cicada")

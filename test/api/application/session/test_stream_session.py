@@ -31,6 +31,10 @@ async def test_stream_full_session() -> None:
 
     session_repo.get_session_by_session_id.return_value = SlimSession()
 
+    # Technically not correct since this should return a session, but we only check the status
+    # anyways so it is fine.
+    session_repo.get_workflow_by_id.return_value = SlimSession()
+
     stream = StreamSession(
         terminal_session_repo=terminal_session_repo,
         session_repo=session_repo,

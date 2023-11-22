@@ -7,6 +7,7 @@ from githubkit import GitHub
 from cicada.api.di import DiContainer
 from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.run_program import (
+    ExecutionContext,
     SelfHostedExecutionContext,
     exit_code_to_status_code,
     get_execution_type,
@@ -128,24 +129,22 @@ async def run_workflow(
             if workflow.run_on_self_hosted:
                 assert di
 
-                ctx = SelfHostedExecutionContext(
-                    url=url,
-                    session=session,
+                ctx: ExecutionContext = SelfHostedExecutionContext(
+                    trigger=session.trigger,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
                     workflow=workflow,
+                    session=session,
+                    url=url,
+                    session_repo=di.session_repo(),
+                    runner_repo=di.runner_repo(),
                 )
-
-                # TODO: move to ctor
-                ctx.session_repo = di.session_repo()
-                ctx.runner_repo = di.runner_repo()
 
             else:
                 executor_type = ExecutionSettings().executor
 
-                ctx = get_execution_type(executor_type)(  # type: ignore
-                    url=url,
-                    session=session,
+                ctx = get_execution_type(executor_type)(
+                    trigger=session.trigger,
                     terminal=terminal,
                     cloned_repo=cloned_repo,
                     workflow=workflow,

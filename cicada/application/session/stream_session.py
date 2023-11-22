@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator, Callable, Coroutine
 
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
-from cicada.domain.session import SessionId, SessionStatus
+from cicada.domain.session import SessionId, WorkflowId, WorkflowStatus
 
 
 class StreamSession:
@@ -28,7 +28,7 @@ class StreamSession:
     async def stream(
         self, session_id: SessionId, run: int
     ) -> AsyncGenerator[dict[str, str | list[str]], str]:
-        session = self.session_repo.get_session_by_session_id(session_id)
+        session = self.session_repo.get_session_by_session_id(session_id, run)
         if not session:
             yield {"error": "Session not found"}
             return
@@ -36,6 +36,11 @@ class StreamSession:
         # TODO: allow for getting workflow id by session id/run
         workflow_id = self.session_repo.get_workflow_id_from_session(session)
         if not workflow_id:
+            yield {"error": "Session not found"}
+            return
+
+        workflow = self.session_repo.get_workflow_by_id(workflow_id)
+        if not workflow:
             yield {"error": "Session not found"}
             return
 
@@ -58,15 +63,8 @@ class StreamSession:
 
         interceptor = create_task(intercept_stop())
 
-        session = self.session_repo.get_session_by_session_id(session_id, run)
-        assert session
-
-        if session.status == SessionStatus.BOOTING:
-            status = await self.wait_for_status_change(
-                session_id,
-                run,
-                is_booting=True,
-            )
+        if workflow.status == WorkflowStatus.BOOTING:
+            status = await self.wait_for_status_change(workflow_id, is_booting=True)
 
             yield {"status": status.name}
 
@@ -76,50 +74,49 @@ class StreamSession:
         terminal.finish()
 
         if interceptor.done():
-            yield {"status": SessionStatus.STOPPED.name}
+            yield {"status": WorkflowStatus.STOPPED.name}
             return
 
         interceptor.cancel()
 
-        status = await self.wait_for_status_change(session_id, run)
+        status = await self.wait_for_status_change(workflow_id)
 
         yield {"status": status.name}
 
     async def wait_for_status_change(
         self,
-        session_id: SessionId,
-        run: int,
+        workflow_id: WorkflowId,
         is_booting: bool = False,
-    ) -> SessionStatus:
+    ) -> WorkflowStatus:
         """
-        Repeatedly check for updates to the session status, and return once the
-        status has changed. When we are booting we are looking for a session
+        Repeatedly check for updates to the workflow status, and return once the
+        status has changed. When we are booting we are looking for a workflow
         status that isn't BOOTING, and after we have booted, we are looking for
-        session statuses that aren't PENDING. We have to wait longer for a
-        session to start then we do for a session to stop since it we might
+        a workflow status that isn't PENDING. We have to wait longer for a
+        workflow to start then we do for a workflow to stop since it we might
         have to wait for a self-hosted runner to become available for certain
-        sessions.
+        workflows, for example.
         """
 
         if is_booting:
-            ignore = SessionStatus.BOOTING
+            ignore = WorkflowStatus.BOOTING
             attempts = 1_000
         else:
-            ignore = SessionStatus.PENDING
+            ignore = WorkflowStatus.PENDING
             attempts = 10
 
         for _ in range(attempts):
-            session = self.session_repo.get_session_by_session_id(session_id, run=run)
-            assert session
+            workflow = self.session_repo.get_workflow_by_id(workflow_id)
+            assert workflow
 
-            if session.status == ignore:
+            if workflow.status == ignore:
                 await sleep(0.5)
                 continue
 
-            return session.status
+            return workflow.status
 
-        # session is still pending, bail and return pending status
-        return SessionStatus.PENDING
+        # Workflow is still pending, bail and return pending status
+        return WorkflowStatus.PENDING
 
     def send_command(self, command: str) -> None:
         self.command_queue.put_nowait(command)

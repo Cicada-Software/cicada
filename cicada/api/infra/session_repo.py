@@ -70,8 +70,9 @@ class SessionRepo(ISessionRepo, DbConnection):
                 finished_at,
                 run_number,
                 run_on_self_hosted,
-                title
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                title,
+                parent
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             [
                 workflow.id,
@@ -85,6 +86,7 @@ class SessionRepo(ISessionRepo, DbConnection):
                 session.run,
                 int(workflow.run_on_self_hosted),
                 workflow.title,
+                workflow.parent,
             ],
         )
 
@@ -378,10 +380,11 @@ class SessionRepo(ISessionRepo, DbConnection):
             trigger=json_to_trigger(row[5]),
         )
 
+    # TODO: return list of workflow ids
     def get_workflow_id_from_session(self, session: Session) -> WorkflowId | None:
         rows = self.conn.execute(
             """
-            SELECT uuid FROM workflows WHERE session_id=? AND run_number=?;
+            SELECT uuid FROM workflows WHERE session_id=? AND run_number=? AND parent is NULL;
             """,
             [session.id, session.run],
         ).fetchall()
@@ -405,15 +408,39 @@ class SessionRepo(ISessionRepo, DbConnection):
                 finished_at,
                 run_number,
                 run_on_self_hosted,
-                title
+                title,
+                parent
             FROM workflows
-            WHERE session_id = ?;
+            WHERE session_id=?
+            ORDER BY run_number;
             """,
             [uuid],
         ).fetchall()
 
-        return [self._convert_workflow(row) for row in rows]
+        workflows = [self._convert_workflow(row) for row in rows]
 
+        tmp: dict[WorkflowId, Workflow] = {}
+
+        # seed dict with all available workflows
+        for workflow in workflows:
+            tmp[workflow.id] = workflow
+
+        # add sub workflows to parent workflows
+        for workflow in workflows:
+            if workflow.parent:
+                tmp[workflow.parent].sub_workflows.append(workflow)
+
+        # go through and remove non-root elements from the dict. Since parents still have
+        # references to the sub-workflows, this will leave only the root nodes.
+        for id, workflow in tmp.copy().items():
+            if workflow.parent:
+                tmp.pop(id)
+
+        # since dicts retain insertion order, return values so that the workflows are ordered
+        # by run number
+        return list(tmp.values())
+
+    # TODO: get subworkflows as well
     def get_workflow_by_id(self, uuid: WorkflowId) -> Workflow | None:
         rows = self.conn.execute(
             """
@@ -426,7 +453,8 @@ class SessionRepo(ISessionRepo, DbConnection):
                 finished_at,
                 run_number,
                 run_on_self_hosted,
-                title
+                title,
+                parent
             FROM workflows
             WHERE uuid=?;
             """,
@@ -451,4 +479,5 @@ class SessionRepo(ISessionRepo, DbConnection):
             ),
             run_on_self_hosted=bool(row["run_on_self_hosted"]),
             title=row["title"] if row["title"] else None,
+            parent=WorkflowId(UUID(row["parent"])) if row["parent"] else None,
         )

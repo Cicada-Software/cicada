@@ -287,6 +287,41 @@ class TestSessionRepo(SqliteTestWrapper):
         assert not got_session.trigger.env
         assert not got_session.trigger.secret
 
+    def test_create_and_get_workflows_with_subworkflows(self) -> None:
+        self.reset()
+
+        user = self.create_dummy_user(username="bob")
+        session = build(Session)
+
+        self.session_repo.create(session)
+
+        workflow = Workflow.from_session(session, filename=Path())
+        self.session_repo.create_workflow(workflow, session)
+
+        sub_workflow = Workflow.from_session(session, filename=Path())
+        sub_workflow.parent = workflow.id
+
+        self.session_repo.create_workflow(sub_workflow, session)
+
+        self.create_dummy_repo_for_user(
+            user,
+            perms=["read"],
+            url=session.trigger.repository_url,
+        )
+
+        session = self.session_repo.get_runs_for_session(user, session.id)
+
+        assert session
+
+        assert len(session.runs) == 1
+        workflow = session.runs[0]
+
+        assert workflow.filename == Path()
+        assert workflow.sha == session.trigger.sha
+        assert workflow.started_at == session.started_at
+        assert workflow.finished_at == session.finished_at
+        assert workflow.sub_workflows == [sub_workflow]
+
     def create_dummy_repo_for_user(
         self,
         user: User,

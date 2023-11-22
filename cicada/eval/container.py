@@ -40,7 +40,7 @@ from cicada.domain.triggers import CommitTrigger
 from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, WorkflowFailure
 
 if TYPE_CHECKING:
-    from cicada.domain.session import Session, Workflow
+    from cicada.domain.session import Workflow
     from cicada.domain.terminal_session import TerminalSession
     from cicada.domain.triggers import Trigger
 
@@ -50,11 +50,7 @@ class ContainerTermination(WorkflowFailure):
 
 
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
-    session: Session
-
     container_id: str
-    terminal: TerminalSession
-    cloned_repo: Path
 
     # Program used to run container (ie, docker or podman)
     program: str
@@ -69,15 +65,15 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     def __init__(
         self,
         cloned_repo: Path,
-        session: Session,
+        trigger: Trigger,
         terminal: TerminalSession,
         image: str,
         program: str,
         workflow: Workflow,
     ) -> None:
-        super().__init__(session.trigger)
+        super().__init__(trigger)
 
-        self.session = session
+        self.trigger = trigger
 
         self.terminal = terminal
         self.cloned_repo = cloned_repo
@@ -143,7 +139,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             cmd.handle(
                 self.cached_files,
                 CacheKey(self.cache_key),
-                self.session.trigger.repository_url,
+                self.trigger.repository_url,
                 self.workflow.id,
                 self.cloned_repo,
             )
