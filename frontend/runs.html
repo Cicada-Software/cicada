@@ -64,9 +64,14 @@ ol.list-view {
   display: flex;
   flex-direction: row;
   gap: 1em;
-  padding: 0.5em 0 0.5em 0;
+  margin: 1em 0 1em 0;
   background: var(--black);
   cursor: pointer;
+  border-radius: 2px;
+}
+
+.status-bar:focus-visible {
+  outline-offset: 6px;
 }
 
 .status-bar > * {
@@ -180,7 +185,9 @@ function RepositoryUrl(repoUrl, provider) {
   return a(
     {
       class: "repo",
-      href: `/repo/${provider}/${shortUrl}`
+      href: `/repo/${provider}/${shortUrl}`,
+      // using negative tab index because its clickable by it's parent
+      tabindex: -1,
     },
     shortUrl,
   );
@@ -247,18 +254,25 @@ function CommitSession(session) {
   const { message, sha, ref, repository_url, provider } = session.trigger;
 
   const elapsed = ElapsedTime(session);
-
   // TODO: use a tag to allow for showing tooltip at bottom of browser
+  const repoUrl = RepositoryUrl(repository_url, provider);
 
   const element = li(
     div(
       {
         class: "status-bar",
         onclick: makeRunCallback(event, session),
+        tabindex: 0,
       },
       CiStatus(session.status),
       span(
-        RepositoryUrl(repository_url, provider),
+        {
+          tabindex: 0,
+          onkeydown: (e) => {
+            if (e.key === "Enter" || e.key === "l") repoUrl.click()
+          },
+        },
+        repoUrl,
         " ",
         Provider(provider),
       ),
@@ -286,16 +300,24 @@ function IssueSession(session) {
   const { title, body, id, repository_url, provider } = session.trigger;
 
   const elapsed = ElapsedTime(session);
+  const repoUrl = RepositoryUrl(repository_url, provider);
 
   const element = li(
     div(
       {
         class: "status-bar",
         onclick: makeRunCallback(event, session),
+        tabindex: 0,
       },
       CiStatus(session.status),
       span(
-        RepositoryUrl(repository_url, provider),
+        {
+          tabindex: 0,
+          onkeydown: (e) => {
+            if (e.key === "Enter") repoUrl.click()
+          },
+        },
+        repoUrl,
         " ",
         Provider(provider),
       ),
@@ -361,6 +383,33 @@ function listenForSessionStatusUpdates() {
     displayStatus(element, session.status);
   }
 }
+
+window.addEventListener("keydown", (e) => {
+  const focused = document.activeElement;
+
+  const ol = document.querySelector("ol");
+  const li = focused.closest("li");
+  let index = [...ol.children].indexOf(li);
+
+  if (e.key === "j") {
+    index += 1;
+  } else if (e.key === "k") {
+    index -= 1;
+  } else if (e.key === "l" || e.key === "Enter") {
+    focused.click();
+    return;
+  } else {
+    return;
+  }
+
+  if (ol.contains(focused)) {
+    index = Math.min(Math.max(index, 0), ol.children.length - 1);
+  } else {
+    index = 0;
+  }
+
+  ol?.children?.[index]?.children?.[0].focus?.();
+});
 </script>
 </body>
 
