@@ -85,17 +85,6 @@ a[disabled] {
   border-radius: var(--border-radius);
 }
 
-#logout {
-  cursor: pointer;
-  padding: 0.4em !important;
-  height: min-content;
-  transition: background 150ms;
-}
-
-#logout:hover {
-  background: var(--medium-gray);
-}
-
 .ci-status[data-status="success"] {
   color: var(--green);
   background: var(--dark-green) !important;

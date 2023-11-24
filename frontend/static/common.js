@@ -57,7 +57,9 @@ function refreshTokenLoop() {
   setInterval(refreshToken, 60_000);
 }
 
-const logout = () => {
+const logout = (e) => {
+  if (e.type === "keydown" && e.key !== "Enter") return;
+
   if (confirm("Are you sure you want to log out?")) {
     removeKey("jwt");
     window.location.href = "/login";
@@ -179,7 +181,13 @@ class Navbar extends HTMLElement {
   <a href="/dashboard" id="back" part="back">&#8592; Back</a>
   <slot></slot>
   <span id="version" part="version">${version}</span>
-  <img id="logout" src="/static/img/logout.svg" onclick="logout()" />
+  <img
+    id="logout"
+    src="/static/img/logout.svg"
+    onclick="logout(event)"
+    onkeydown="logout(event)"
+    tabindex=0
+  />
 </div>
 
 <style>
