@@ -102,7 +102,6 @@ extend-ignore = [
   "FIX002", "FIX004",
   "FLY002",
   "FURB140",
-  "G004",
   "I001",
   "N818",
   "PGH003",

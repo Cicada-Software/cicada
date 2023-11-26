@@ -63,7 +63,7 @@ async def rerun_session(session_id: SessionId, di: Di, user: CurrentUser) -> Non
         token = await di.gitlab_token_store().load_token(user)
 
         if not token:
-            logger.error(f"Cannot rerun session {session_id}")
+            logger.error("Cannot rerun session %s", session_id)
             return
 
         gather = partial(gather_gitlab_workflows, access_token=token.access_token)

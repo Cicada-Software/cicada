@@ -34,6 +34,6 @@ class SetRepositorySecret:
         if not is_owner:
             raise Unauthorized("You are not authorized to view this repository")
 
-        self.logger.info(f"User {user.id} is setting env var for repository {repository.id}")
+        self.logger.info("User %s is setting env var for repository %s", user.id, repository.id)
 
         self.secret_repo.set_secrets_for_repo(repository.id, [secret])

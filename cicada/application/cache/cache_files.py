@@ -72,10 +72,10 @@ class CacheFilesForWorkflow:
                 file=Path(f.name),
             )
 
-            self.logger.debug(f"Uploading cache id {cache_object.id}")
+            self.logger.debug("Uploading cache id %s", cache_object.id)
 
             start = time.time()
             self.cache_repo.store(cache_object)
             elapsed = time.time() - start
 
-            self.logger.debug(f"Upload took {elapsed} seconds")
+            self.logger.debug("Upload took %s seconds", elapsed)

@@ -26,7 +26,7 @@ class DeleteInstallationSecret:
                     raise Unauthorized("You do not have access to this installation")
 
                 self.logger.info(
-                    f"User {user.id} deleting secret for installation {installation.id}"
+                    "User %s deleting secret for installation %s", user.id, installation.id
                 )
 
                 self.secret_repo.delete_installation_secret(id, key)

@@ -83,7 +83,7 @@ async def send_json(  # type: ignore
     if not isinstance(data, str):
         data = json.dumps(data, separators=(",", ":"))
 
-    logger.debug(f"Sending packet: {data}")
+    logger.debug("Sending packet: %s", data)
 
     await ws.send(data)
 
@@ -96,13 +96,13 @@ async def recv_json(  # type: ignore[misc]
     if isinstance(packet, bytes):
         packet = packet.decode()
 
-    logger.debug(f"Received packet: {packet}")
+    logger.debug("Received packet: %s", packet)
 
     return json.loads(packet)  # type: ignore
 
 
 def add_control_c_handler() -> None:
-    logger.info(f"Connecting to {CICADA_DOMAIN}")
+    logger.info("Connecting to %s", CICADA_DOMAIN)
 
     def close(*_) -> NoReturn:  # type: ignore
         logger.fatal("Shutting down")
@@ -200,7 +200,7 @@ async def websocket_lifecycle(ws: WebSocketClientProtocol) -> None:
             logger.info("Session stopped")
 
         else:
-            logger.error(f"Unknown packet type: {packet['type']}")
+            logger.error("Unknown packet type: %s", packet["type"])
             await ws.close(1003)
             return
 

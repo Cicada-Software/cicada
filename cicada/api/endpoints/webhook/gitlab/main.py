@@ -92,14 +92,14 @@ async def handle_github_event(request: Request, di: Di) -> None:
 
     event = await request.json()
 
-    logger.debug(f"Gitlab webhook data: {event}")
+    logger.debug("Gitlab webhook data: %s", event)
 
     white_list = GitProviderSettings().repo_white_list
 
     match event:
         case {"project": {"path_with_namespace": str(repo)}}:
             if not is_repo_in_white_list(repo, white_list):
-                logger.warning(f'Gitlab repo "{repo}" not in whitelist')
+                logger.warning('Gitlab repo "%s" not in whitelist', repo)
                 return
 
         case _:
@@ -111,7 +111,7 @@ async def handle_github_event(request: Request, di: Di) -> None:
         access_token = await get_access_token_for_webhook(di, webhook_id)
 
         if not access_token:
-            logger.error(f"Could not get an access token for webhook {webhook_id}")
+            logger.error("Could not get an access token for webhook %s", webhook_id)
 
             return
 

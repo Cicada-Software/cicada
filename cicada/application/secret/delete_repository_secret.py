@@ -29,5 +29,5 @@ class DeleteRepositorySecret:
         if not is_owner:
             raise Unauthorized("You are not allowed to delete repository secrets")
 
-        self.logger.info(f"User {user.id} deleting secret for repository id {repo.id}")
+        self.logger.info("User %s deleting secret for repository id %s", user.id, repo.id)
         self.secret_repo.delete_repository_secret(id, key)

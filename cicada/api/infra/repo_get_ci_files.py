@@ -43,7 +43,7 @@ async def repo_get_ci_files(
             await process.wait()
 
             if process.returncode != 0:
-                logger.error(f"Could not clone repository {trigger.repository_url}")
+                logger.error("Could not clone repository %s", trigger.repository_url)
                 return []
 
         return folder_get_runnable_ci_files(cloned_repo, trigger)

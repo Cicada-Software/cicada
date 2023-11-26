@@ -46,23 +46,21 @@ class GatherSecretsFromTrigger:
 
         if installation_id:
             # TODO: isolate shared logging logic
-            installation_info = f"installation id {installation_id}"
-            self.logger.info(f"Pulling secrets for {installation_info}")
+            self.logger.info("Pulling secrets for installation id %s", installation_id)
 
             secrets = self.secret_repo.get_secrets_for_installation(installation_id)
 
             count = len(secrets) or "No"
-            self.logger.info(f"{count} secrets accessed for {installation_info}")
+            self.logger.info("%s secrets accessed for installation id %s", count, installation_id)
 
             output = {secret.key: secret.value for secret in secrets}
 
-        repo_info = f"repository id {repo.id}"
-        self.logger.info(f"Pulling secrets for {repo_info}")
+        self.logger.info("Pulling secrets for repository id %s", repo.id)
 
         secrets = self.secret_repo.get_secrets_for_repo(repo.id)
 
         count = len(secrets) or "No"
-        self.logger.info(f"{count} secrets accessed for {repo_info}")
+        self.logger.info("%s secrets accessed for repository id %s", count, repo.id)
 
         # Override installation secrets (if any) with repository secrets
         for secret in secrets:

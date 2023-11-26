@@ -111,15 +111,15 @@ async def handle_github_event(request: Request, di: Di) -> None:
 
     event = await request.json()
 
-    logger.debug(f"GitHub event type: {event_type}")
-    logger.debug(f"GitHub webhook data: {event}")
+    logger.debug("GitHub event type: %s", event_type)
+    logger.debug("GitHub webhook data: %s", event)
 
     white_list = GitProviderSettings().repo_white_list
 
     match event:
         case {"repository": {"full_name": str(repo_name)}}:
             if not is_repo_in_white_list(repo_name, white_list):
-                logger.warning(f'GitHub repo "{repo_name}" not in whitelist')
+                logger.warning('GitHub repo "%s" not in whitelist', repo_name)
                 return
 
         case _ if event_type not in INSTALLATION_EVENTS:
