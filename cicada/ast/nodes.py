@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from ast import literal_eval as python_literal_eval
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum, auto
@@ -103,7 +103,7 @@ class RecordValue(Value):
     type: Type
 
 
-BuiltInFunction = Callable[..., Value]  # type: ignore[misc]
+BuiltInFunction = Callable[..., Awaitable[Value] | Value]  # type: ignore[misc]
 
 
 @dataclass
@@ -120,7 +120,7 @@ class Node(ABC):
     info: LineInfo
 
     @abstractmethod
-    def accept(self, visitor: NodeVisitor[T]) -> T:
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
         raise NotImplementedError
 
 
@@ -172,8 +172,8 @@ class BlockExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_block_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_block_expr(self)
 
     def __str__(self) -> str:
         body = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.exprs))
@@ -197,8 +197,8 @@ class FileNode:
     run_on: RunOnStatement | None = None
     title: TitleStatement | None = None
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_file_node(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_file_node(self)
 
     def __str__(self) -> str:
         nodes = "\n".join(str(expr) for expr in self.exprs)
@@ -225,8 +225,8 @@ class FunctionExpression(Expression):
 
     __match_args__ = ("callee", "args", "is_shell_mode")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_func_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_func_expr(self)
 
     def __str__(self) -> str:
         shell = self.is_shell_mode
@@ -257,8 +257,8 @@ class LetExpression(Expression):
 
     __match_args__ = ("name", "expr", "is_mutable")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_let_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_let_expr(self)
 
     def __str__(self) -> str:
         args = f"name={self.name}\nexpr={self.expr}"
@@ -279,8 +279,8 @@ class IdentifierExpression(Expression):
 
     __match_args__ = ("name",)
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_ident_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_ident_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.name!r}) # {self.info}"
@@ -313,8 +313,8 @@ class MemberExpression(Expression):
 
     __match_args__ = ("lhs", "name")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_member_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_member_expr(self)
 
     def __str__(self) -> str:
         args = f"lhs={self.lhs}\nname={self.name}"
@@ -351,8 +351,8 @@ class StringExpression(Expression, StringValue):
             type=StringType(),
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_str_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_str_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.value!r}) # {self.info}"
@@ -372,8 +372,8 @@ class BooleanExpression(Expression, BooleanValue):
             type=BooleanType(),
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_bool_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_bool_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.value!r}) # {self.info}"
@@ -394,8 +394,8 @@ class ParenthesisExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_paren_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_paren_expr(self)
 
     def __str__(self) -> str:
         expr = indent(str(self.expr), "  ")
@@ -436,8 +436,8 @@ class ListExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_list_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_list_expr(self)
 
     def __str__(self) -> str:
         if self.items:
@@ -469,8 +469,8 @@ class NumericExpression(Expression, NumericValue):
             type=NumericType(),
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_num_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_num_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.value}) # {self.info}"
@@ -498,8 +498,8 @@ class UnaryExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_unary_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_unary_expr(self)
 
     def __str__(self) -> str:
         expr = indent(str(self.rhs), "  ")
@@ -591,8 +591,8 @@ class BinaryExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_binary_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_binary_expr(self)
 
     def __str__(self) -> str:
         expr = indent("\n".join([str(self.lhs), str(self.rhs)]), "  ")
@@ -613,8 +613,8 @@ class IfExpression(Expression):
     condition: Expression
     body: BlockExpression
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_if_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_if_expr(self)
 
     def __str__(self) -> str:
         args = f"cond={self.condition}\nbody={self.body}"
@@ -644,8 +644,8 @@ class ToStringExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_to_string_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_to_string_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}: # {self.info}\n  expr={self.expr}"
@@ -670,8 +670,8 @@ class ShellEscapeExpression(Expression):
             is_constexpr=False,
         )
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_shell_escape_expr(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_shell_escape_expr(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}: # {self.info}\n  expr={self.expr}"
@@ -684,8 +684,8 @@ class Statement(Node):
     expressions. They normally dictate things such as control flow.
     """
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_stmt(self)  # pragma: no cover
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_stmt(self)  # pragma: no cover
 
 
 EventType = str
@@ -698,8 +698,8 @@ class OnStatement(Statement):
 
     __match_args__ = ("event",)
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_on_stmt(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_on_stmt(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.event!r}) # {self.info}"
@@ -717,8 +717,8 @@ class RunOnStatement(Statement):
 
     __match_args__ = ("type", "value")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_run_on_stmt(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_run_on_stmt(self)
 
     def __str__(self) -> str:
         return "".join(
@@ -737,8 +737,8 @@ class CacheStatement(Statement):
 
     __match_args__ = ("files", "using")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_cache_stmt(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_cache_stmt(self)
 
     def __str__(self) -> str:
         files = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.files))
@@ -754,8 +754,8 @@ class CacheStatement(Statement):
 class TitleStatement(Statement):
     parts: list[Expression]
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_title_stmt(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_title_stmt(self)
 
     def __str__(self) -> str:
         parts = "\n".join(str(x) for x in self.parts)
@@ -785,8 +785,8 @@ class FunctionAnnotation(Node):
 
     __match_args__ = ("expr",)
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_func_annotation(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_func_annotation(self)
 
     def __str__(self) -> str:
         return f"{type(self).__name__}({self.expr.name}) # {self.info}"
@@ -805,8 +805,8 @@ class FunctionDefStatement(Expression):
 
     __match_args__ = ("name", "arg_names", "type", "body")
 
-    def accept(self, visitor: NodeVisitor[T]) -> T:
-        return visitor.visit_func_def_stmt(self)
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_func_def_stmt(self)
 
     def __str__(self) -> str:
         name = f"name={self.name}"
@@ -838,159 +838,159 @@ class FunctionDefStatement(Expression):
 
 
 class NodeVisitor(Generic[T]):
-    def visit_file_node(self, node: FileNode) -> T:
+    async def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError
 
-    def visit_func_expr(self, node: FunctionExpression) -> T:
+    async def visit_func_expr(self, node: FunctionExpression) -> T:
         raise NotImplementedError
 
-    def visit_let_expr(self, node: LetExpression) -> T:
+    async def visit_let_expr(self, node: LetExpression) -> T:
         raise NotImplementedError
 
-    def visit_ident_expr(self, node: IdentifierExpression) -> T:
+    async def visit_ident_expr(self, node: IdentifierExpression) -> T:
         raise NotImplementedError
 
-    def visit_member_expr(self, node: MemberExpression) -> T:
+    async def visit_member_expr(self, node: MemberExpression) -> T:
         raise NotImplementedError
 
-    def visit_str_expr(self, node: StringExpression) -> T:
+    async def visit_str_expr(self, node: StringExpression) -> T:
         raise NotImplementedError
 
-    def visit_bool_expr(self, node: BooleanExpression) -> T:
+    async def visit_bool_expr(self, node: BooleanExpression) -> T:
         raise NotImplementedError
 
-    def visit_num_expr(self, node: NumericExpression) -> T:
+    async def visit_num_expr(self, node: NumericExpression) -> T:
         raise NotImplementedError
 
-    def visit_paren_expr(self, node: ParenthesisExpression) -> T:
+    async def visit_paren_expr(self, node: ParenthesisExpression) -> T:
         raise NotImplementedError
 
-    def visit_list_expr(self, node: ListExpression) -> T:
+    async def visit_list_expr(self, node: ListExpression) -> T:
         raise NotImplementedError
 
-    def visit_stmt(self, node: Statement) -> T:
+    async def visit_stmt(self, node: Statement) -> T:
         raise NotImplementedError
 
-    def visit_on_stmt(self, node: OnStatement) -> T:
+    async def visit_on_stmt(self, node: OnStatement) -> T:
         raise NotImplementedError
 
-    def visit_if_expr(self, node: IfExpression) -> T:
+    async def visit_if_expr(self, node: IfExpression) -> T:
         raise NotImplementedError
 
-    def visit_unary_expr(self, node: UnaryExpression) -> T:
+    async def visit_unary_expr(self, node: UnaryExpression) -> T:
         raise NotImplementedError
 
-    def visit_binary_expr(self, node: BinaryExpression) -> T:
+    async def visit_binary_expr(self, node: BinaryExpression) -> T:
         raise NotImplementedError
 
-    def visit_block_expr(self, node: BlockExpression) -> T:
+    async def visit_block_expr(self, node: BlockExpression) -> T:
         raise NotImplementedError
 
-    def visit_to_string_expr(self, node: ToStringExpression) -> T:
+    async def visit_to_string_expr(self, node: ToStringExpression) -> T:
         raise NotImplementedError
 
-    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> T:
+    async def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> T:
         raise NotImplementedError
 
-    def visit_run_on_stmt(self, node: RunOnStatement) -> T:
+    async def visit_run_on_stmt(self, node: RunOnStatement) -> T:
         raise NotImplementedError
 
-    def visit_cache_stmt(self, node: CacheStatement) -> T:
+    async def visit_cache_stmt(self, node: CacheStatement) -> T:
         raise NotImplementedError
 
-    def visit_title_stmt(self, node: TitleStatement) -> T:
+    async def visit_title_stmt(self, node: TitleStatement) -> T:
         raise NotImplementedError
 
-    def visit_func_def_stmt(self, node: FunctionDefStatement) -> T:
+    async def visit_func_def_stmt(self, node: FunctionDefStatement) -> T:
         raise NotImplementedError
 
-    def visit_func_annotation(self, node: FunctionAnnotation) -> T:
+    async def visit_func_annotation(self, node: FunctionAnnotation) -> T:
         raise NotImplementedError
 
 
 class TraversalVisitor(NodeVisitor[None]):
-    def visit_file_node(self, node: FileNode) -> None:
+    async def visit_file_node(self, node: FileNode) -> None:
         for expr in node.exprs:
-            expr.accept(self)
+            await expr.accept(self)
 
-    def visit_func_expr(self, node: FunctionExpression) -> None:
-        node.callee.accept(self)
+    async def visit_func_expr(self, node: FunctionExpression) -> None:
+        await node.callee.accept(self)
 
         for arg in node.args:
-            arg.accept(self)
+            await arg.accept(self)
 
-    def visit_let_expr(self, node: LetExpression) -> None:
-        node.expr.accept(self)
+    async def visit_let_expr(self, node: LetExpression) -> None:
+        await node.expr.accept(self)
 
-    def visit_ident_expr(self, node: IdentifierExpression) -> None:
+    async def visit_ident_expr(self, node: IdentifierExpression) -> None:
         pass
 
-    def visit_member_expr(self, node: MemberExpression) -> None:
-        node.lhs.accept(self)
+    async def visit_member_expr(self, node: MemberExpression) -> None:
+        await node.lhs.accept(self)
 
-    def visit_str_expr(self, node: StringExpression) -> None:
+    async def visit_str_expr(self, node: StringExpression) -> None:
         pass
 
-    def visit_bool_expr(self, node: BooleanExpression) -> None:
+    async def visit_bool_expr(self, node: BooleanExpression) -> None:
         pass
 
-    def visit_num_expr(self, node: NumericExpression) -> None:
+    async def visit_num_expr(self, node: NumericExpression) -> None:
         pass
 
-    def visit_paren_expr(self, node: ParenthesisExpression) -> None:
-        node.expr.accept(self)
+    async def visit_paren_expr(self, node: ParenthesisExpression) -> None:
+        await node.expr.accept(self)
 
-    def visit_list_expr(self, node: ListExpression) -> None:
+    async def visit_list_expr(self, node: ListExpression) -> None:
         for item in node.items:
-            item.accept(self)
+            await item.accept(self)
 
-    def visit_stmt(self, node: Statement) -> None:
+    async def visit_stmt(self, node: Statement) -> None:
         pass  # pragma: no cover
 
-    def visit_on_stmt(self, node: OnStatement) -> None:
+    async def visit_on_stmt(self, node: OnStatement) -> None:
         if node.where:
-            node.where.accept(self)
+            await node.where.accept(self)
 
-    def visit_unary_expr(self, node: UnaryExpression) -> None:
-        node.rhs.accept(self)
+    async def visit_unary_expr(self, node: UnaryExpression) -> None:
+        await node.rhs.accept(self)
 
-    def visit_binary_expr(self, node: BinaryExpression) -> None:
-        node.lhs.accept(self)
-        node.rhs.accept(self)
+    async def visit_binary_expr(self, node: BinaryExpression) -> None:
+        await node.lhs.accept(self)
+        await node.rhs.accept(self)
 
-    def visit_if_expr(self, node: IfExpression) -> None:
-        node.condition.accept(self)
+    async def visit_if_expr(self, node: IfExpression) -> None:
+        await node.condition.accept(self)
 
-        node.body.accept(self)
+        await node.body.accept(self)
 
-    def visit_block_expr(self, node: BlockExpression) -> None:
+    async def visit_block_expr(self, node: BlockExpression) -> None:
         for expr in node.exprs:
-            expr.accept(self)
+            await expr.accept(self)
 
-    def visit_to_string_expr(self, node: ToStringExpression) -> None:
-        node.expr.accept(self)
+    async def visit_to_string_expr(self, node: ToStringExpression) -> None:
+        await node.expr.accept(self)
 
-    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
-        node.expr.accept(self)
+    async def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
+        await node.expr.accept(self)
 
-    def visit_run_on_stmt(self, node: RunOnStatement) -> None:
+    async def visit_run_on_stmt(self, node: RunOnStatement) -> None:
         pass
 
-    def visit_cache_stmt(self, node: CacheStatement) -> None:
+    async def visit_cache_stmt(self, node: CacheStatement) -> None:
         for file in node.files:
-            file.accept(self)
+            await file.accept(self)
 
-        node.using.accept(self)
+        await node.using.accept(self)
 
-    def visit_title_stmt(self, node: TitleStatement) -> None:
+    async def visit_title_stmt(self, node: TitleStatement) -> None:
         for part in node.parts:
-            part.accept(self)
+            await part.accept(self)
 
-    def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
-        node.body.accept(self)
+    async def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
+        await node.body.accept(self)
 
         for annotation in node.annotations:
-            annotation.accept(self)
+            await annotation.accept(self)
 
-    def visit_func_annotation(self, node: FunctionAnnotation) -> None:
-        node.expr.accept(self)
+    async def visit_func_annotation(self, node: FunctionAnnotation) -> None:
+        await node.expr.accept(self)

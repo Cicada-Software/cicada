@@ -18,9 +18,9 @@ class OnStatementEvalVisitor(ConstexprEvalVisitor):
     workflow should run or not.
     """
 
-    def visit_on_stmt(self, node: OnStatement) -> Value:
+    async def visit_on_stmt(self, node: OnStatement) -> Value:
         if node.where:
-            result = node.where.accept(self)
+            result = await node.where.accept(self)
 
             if isinstance(result, BooleanValue):
                 raise ShouldRunWorkflow(result.value)
@@ -29,8 +29,8 @@ class OnStatementEvalVisitor(ConstexprEvalVisitor):
 
         raise ShouldRunWorkflow(True)
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
+    async def visit_func_expr(self, node: FunctionExpression) -> Value:
         if node.is_constexpr:
-            return super().visit_func_expr(node)
+            return await super().visit_func_expr(node)
 
         raise ShouldRunWorkflow(False)

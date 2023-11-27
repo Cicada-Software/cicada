@@ -2,7 +2,6 @@ import asyncio
 import logging
 from asyncio import create_subprocess_exec, create_task, subprocess
 from dataclasses import dataclass
-from functools import partial
 from pathlib import Path
 
 from cicada.ast.generate import AstError, generate_ast_tree
@@ -119,15 +118,15 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
         assert file.file
 
-        return await asyncio.to_thread(partial(self.run_file, file.file))
+        return await self.run_file(file.file)
 
-    def run_file(self, file: Path) -> int:
+    async def run_file(self, file: Path) -> int:
         try:
             tokens = tokenize(file.read_text())
             tree = generate_ast_tree(tokens)
 
             semantics = SemanticAnalysisVisitor(self.trigger)
-            tree.accept(semantics)
+            await tree.accept(semantics)
 
         except AstError as exc:
             # Shouldn't happen, gather phase should pass without issues
@@ -155,8 +154,9 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
                 program=self.program,
                 workflow=self.workflow,
             )
+            await visitor.setup()
 
-            tree.accept(visitor)
+            await tree.accept(visitor)
 
         except WorkflowFailure as exc:
             return exc.return_code
@@ -166,7 +166,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
         finally:
             if visitor:
-                visitor.cleanup()
+                await visitor.cleanup()
 
         return 0
 

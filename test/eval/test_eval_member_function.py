@@ -3,17 +3,17 @@ from cicada.ast.nodes import BooleanValue
 from cicada.eval.main import EvalVisitor
 
 
-def test_eval_starts_with() -> None:
+async def test_eval_starts_with() -> None:
     code = """
 let x = "hello world"
 let t = x.starts_with("hello")
 let f = x.starts_with("xyz")
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     t = visitor.symbols.get("t")
     f = visitor.symbols.get("f")
@@ -27,17 +27,17 @@ let f = x.starts_with("xyz")
     assert not f.value
 
 
-def test_eval_ends_with() -> None:
+async def test_eval_ends_with() -> None:
     code = """
 let x = "hello world"
 let t = x.ends_with("world")
 let f = x.ends_with("xyz")
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     t = visitor.symbols.get("t")
     f = visitor.symbols.get("f")

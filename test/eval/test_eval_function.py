@@ -1,61 +1,56 @@
-from unittest.mock import MagicMock, call, patch
+from collections.abc import Iterator
+from contextlib import contextmanager
+from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 
 from cicada.ast.entry import parse_and_analyze
 from cicada.ast.nodes import BooleanValue, NumericValue, StringValue, UnitValue
 from cicada.eval.main import EvalVisitor, run_pipeline
 
 
-def test_calling_shell_function_invokes_sh_binary() -> None:
+@contextmanager
+def mock_exec(*, returncode: int = 0) -> Iterator[Mock]:
     m = MagicMock()
 
-    # TODO: can this mocking be cleaned up?
+    m.stdout.read = AsyncMock(return_value="")
+    m.wait = AsyncMock()
+    m.returncode = returncode
+
+    with patch("asyncio.subprocess.create_subprocess_exec", return_value=m) as p:
+        yield p
+
+
+async def test_calling_shell_function_invokes_sh_binary() -> None:
+    with mock_exec() as p:
+        await run_pipeline("shell echo hello")
+
+    assert p.call_args.args == ("/bin/sh", "-c", "echo hello")
+
+
+async def test_failing_shell_command_calls_exit() -> None:
     with (
-        patch("subprocess.Popen", return_value=m) as p,
-        patch.object(m, "returncode", 0),
-    ):
-        run_pipeline("shell echo hello")
-
-    assert p.call_args.args[0] == ["/bin/sh", "-c", "echo hello"]
-
-
-def test_failing_shell_command_calls_exit() -> None:
-    m = MagicMock()
-
-    with (
-        patch("subprocess.Popen", return_value=m),
+        mock_exec(returncode=1),
         patch("sys.exit") as sys_exit,
-        patch.object(m, "returncode", 1),
     ):
-        run_pipeline("shell some_failing_command")
+        await run_pipeline("shell some_failing_command")
 
     assert sys_exit.call_args == call(1)
 
 
-def test_calling_shell_function_with_exprs() -> None:
-    m = MagicMock()
+async def test_calling_shell_function_with_exprs() -> None:
+    with mock_exec() as p:
+        await run_pipeline('let x = 123\nshell echo (x) (456) ("789") (true)')
 
-    with (
-        patch("subprocess.Popen", return_value=m) as p,
-        patch.object(m, "returncode", 0),
-    ):
-        run_pipeline('let x = 123\nshell echo (x) (456) ("789") (true)')
-
-    assert p.call_args.args[0] == ["/bin/sh", "-c", "echo 123 456 789 true"]
+    assert p.call_args.args == ("/bin/sh", "-c", "echo 123 456 789 true")
 
 
-def test_calling_shell_function_escapes_shell_code() -> None:
-    m = MagicMock()
+async def test_calling_shell_function_escapes_shell_code() -> None:
+    with mock_exec() as p:
+        await run_pipeline('shell echo ("$ABC") (";") ("echo hi")')
 
-    with (
-        patch("subprocess.Popen", return_value=m) as p,
-        patch.object(m, "returncode", 0),
-    ):
-        run_pipeline('shell echo ("$ABC") (";") ("echo hi")')
-
-    assert p.call_args.args[0] == ["/bin/sh", "-c", "echo '$ABC' ';' 'echo hi'"]
+    assert p.call_args.args == ("/bin/sh", "-c", "echo '$ABC' ';' 'echo hi'")
 
 
-def test_can_call_multiple_functions() -> None:
+async def test_can_call_multiple_functions() -> None:
     """
     Fixes bug where the eval visitor exited after running the first function.
 
@@ -63,28 +58,23 @@ def test_can_call_multiple_functions() -> None:
     execute, then check if it exists in the context, but this will suffice.
     """
 
-    m = MagicMock()
+    with mock_exec() as p:
+        await run_pipeline("echo hello\necho world")
 
-    with (
-        patch("subprocess.Popen", return_value=m) as p,
-        patch.object(m, "returncode", 0),
-    ):
-        run_pipeline("echo hello\necho world")
-
-    assert [call.args[0] for call in p.call_args_list] == [
-        ["/bin/sh", "-c", "echo hello"],
-        ["/bin/sh", "-c", "echo world"],
+    assert [call.args for call in p.call_args_list] == [
+        ("/bin/sh", "-c", "echo hello"),
+        ("/bin/sh", "-c", "echo world"),
     ]
 
 
-def test_calling_builtin_print_function_calls_print() -> None:
+async def test_calling_builtin_print_function_calls_print() -> None:
     with patch("builtins.print") as p:
-        run_pipeline('print("testing 123")')
+        await run_pipeline('print("testing 123")')
 
     assert p.call_args == call("testing 123")
 
 
-def test_eval_user_defined_func() -> None:
+async def test_eval_user_defined_func() -> None:
     code = """
 let mut ran = false
 
@@ -94,10 +84,10 @@ fn f():
 f()
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     ran = visitor.symbols.get("ran")
 
@@ -106,7 +96,7 @@ f()
     assert ran.value
 
 
-def test_function_is_only_ran_if_called() -> None:
+async def test_function_is_only_ran_if_called() -> None:
     code = """
 let mut ran = false
 
@@ -114,10 +104,10 @@ fn f():
   ran = true
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     ran = visitor.symbols.get("ran")
 
@@ -126,7 +116,7 @@ fn f():
     assert not ran.value
 
 
-def test_function_creates_its_own_scope() -> None:
+async def test_function_creates_its_own_scope() -> None:
     code = """
 fn f():
   let x = true
@@ -134,15 +124,15 @@ fn f():
 f()
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     assert not visitor.symbols.get("x")
 
 
-def test_function_passes_arguments() -> None:
+async def test_function_passes_arguments() -> None:
     code = """
 let mut str = ""
 
@@ -153,10 +143,10 @@ fn concat(x, y):
 concat("hello", " world")
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols.get("str")
 
@@ -165,7 +155,7 @@ concat("hello", " world")
     assert symbol.value == "hello world"
 
 
-def test_function_returns_return_value() -> None:
+async def test_function_returns_return_value() -> None:
     code = """
 fn add(x: number, y: number) -> number:
     x + y
@@ -173,10 +163,10 @@ fn add(x: number, y: number) -> number:
 let num = add(1, 2)
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols.get("num")
 
@@ -185,7 +175,7 @@ let num = add(1, 2)
     assert symbol.value == 3
 
 
-def test_function_with_unit_type_rtype_returns_return_unit_value() -> None:
+async def test_function_with_unit_type_rtype_returns_return_unit_value() -> None:
     code = """
 fn f():
     echo hi
@@ -193,10 +183,10 @@ fn f():
 let x = f()
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols.get("x")
 
@@ -204,16 +194,16 @@ let x = f()
     assert isinstance(symbol, UnitValue)
 
 
-def test_strip_string_function() -> None:
+async def test_strip_string_function() -> None:
     code = """
 let input = " hello world "
 let x = input.strip()
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols.get("x")
 

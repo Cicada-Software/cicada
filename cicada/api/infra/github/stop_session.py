@@ -18,6 +18,7 @@ async def github_session_terminator(session: Session) -> None:
         repo_name,
         str(session.trigger.sha),
         check_name="Cicada",
+        app_id=int(github.auth.app_id),
     )
 
     for check in data.parsed_data.check_runs:

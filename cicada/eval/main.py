@@ -1,5 +1,8 @@
+import asyncio
 import sys
+from inspect import isawaitable
 from pathlib import Path
+from typing import cast
 
 from cicada.api.settings import trigger_from_env
 from cicada.ast.entry import parse_and_analyze
@@ -62,8 +65,8 @@ class EvalVisitor(ConstexprEvalVisitor):
         self.cached_files = None
         self.cache_key = None
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
-        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+    async def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if (expr := await super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
         assert isinstance(node.callee, IdentifierExpression)
@@ -79,28 +82,33 @@ class EvalVisitor(ConstexprEvalVisitor):
             func = symbol.func
 
             with self.new_scope():
-                args = [arg.accept(self) for arg in node.args]
+                args = [await arg.accept(self) for arg in node.args]
 
                 for name, arg in zip(func.arg_names, args, strict=True):
                     self.symbols[name] = arg
 
-                rvalue = func.body.accept(self)
+                rvalue = await func.body.accept(self)
 
                 return UnitValue() if symbol.type.rtype == UnitType() else rvalue
 
         if callable(symbol.func):
             # TODO: make this type-safe
-            return symbol.func(self, node)
+            f = symbol.func(self, node)
+
+            if isawaitable(f):
+                return cast(Value, await f)
+
+            return cast(Value, f)
 
         return UnreachableValue()
 
-    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+    async def visit_cache_stmt(self, node: CacheStatement) -> Value:
         print("Caching is not yet supported for locally ran workflows")  # noqa: T201
 
         return UnitValue()
 
 
-def run_pipeline(
+async def run_pipeline(
     contents: str,
     filename: str | None = None,
     trigger: Trigger | None = None,
@@ -108,9 +116,9 @@ def run_pipeline(
     try:
         trigger = trigger or trigger_from_env()
 
-        tree = parse_and_analyze(contents, trigger)
+        tree = await parse_and_analyze(contents, trigger)
 
-        tree.accept(EvalVisitor(trigger))
+        await tree.accept(EvalVisitor(trigger))
 
     except IgnoreWorkflow:
         pass
@@ -125,7 +133,7 @@ def main(filenames: list[str]) -> None:  # pragma: no cover
     files = [Path(x) for x in filenames]
 
     for file in files or find_ci_files(Path.cwd()):
-        run_pipeline(file.read_text(), filename=str(file))
+        asyncio.run(run_pipeline(file.read_text(), filename=str(file)))
 
 
 if __name__ == "__main__":

@@ -8,11 +8,11 @@ from cicada.eval.main import EvalVisitor
 from test.eval.test_eval_statements import make_dummy_commit_trigger
 
 
-def test_unary_not_expr() -> None:
-    tree = parse_and_analyze("let x = not true")
+async def test_unary_not_expr() -> None:
+    tree = await parse_and_analyze("let x = not true")
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     expr = visitor.symbols["x"]
 
@@ -20,11 +20,11 @@ def test_unary_not_expr() -> None:
     assert expr.value is False
 
 
-def test_unary_negate_expr() -> None:
-    tree = parse_and_analyze("let x = - 123")
+async def test_unary_negate_expr() -> None:
+    tree = await parse_and_analyze("let x = - 123")
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     expr = visitor.symbols["x"]
 
@@ -32,25 +32,25 @@ def test_unary_negate_expr() -> None:
     assert expr.value == -123
 
 
-def test_member_expr() -> None:
+async def test_member_expr() -> None:
     # Disabling validation for now since there is no way to create record types
     # from within the language, for now they have to be inserted in at runtime.
-    tree = parse_and_analyze("let x = a.b", validate=False)
+    tree = await parse_and_analyze("let x = a.b", validate=False)
 
     visitor = EvalVisitor()
 
     a = json_to_record({"b": 123})
     visitor.symbols["a"] = a
 
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     expr = visitor.symbols["x"]
     assert isinstance(expr, NumericValue)
     assert expr.value == 123
 
 
-def test_numeric_binary_exprs() -> None:
-    tree = parse_and_analyze(
+async def test_numeric_binary_exprs() -> None:
+    tree = await parse_and_analyze(
         """\
 let pow = 2 ^ 8
 let add = 1 + 2
@@ -70,7 +70,7 @@ let b = 1 * 2 + 3
     )
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     expected = {
         "pow": 2**8,
@@ -94,8 +94,8 @@ let b = 1 * 2 + 3
         assert symbol.value == value, f"Variable `{name}` does not match"
 
 
-def test_boolean_binary_exprs() -> None:
-    tree = parse_and_analyze(
+async def test_boolean_binary_exprs() -> None:
+    tree = await parse_and_analyze(
         """\
 let _and = true and false
 let _or = true or false
@@ -112,7 +112,7 @@ let not_in = "a" not in "abc"
     )
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     expected = {
         "_and": False,
@@ -135,11 +135,11 @@ let not_in = "a" not in "abc"
         assert symbol.value == value, f"Variable `{name}` does not match"
 
 
-def test_string_add_binary_expr() -> None:
-    tree = parse_and_analyze('let x = "hello " + "world"')
+async def test_string_add_binary_expr() -> None:
+    tree = await parse_and_analyze('let x = "hello " + "world"')
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["x"]
 
@@ -147,14 +147,14 @@ def test_string_add_binary_expr() -> None:
     assert symbol.value == "hello world"
 
 
-def test_use_env_var_exprs() -> None:
+async def test_use_env_var_exprs() -> None:
     trigger = make_dummy_commit_trigger()
     trigger.env = {"TESTING": "123"}
 
-    tree = parse_and_analyze("let x = env.TESTING", trigger)
+    tree = await parse_and_analyze("let x = env.TESTING", trigger)
 
     visitor = EvalVisitor(trigger)
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["x"]
 
@@ -162,7 +162,7 @@ def test_use_env_var_exprs() -> None:
     assert symbol.value == "123"
 
 
-def test_eval_if_condition_truthiness() -> None:
+async def test_eval_if_condition_truthiness() -> None:
     code = """\
 let mut a = false
 let mut b = false
@@ -186,10 +186,10 @@ if "":
     f = true
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     for symbol in ("a", "b", "c", "d", "e", "f"):
         expr = visitor.symbols[symbol]
@@ -201,7 +201,7 @@ if "":
         assert expr.value == expect_true
 
 
-def test_let_expr_scoping_semantics() -> None:
+async def test_let_expr_scoping_semantics() -> None:
     code = """\
 let a = 1
 
@@ -220,10 +220,10 @@ if true:
 d = 3
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     values = {
         "a": 1,
@@ -240,25 +240,25 @@ d = 3
         assert expr.value == value
 
 
-def test_eval_falsey_if_expr() -> None:
+async def test_eval_falsey_if_expr() -> None:
     code = """\
 if false:
     let x = 1
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     assert "x" not in visitor.symbols
 
 
-def test_eval_float_exprs() -> None:
-    tree = parse_and_analyze("let x = 0.1 + 0.2")
+async def test_eval_float_exprs() -> None:
+    tree = await parse_and_analyze("let x = 0.1 + 0.2")
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     x = visitor.symbols["x"]
 
@@ -266,14 +266,14 @@ def test_eval_float_exprs() -> None:
     assert x.value == Decimal("0.3")
 
 
-def test_update_existing_env_var() -> None:
+async def test_update_existing_env_var() -> None:
     trigger = make_dummy_commit_trigger()
     trigger.env = {"TESTING": "abc"}
 
-    tree = parse_and_analyze('env.TESTING = "xyz"', trigger)
+    tree = await parse_and_analyze('env.TESTING = "xyz"', trigger)
 
     visitor = EvalVisitor(trigger)
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["env"]
 
@@ -281,14 +281,14 @@ def test_update_existing_env_var() -> None:
     assert symbol.value["TESTING"] == StringValue("xyz")
 
 
-def test_set_new_env_var() -> None:
+async def test_set_new_env_var() -> None:
     trigger = make_dummy_commit_trigger()
     trigger.env = {}
 
-    tree = parse_and_analyze('env.TESTING = "xyz"', trigger)
+    tree = await parse_and_analyze('env.TESTING = "xyz"', trigger)
 
     visitor = EvalVisitor(trigger)
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["env"]
 
@@ -296,14 +296,14 @@ def test_set_new_env_var() -> None:
     assert symbol.value["TESTING"] == StringValue("xyz")
 
 
-def test_get_secret() -> None:
+async def test_get_secret() -> None:
     trigger = make_dummy_commit_trigger()
     trigger.secret = {"API_KEY": "abc123"}
 
-    tree = parse_and_analyze("let x = secret.API_KEY", trigger)
+    tree = await parse_and_analyze("let x = secret.API_KEY", trigger)
 
     visitor = EvalVisitor(trigger)
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["secret"]
 
@@ -316,7 +316,7 @@ def test_get_secret() -> None:
     assert symbol.value == "abc123"
 
 
-def test_list_expr_evaluates_items_in_order() -> None:
+async def test_list_expr_evaluates_items_in_order() -> None:
     code = """\
 let mut i = 0
 
@@ -326,10 +326,10 @@ fn f() -> number:
 let l = [f(), f(), f()]
 """
 
-    tree = parse_and_analyze(code)
+    tree = await parse_and_analyze(code)
 
     visitor = EvalVisitor()
-    tree.accept(visitor)
+    await tree.accept(visitor)
 
     symbol = visitor.symbols["l"]
 

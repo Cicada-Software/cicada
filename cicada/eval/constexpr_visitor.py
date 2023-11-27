@@ -92,58 +92,58 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             self.symbols["env"] = event.value["env"]
             self.symbols["secret"] = event.value["secret"]
 
-    def visit_file_node(self, node: FileNode) -> Value:
+    async def visit_file_node(self, node: FileNode) -> Value:
         for expr in node.exprs:
-            match expr.accept(self):
+            match await expr.accept(self):
                 case UnreachableValue():
                     return UnreachableValue()
 
         return UnitValue()
 
-    def visit_member_expr(self, node: MemberExpression) -> Value:
-        lhs = node.lhs.accept(self)
+    async def visit_member_expr(self, node: MemberExpression) -> Value:
+        lhs = await node.lhs.accept(self)
 
         assert isinstance(lhs, RecordValue)
 
         return lhs.value[node.name]
 
-    def visit_let_expr(self, node: LetExpression) -> Value:
-        expr = node.expr.accept(self)
+    async def visit_let_expr(self, node: LetExpression) -> Value:
+        expr = await node.expr.accept(self)
 
         self.symbols[node.name] = expr
 
         return expr
 
-    def visit_ident_expr(self, node: IdentifierExpression) -> Value:
+    async def visit_ident_expr(self, node: IdentifierExpression) -> Value:
         return self.symbols[node.name]
 
-    def visit_paren_expr(self, node: ParenthesisExpression) -> Value:
-        return node.expr.accept(self)
+    async def visit_paren_expr(self, node: ParenthesisExpression) -> Value:
+        return await node.expr.accept(self)
 
-    def visit_list_expr(self, node: ListExpression) -> Value:
-        items = [item.accept(self) for item in node.items]
+    async def visit_list_expr(self, node: ListExpression) -> Value:
+        items = [await item.accept(self) for item in node.items]
 
         return ListValue(items, cast(ListType, node.type))
 
-    def visit_num_expr(self, node: NumericExpression) -> Value:
+    async def visit_num_expr(self, node: NumericExpression) -> Value:
         return NumericValue(node.value)
 
-    def visit_str_expr(self, node: StringExpression) -> Value:
+    async def visit_str_expr(self, node: StringExpression) -> Value:
         return StringValue(node.value)
 
-    def visit_bool_expr(self, node: BooleanExpression) -> Value:
+    async def visit_bool_expr(self, node: BooleanExpression) -> Value:
         return BooleanValue(node.value)
 
-    def visit_unary_expr(self, node: UnaryExpression) -> Value:
+    async def visit_unary_expr(self, node: UnaryExpression) -> Value:
         if node.oper == UnaryOperator.NOT:
-            rhs = node.rhs.accept(self)
+            rhs = await node.rhs.accept(self)
 
             assert isinstance(rhs, BooleanValue)
 
             return BooleanValue(not rhs.value)
 
         if node.oper == UnaryOperator.NEGATE:
-            rhs = node.rhs.accept(self)
+            rhs = await node.rhs.accept(self)
 
             assert isinstance(rhs, NumericValue)
 
@@ -151,10 +151,10 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         raise NotImplementedError
 
-    def visit_binary_expr(self, node: BinaryExpression) -> Value:
+    async def visit_binary_expr(self, node: BinaryExpression) -> Value:
         # TODO: simplify
 
-        rhs = node.rhs.accept(self)
+        rhs = await node.rhs.accept(self)
 
         if node.oper == BinaryOperator.ASSIGN:
             if isinstance(node.lhs, IdentifierExpression):
@@ -162,14 +162,14 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
             if isinstance(node.lhs, MemberExpression):
                 # TODO: dont re-eval
-                root = node.lhs.lhs.accept(self)
+                root = await node.lhs.lhs.accept(self)
                 assert isinstance(root, RecordValue)
 
                 root.value[node.lhs.name] = rhs
 
             return rhs
 
-        lhs = node.lhs.accept(self)
+        lhs = await node.lhs.accept(self)
 
         if node.oper in {BinaryOperator.IS, BinaryOperator.IS_NOT}:
             try:
@@ -245,14 +245,14 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         raise NotImplementedError
 
-    def visit_on_stmt(self, node: OnStatement) -> Value:
+    async def visit_on_stmt(self, node: OnStatement) -> Value:
         assert self.trigger
 
         if node.event != self.trigger.type:
             return UnreachableValue()
 
         if node.where:
-            should_run = node.where.accept(self)
+            should_run = await node.where.accept(self)
 
             if isinstance(should_run, BooleanValue) and should_run.value:
                 return should_run
@@ -261,49 +261,49 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         return BooleanValue(True)
 
-    def visit_if_expr(self, node: IfExpression) -> Value:
+    async def visit_if_expr(self, node: IfExpression) -> Value:
         with self.new_scope():
-            cond = node.condition.accept(self)
+            cond = await node.condition.accept(self)
 
             assert isinstance(cond, BooleanValue | NumericValue | StringValue)
 
             if cond.value:
-                return node.body.accept(self)
+                return await node.body.accept(self)
 
             return UnitValue()
 
-    def visit_block_expr(self, node: BlockExpression) -> Value:
+    async def visit_block_expr(self, node: BlockExpression) -> Value:
         last: Value = UnitValue()
 
         for expr in node.exprs:
-            last = expr.accept(self)
+            last = await expr.accept(self)
 
         return last
 
-    def visit_to_string_expr(self, node: ToStringExpression) -> Value:
-        value = node.expr.accept(self)
+    async def visit_to_string_expr(self, node: ToStringExpression) -> Value:
+        value = await node.expr.accept(self)
 
         return value_to_string(value)
 
-    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> Value:
-        value = node.expr.accept(self)
+    async def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> Value:
+        value = await node.expr.accept(self)
 
         assert isinstance(value, StringValue)
 
         return StringValue(shlex.quote(value.value))
 
-    def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
+    async def visit_run_on_stmt(self, node: RunOnStatement) -> Value:
         return UnitValue()
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
+    async def visit_func_expr(self, node: FunctionExpression) -> Value:
         if not isinstance(node.callee, MemberExpression):
             return NotImplemented
 
         # TODO: use member function types
-        expr = cast(StringValue, node.callee.lhs.accept(self))
+        expr = cast(StringValue, await node.callee.lhs.accept(self))
         args = cast(
             list[StringValue],
-            [arg.accept(self) for arg in node.args],
+            [await arg.accept(self) for arg in node.args],
         )
 
         name = node.callee.name
@@ -319,13 +319,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         assert False
 
-    def visit_title_stmt(self, node: TitleStatement) -> Value:
+    async def visit_title_stmt(self, node: TitleStatement) -> Value:
         # TitleStatement is special in that it is used for display purposes and
         # is computed after semantic analysis, but before the actual evaluation
         # of the workflow.
         return UnitValue()
 
-    def visit_func_def_stmt(self, node: FunctionDefStatement) -> Value:
+    async def visit_func_def_stmt(self, node: FunctionDefStatement) -> Value:
         self.symbols[node.name] = FunctionValue(type=node.type, func=node)
 
         return UnitValue()
@@ -366,13 +366,13 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         assert False
 
 
-def eval_title(title: TitleStatement | None) -> str | None:
+async def eval_title(title: TitleStatement | None) -> str | None:
     if not title:
         return None
 
     visitor = ConstexprEvalVisitor()
 
-    parts = [value_to_string(x.accept(visitor)) for x in title.parts]
+    parts = [value_to_string(await x.accept(visitor)) for x in title.parts]
 
     assert all(isinstance(x, StringValue) for x in parts)
 

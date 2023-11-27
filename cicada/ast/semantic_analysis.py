@@ -198,13 +198,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             self.symbols["env"] = event.value["env"]
             self.symbols["secret"] = event.value["secret"]
 
-    def visit_file_node(self, node: FileNode) -> None:
+    async def visit_file_node(self, node: FileNode) -> None:
         self.file_node = node
 
-        super().visit_file_node(node)
+        await super().visit_file_node(node)
 
-    def visit_let_expr(self, node: LetExpression) -> None:
-        super().visit_let_expr(node)
+    async def visit_let_expr(self, node: LetExpression) -> None:
+        await super().visit_let_expr(node)
 
         if node.name in RESERVED_NAMES:
             raise AstError(f"Name `{node.name}` is reserved", node)
@@ -216,8 +216,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         node.type = node.expr.type
 
-    def visit_member_expr(self, node: MemberExpression) -> None:
-        super().visit_member_expr(node)
+    async def visit_member_expr(self, node: MemberExpression) -> None:
+        await super().visit_member_expr(node)
 
         if isinstance(node.lhs.type, RecordType):
             for name, field_type in node.lhs.type.fields.items():
@@ -249,8 +249,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.is_constexpr(node.lhs):
             node.is_constexpr = True
 
-    def visit_ident_expr(self, node: IdentifierExpression) -> None:
-        super().visit_ident_expr(node)
+    async def visit_ident_expr(self, node: IdentifierExpression) -> None:
+        await super().visit_ident_expr(node)
 
         if symbol := self.symbols.get(node.name):
             node.type = symbol.type
@@ -258,15 +258,15 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         else:
             raise AstError(f"Variable `{node.name}` is not defined", node)
 
-    def visit_paren_expr(self, node: ParenthesisExpression) -> None:
+    async def visit_paren_expr(self, node: ParenthesisExpression) -> None:
         # TODO: test this
 
-        super().visit_paren_expr(node)
+        await super().visit_paren_expr(node)
 
         node.type = node.expr.type
 
-    def visit_list_expr(self, node: ListExpression) -> None:
-        super().visit_list_expr(node)
+    async def visit_list_expr(self, node: ListExpression) -> None:
+        await super().visit_list_expr(node)
 
         inner_type: Type = UnknownType()
 
@@ -285,8 +285,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         node.type = ListType(inner_type)
         node.is_constexpr = all(item.is_constexpr for item in node.items)
 
-    def visit_unary_expr(self, node: UnaryExpression) -> None:
-        super().visit_unary_expr(node)
+    async def visit_unary_expr(self, node: UnaryExpression) -> None:
+        await super().visit_unary_expr(node)
 
         if node.oper == UnaryOperator.NOT:
             if node.rhs.type != BooleanType():
@@ -305,12 +305,12 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.is_constexpr(node.rhs):
             node.is_constexpr = True
 
-    def visit_binary_expr(self, node: BinaryExpression) -> None:
-        node.rhs.accept(self)
+    async def visit_binary_expr(self, node: BinaryExpression) -> None:
+        await node.rhs.accept(self)
 
         if node.oper == BinaryOperator.ASSIGN:
             if isinstance(node.lhs, IdentifierExpression):
-                node.lhs.accept(self)
+                await node.lhs.accept(self)
 
                 var = self.get_symbol(node.lhs)
 
@@ -323,7 +323,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             elif isinstance(node.lhs, MemberExpression):
                 member = node.lhs
 
-                member.lhs.accept(self)
+                await member.lhs.accept(self)
 
                 rvalue = self.get_symbol(member.lhs)
 
@@ -338,7 +338,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                         )
 
                 if rvalue.type.fields.get(member.name):
-                    member.accept(self)
+                    await member.accept(self)
 
                     self.ensure_valid_op_types(
                         member,
@@ -363,13 +363,13 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     # to just assign directly.
                     rvalue.type.fields[member.name] = node.rhs.type
 
-                    member.accept(self)
+                    await member.accept(self)
 
             else:
                 raise AstError("You can only assign to variables", node.lhs)
 
         else:
-            node.lhs.accept(self)
+            await node.lhs.accept(self)
 
         self.ensure_valid_op_types(node.lhs, node.oper, node.rhs)
 
@@ -399,8 +399,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             # TODO: test this
             node.type = node.lhs.type
 
-    def visit_func_expr(self, node: FunctionExpression) -> None:
-        super().visit_func_expr(node)
+    async def visit_func_expr(self, node: FunctionExpression) -> None:
+        await super().visit_func_expr(node)
 
         if not isinstance(node.callee, IdentifierExpression):
             if not isinstance(node.callee, MemberExpression):
@@ -526,7 +526,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                     arg,
                 )
 
-    def visit_on_stmt(self, node: OnStatement) -> None:
+    async def visit_on_stmt(self, node: OnStatement) -> None:
         if self.has_on_stmt:
             # TODO: include location of existing on stmt
 
@@ -540,7 +540,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError("Cannot use `on` statement after a function call", node)
 
-        super().visit_on_stmt(node)
+        await super().visit_on_stmt(node)
 
         if not self.trigger:
             raise AstError(
@@ -569,8 +569,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         self.has_on_stmt = True
 
-    def visit_run_on_stmt(self, node: RunOnStatement) -> None:
-        super().visit_run_on_stmt(node)
+    async def visit_run_on_stmt(self, node: RunOnStatement) -> None:
+        await super().visit_run_on_stmt(node)
 
         if self.has_ran_function:
             raise AstError(
@@ -590,9 +590,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.file_node:
             self.file_node.run_on = node
 
-    def visit_if_expr(self, node: IfExpression) -> None:
+    async def visit_if_expr(self, node: IfExpression) -> None:
         with self.new_scope():
-            super().visit_if_expr(node)
+            await super().visit_if_expr(node)
 
             if node.condition.type not in BOOL_LIKE_TYPES:
                 raise AstError(
@@ -603,8 +603,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.is_constexpr = node.body.is_constexpr
             node.type = UnionType((node.body.type, UnknownType()))
 
-    def visit_block_expr(self, node: BlockExpression) -> None:
-        super().visit_block_expr(node)
+    async def visit_block_expr(self, node: BlockExpression) -> None:
+        await super().visit_block_expr(node)
 
         if not node.exprs:  # pragma: no cover
             raise AstError("Block cannot be empty", node)
@@ -612,8 +612,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         node.is_constexpr = all(self.is_constexpr(x) for x in node.exprs)
         node.type = node.exprs[-1].type
 
-    def visit_to_string_expr(self, node: ToStringExpression) -> None:
-        super().visit_to_string_expr(node)
+    async def visit_to_string_expr(self, node: ToStringExpression) -> None:
+        await super().visit_to_string_expr(node)
 
         if node.expr.type not in STRING_COERCIBLE_TYPES:
             raise AstError(
@@ -623,8 +623,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         node.type = StringType()
 
-    def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
-        super().visit_shell_escape_expr(node)
+    async def visit_shell_escape_expr(self, node: ShellEscapeExpression) -> None:
+        await super().visit_shell_escape_expr(node)
 
         if node.expr.type != StringType():
             raise AstError(
@@ -634,8 +634,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         node.type = StringType()
 
-    def visit_cache_stmt(self, node: CacheStatement) -> None:
-        super().visit_cache_stmt(node)
+    async def visit_cache_stmt(self, node: CacheStatement) -> None:
+        await super().visit_cache_stmt(node)
 
         if self.cache_stmt:
             msg = "Cannot have multiple `cache` statements in a single file"
@@ -650,8 +650,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         self.cache_stmt = node
 
-    def visit_title_stmt(self, node: TitleStatement) -> None:
-        super().visit_title_stmt(node)
+    async def visit_title_stmt(self, node: TitleStatement) -> None:
+        await super().visit_title_stmt(node)
 
         if self.file_node and self.file_node.title:
             raise AstError(
@@ -669,7 +669,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         if self.file_node:
             self.file_node.title = node
 
-    def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
+    async def visit_func_def_stmt(self, node: FunctionDefStatement) -> None:
         # TODO: only allow funcs at top level for now?
         # TODO: allow calling user defined functions via shell format
 
@@ -692,7 +692,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
                 self.symbols[arg] = value
 
-            super().visit_func_def_stmt(node)
+            await super().visit_func_def_stmt(node)
 
         func_rtype = node.type.rtype
         body_rtype = node.body.exprs[-1].type
@@ -703,7 +703,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 node.body.exprs[-1],
             )
 
-    def visit_func_annotation(self, node: FunctionAnnotation) -> None:
+    async def visit_func_annotation(self, node: FunctionAnnotation) -> None:
         if node.expr.name not in BUILT_IN_ANNOTATIONS:
             raise AstError(
                 f"Unknown annotation `@{node.expr.name}`",

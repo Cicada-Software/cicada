@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import pty
 import shlex
-import subprocess
 import sys
 import termios
+from asyncio import subprocess
+from asyncio.subprocess import PIPE, STDOUT
 from contextlib import suppress
 from decimal import Decimal
+from functools import partial
+from inspect import isawaitable
 from itertools import chain
 from pathlib import Path
-from subprocess import PIPE, STDOUT, Popen
 from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
@@ -74,6 +77,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         super().__init__(trigger)
 
         self.trigger = trigger
+        self.image = image
 
         self.terminal = terminal
         self.cloned_repo = cloned_repo
@@ -117,26 +121,33 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         self.symbols.update(built_in_symbols)
 
-        self._start_container(image)
+    async def setup(self) -> None:
+        await self._start_container(self.image)
 
-    def cleanup(self) -> None:
+    async def cleanup(self) -> None:
         self.terminal.finish()
 
-        process = subprocess.run(  # noqa: PLW1510
-            [self.program, "kill", self.container_id],
+        process = await subprocess.create_subprocess_exec(
+            self.program,
+            "kill",
+            self.container_id,
             stdout=PIPE,
             stderr=STDOUT,
         )
 
+        await process.wait()
+
         if process.returncode != 0:
             logging.getLogger("cicada").error(f"Could not kill container id: {self.container_id}")
 
-    def visit_file_node(self, node: FileNode) -> Value:
-        output = super().visit_file_node(node)
+    async def visit_file_node(self, node: FileNode) -> Value:
+        output = await super().visit_file_node(node)
 
         if isinstance(output, UnitValue) and self.cached_files and self.cache_key and self.trigger:
             cmd = CacheFilesForWorkflow(CacheRepo())
-            cmd.handle(
+
+            f = partial(
+                cmd.handle,
                 self.cached_files,
                 CacheKey(self.cache_key),
                 self.trigger.repository_url,
@@ -144,10 +155,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 self.cloned_repo,
             )
 
+            await asyncio.get_event_loop().run_in_executor(None, f)
+
         return output
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
-        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+    async def visit_func_expr(self, node: FunctionExpression) -> Value:
+        if (expr := await super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
         assert isinstance(node.callee, IdentifierExpression)
@@ -163,24 +176,28 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             func = symbol.func
 
             with self.new_scope():
-                args = [arg.accept(self) for arg in node.args]
+                args = [await arg.accept(self) for arg in node.args]
 
                 for name, arg in zip(func.arg_names, args, strict=True):
                     self.symbols[name] = arg
 
-                return func.body.accept(self)
+                return await func.body.accept(self)
 
         if callable(symbol.func):
             # TODO: make this type-safe
-            return symbol.func(node)
+            f = symbol.func(node)
+            if isawaitable(f):
+                return cast(Value, await f)
+
+            return cast(Value, f)
 
         return UnreachableValue()
 
-    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+    async def visit_cache_stmt(self, node: CacheStatement) -> Value:
         assert self.trigger
 
-        files = [file.accept(self) for file in node.files]
-        cache_key = node.using.accept(self)
+        files = [await file.accept(self) for file in node.files]
+        cache_key = await node.using.accept(self)
 
         assert isinstance(cache_key, StringValue)
 
@@ -188,11 +205,15 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         if cache_repo.key_exists(self.trigger.repository_url, cache_key.value):
             cmd = RestoreCache(cache_repo)
-            cmd.handle(
+
+            f = partial(
+                cmd.handle,
                 self.trigger.repository_url,
                 cache_key.value,
                 self.cloned_repo,
             )
+
+            await asyncio.get_event_loop().run_in_executor(None, f)
 
             return UnitValue()
 
@@ -206,24 +227,23 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return UnitValue()
 
-    def _start_container(self, image: str) -> None:
+    async def _start_container(self, image: str) -> None:
         # TODO: add timeout
-        process = subprocess.run(  # noqa: PLW1510
-            [
-                self.program,
-                "run",
-                "--rm",
-                "--detach",
-                "--entrypoint",
-                "sleep",
-                "--mount",
-                f"type=bind,src={self.cloned_repo},dst={self.temp_dir}",
-                image,
-                "infinity",
-            ],
+        process = await subprocess.create_subprocess_exec(
+            self.program,
+            "run",
+            "--rm",
+            "--detach",
+            "--entrypoint",
+            "sleep",
+            "--mount",
+            f"type=bind,src={self.cloned_repo},dst={self.temp_dir}",
+            image,
+            "infinity",
             stdout=PIPE,
             stderr=STDOUT,
         )
+        await process.wait()
 
         if process.returncode != 0:
             msg = f"Could not start container. Make sure image `{image}` exists and is valid, then retry."  # noqa: E501
@@ -233,9 +253,12 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
             raise ContainerTermination(1)
 
-        self.container_id = process.stdout.strip().split(b"\n")[-1].decode().strip()
+        assert process.stdout
+        stdout = await process.stdout.read()
 
-    def _container_exec(self, args: list[str]) -> tuple[Popen[bytes], bytes]:
+        self.container_id = stdout.strip().split(b"\n")[-1].decode().strip()
+
+    async def _container_exec(self, args: list[str]) -> tuple[subprocess.Process, bytes]:
         # This command is a hack to make sure we are in cwd from the last
         # command that was ran. Because each `exec` command is executed in the
         # container WORKDIR folder the cwd is not saved after `exec` finishes.
@@ -275,20 +298,18 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         # Add "-e" flag before each env var
         extra_args = chain.from_iterable(["-e", x] for x in env_vars)
 
-        process = subprocess.Popen(
-            [
-                self.program,
-                "exec",
-                "-e",
-                f"COLUMNS={self.max_columns}",
-                *extra_args,
-                "-t",
-                *self.program_specific_flags(),
-                self.container_id,
-                "/bin/sh",
-                "-c",
-                cmd,
-            ],
+        process = await subprocess.create_subprocess_exec(
+            self.program,
+            "exec",
+            "-e",
+            f"COLUMNS={self.max_columns}",
+            *extra_args,
+            "-t",
+            *self.program_specific_flags(),
+            self.container_id,
+            "/bin/sh",
+            "-c",
+            cmd,
             stdout=slave,
             stderr=STDOUT,
             close_fds=True,
@@ -296,11 +317,22 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         os.close(slave)
 
+        # TODO: move to function
+        loop = asyncio.get_event_loop()
+        reader = asyncio.StreamReader(1024, loop)
+
+        file_obj = os.fdopen(master, "rb", closefd=False)
+
+        await loop.connect_read_pipe(
+            partial(asyncio.StreamReaderProtocol, reader, loop=loop),
+            file_obj,
+        )
+
         stdout = b""
 
         with suppress(IOError):
             while True:
-                data = os.read(master, 1024)
+                data = await reader.read(1024)
 
                 if not data:
                     break
@@ -308,7 +340,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 stdout += data
                 self.terminal.append(data)
 
-        process.wait()
+        await process.wait()
 
         return process, stdout
 
@@ -316,11 +348,11 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     def temp_dir(self) -> str:
         return f"/tmp/{self.uuid}"
 
-    def hashOf(self, node: FunctionExpression) -> StringValue:  # noqa: N802
+    async def hashOf(self, node: FunctionExpression) -> StringValue:  # noqa: N802
         args: list[str] = []
 
         for arg in node.args:
-            value = arg.accept(self)
+            value = await arg.accept(self)
 
             assert isinstance(value, StringValue)
 
@@ -353,21 +385,20 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         ) | sha256sum - | awk '{{print $1}}'
         """
 
-        process = subprocess.run(  # noqa: PLW1510
-            [
-                self.program,
-                "exec",
-                "-t",
-                *self.program_specific_flags(),
-                self.container_id,
-                "/bin/bash",
-                "-c",
-                shell_code,
-            ],
-            capture_output=True,
+        process = await subprocess.create_subprocess_exec(
+            self.program,
+            "exec",
+            "-t",
+            *self.program_specific_flags(),
+            self.container_id,
+            "/bin/bash",
+            "-c",
+            shell_code,
         )
 
-        lines = process.stdout.decode().splitlines()
+        assert process.stdout
+
+        lines = (await process.stdout.read()).decode().splitlines()
 
         if process.returncode:
             if len(lines) > 1:  # noqa: SIM108
@@ -382,21 +413,21 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return StringValue(lines[0].strip())
 
-    def builtin_shell(self, node: FunctionExpression) -> Value:
+    async def builtin_shell(self, node: FunctionExpression) -> Value:
         # TODO: turn this into a function
         args: list[str] = []
 
         for arg in node.args:
-            value = arg.accept(self)
+            value = await arg.accept(self)
 
             assert isinstance(value, StringValue)
 
             args.append(value.value)
 
-        process, stdout = self._container_exec(args)
+        process, stdout = await self._container_exec(args)
 
         if process.returncode != 0:
-            raise CommandFailed(process.returncode)
+            raise CommandFailed(process.returncode or 0)
 
         return RecordValue(
             {
@@ -406,11 +437,11 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             CommandType(),
         )
 
-    def builtin_print(self, node: FunctionExpression) -> Value:
+    async def builtin_print(self, node: FunctionExpression) -> Value:
         args: list[str] = []
 
         for arg in node.args:
-            value = arg.accept(self)
+            value = await arg.accept(self)
 
             assert isinstance(value, StringValue)
 

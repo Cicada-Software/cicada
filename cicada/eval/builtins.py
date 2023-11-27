@@ -1,5 +1,5 @@
-import subprocess
 import sys
+from asyncio import subprocess
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
@@ -11,11 +11,13 @@ from cicada.eval.constexpr_visitor import CommandFailed, ConstexprEvalVisitor, v
 
 
 # TODO: rename function
-def hashOf(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> StringValue:  # noqa: N802
+async def hashOf(  # noqa: N802
+    visitor: ConstexprEvalVisitor, node: FunctionExpression
+) -> StringValue:
     files: list[Path] = []
 
     for arg in node.args:
-        filename = cast(StringValue, arg.accept(visitor)).value
+        filename = cast(StringValue, await arg.accept(visitor)).value
 
         if "*" in filename:
             globs = list(Path().glob(filename))
@@ -44,11 +46,11 @@ def hashOf(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> StringVal
     return StringValue(hashes.hexdigest())
 
 
-def builtin_print(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> UnitValue:
+async def builtin_print(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> UnitValue:
     args: list[str] = []
 
     for arg in node.args:
-        value = value_to_string(arg.accept(visitor))
+        value = value_to_string(await arg.accept(visitor))
 
         assert isinstance(value, StringValue)
 
@@ -59,11 +61,11 @@ def builtin_print(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> Un
     return UnitValue()
 
 
-def builtin_shell(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> RecordValue:
+async def builtin_shell(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> RecordValue:
     args: list[str] = []
 
     for arg in node.args:
-        value = value_to_string(arg.accept(visitor))
+        value = value_to_string(await arg.accept(visitor))
 
         assert isinstance(value, StringValue)
 
@@ -72,23 +74,25 @@ def builtin_shell(visitor: ConstexprEvalVisitor, node: FunctionExpression) -> Re
     # `shlex.join` is intentionally not used here to allow for shell features
     # like piping and env vars.
 
-    process = subprocess.Popen(
-        ["/bin/sh", "-c", " ".join(args)],  # noqa: S603
+    process = await subprocess.create_subprocess_exec(
+        "/bin/sh",
+        "-c",
+        " ".join(args),
         env=visitor.trigger.env if visitor.trigger else None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
 
-    assert process.stdout
-
     data = b""
 
-    for line in process.stdout:
-        data += line
+    assert process.stdout
 
-        print(line.decode(), end="")  # noqa: T201
+    while chunk := await process.stdout.read(1):
+        data += chunk
 
-    process.wait()
+        print(chunk.decode(), end="")  # noqa: T201
+
+    await process.wait()
 
     if process.returncode != 0:
         sys.exit(process.returncode)

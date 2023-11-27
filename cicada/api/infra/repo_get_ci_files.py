@@ -46,7 +46,7 @@ async def repo_get_ci_files(
                 logger.error("Could not clone repository %s", trigger.repository_url)
                 return []
 
-        return folder_get_runnable_ci_files(cloned_repo, trigger)
+        return await folder_get_runnable_ci_files(cloned_repo, trigger)
 
     except Exception:
         logger.exception("Issue gathering workflows")
@@ -54,19 +54,19 @@ async def repo_get_ci_files(
     return []
 
 
-def folder_get_runnable_ci_files(
+async def folder_get_runnable_ci_files(
     folder: Path, trigger: Trigger
 ) -> list[FileNode | AstError]:  # pragma: no cover
     files_or_errors: list[FileNode | AstError] = []
 
     for file in find_ci_files(folder):
         try:
-            tree = parse_and_analyze(file.read_text(), trigger)
+            tree = await parse_and_analyze(file.read_text(), trigger)
 
             visitor = OnStatementEvalVisitor(trigger)
 
             try:
-                tree.accept(visitor)
+                await tree.accept(visitor)
 
             except ShouldRunWorkflow as ex:
                 if ex.should_run:

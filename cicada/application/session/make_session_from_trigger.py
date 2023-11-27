@@ -106,7 +106,7 @@ class MakeSessionFromTrigger:
             session,
             filename=filenode.file.relative_to(dir),
             run_on_self_hosted=run_on_self_hosted,
-            title=eval_title(filenode.title),
+            title=await eval_title(filenode.title),
         )
         self.session_repo.create_workflow(workflow, session)
 

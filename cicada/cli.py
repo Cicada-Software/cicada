@@ -1,3 +1,4 @@
+import asyncio
 import os
 from argparse import ArgumentParser
 from pathlib import Path
@@ -51,7 +52,7 @@ def main() -> None:
 
         trigger.secret[k] = v
 
-    run_pipeline(file.read_text(), str(file), trigger)
+    asyncio.run(run_pipeline(file.read_text(), str(file), trigger))
 
 
 def parse_env_string(s: str, use_env_default: bool = True) -> tuple[str, str]:

@@ -5,10 +5,10 @@ import os
 import pty
 import shlex
 import signal
-import subprocess
 import sys
 import tempfile
 import termios
+from asyncio import subprocess
 from contextlib import redirect_stdout, suppress
 from decimal import Decimal
 from functools import partial
@@ -349,7 +349,7 @@ async def run_workflow(
     should_stop: asyncio.Event,
 ) -> SessionStatus | None:
     try:
-        tree = parse_and_analyze(file.read_text(), trigger)
+        tree = await parse_and_analyze(file.read_text(), trigger)
 
     except IgnoreWorkflow:
         return None
@@ -362,16 +362,16 @@ async def run_workflow(
     try:
         visitor = SelfHostedVisitor(data_stream, should_stop, trigger)
 
-        fut = asyncio.get_event_loop().run_in_executor(None, partial(tree.accept, visitor))
+        workflow = asyncio.create_task(tree.accept(visitor))
 
         async def workflow_stopper() -> None:
             await should_stop.wait()
-            fut.cancel()
+            workflow.cancel()
 
         task = asyncio.create_task(workflow_stopper())
 
         try:
-            await fut
+            await workflow
 
         except asyncio.CancelledError:
             return SessionStatus.STOPPED
@@ -406,16 +406,16 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
         if self.should_stop.is_set():
             raise CommandFailed(1)
 
-    def visit_func_expr(self, node: FunctionExpression) -> Value:
+    async def visit_func_expr(self, node: FunctionExpression) -> Value:
         self.terminate_if_needed()
 
-        if (expr := super().visit_func_expr(node)) is not NotImplemented:
+        if (expr := await super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
         args: list[str] = []
 
         for arg in node.args:
-            value = value_to_string(arg.accept(self))
+            value = value_to_string(await arg.accept(self))
 
             assert isinstance(value, StringValue)
 
@@ -437,12 +437,10 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
             # `shlex.join` is intentionally not used here to allow for shell
             # featuresd like piping and env vars.
 
-            process = subprocess.Popen(
-                [  # noqa: S603
-                    "/bin/sh",
-                    "-c",
-                    " ".join(args),
-                ],
+            process = await subprocess.create_subprocess_exec(
+                "/bin/sh",
+                "-c",
+                " ".join(args),
                 stdout=slave,
                 stderr=subprocess.STDOUT,
                 close_fds=True,
@@ -451,27 +449,37 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
 
             os.close(slave)
 
+            loop = asyncio.get_event_loop()
+            reader = asyncio.StreamReader(1024, loop)
+
+            file_obj = os.fdopen(master, "rb", closefd=False)
+
+            await loop.connect_read_pipe(
+                partial(asyncio.StreamReaderProtocol, reader, loop=loop),
+                file_obj,
+            )
+
             with suppress(IOError):
                 while True:
                     self.terminate_if_needed()
 
-                    data = os.read(master, 1024)
+                    data = await reader.read(1024)
 
                     if not data:
                         break
 
                     self.data_stream.append(data)
 
-            returncode = process.wait()
+            returncode = await process.wait()
 
             if returncode != 0:
                 raise CommandFailed(returncode)
 
-            stdout = process.stdout.read().decode() if process.stdout else ""
+            stdout = (await process.stdout.read()).decode() if process.stdout else ""
 
             return RecordValue(
                 {
-                    "exit_code": NumericValue(Decimal(process.returncode)),
+                    "exit_code": NumericValue(Decimal(process.returncode or 0)),
                     "stdout": StringValue(stdout),
                 },
                 CommandType(),
@@ -485,7 +493,7 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
 
             with redirect_stdout(f):
                 try:
-                    return hashOf(self, node)
+                    return await hashOf(self, node)
 
                 except CommandFailed:
                     self.data_stream.append(f.getvalue().encode())
@@ -494,7 +502,7 @@ class SelfHostedVisitor(ConstexprEvalVisitor):
 
         return UnitValue()
 
-    def visit_cache_stmt(self, node: CacheStatement) -> Value:
+    async def visit_cache_stmt(self, node: CacheStatement) -> Value:
         self.data_stream.append(b"Caching is not yet supported for self-hosted runners")
 
         return UnitValue()
