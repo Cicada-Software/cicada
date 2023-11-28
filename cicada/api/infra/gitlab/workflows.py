@@ -37,7 +37,7 @@ async def wrap_in_gitlab_status_check(
         "sha": str(session.trigger.sha),
         "state": "running",
         "name": "Cicada",
-        "target_url": f"http://{settings.domain}/run/{session.id}",
+        "target_url": f"https://{settings.domain}/run/{session.id}?run={session.run}",
     }
 
     commit.statuses.create(payload)

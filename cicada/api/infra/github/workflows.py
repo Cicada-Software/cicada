@@ -64,7 +64,7 @@ async def wrap_in_github_check_run(
     github = GitHub(token)
 
     base_url = f"https://{DNSSettings().domain}"
-    redirect_url = f"{base_url}/run/{session.id}"
+    redirect_url = f"{base_url}/run/{session.id}?run={session.run}"
 
     data = await github.rest.checks.async_create(
         username,
