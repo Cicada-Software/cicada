@@ -71,5 +71,5 @@ class TerminalSession:
             self.has_new_chunk.clear()
 
     def finish(self) -> None:
-        self.has_new_chunk.set()
         self.is_done = True
+        self.has_new_chunk.set()

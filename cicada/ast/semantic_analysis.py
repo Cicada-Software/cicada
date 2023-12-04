@@ -676,6 +676,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         self.symbols[node.name] = FunctionValue(type=node.type, func=node)
 
         self.check_for_duplicate_arg_names(node)
+        self.check_annotation_types(node)
 
         with self.new_scope():
             for arg, ty in zip(node.arg_names, node.type.arg_types, strict=True):
@@ -724,6 +725,16 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 )
 
             seen.add(arg_name)
+
+    @staticmethod
+    def check_annotation_types(node: FunctionDefStatement) -> None:
+        match node.annotations:
+            case [FunctionAnnotation(IdentifierExpression("workflow"))]:
+                if node.type.rtype != UnitType():
+                    raise AstError(
+                        "`@workflow` annotated functions must have `()` return type",
+                        node,
+                    )
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

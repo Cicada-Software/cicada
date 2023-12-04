@@ -16,7 +16,7 @@ from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
-from cicada.domain.session import Session, SessionStatus, Workflow
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import eval_title
 
@@ -120,19 +120,25 @@ class MakeSessionFromTrigger:
             logger = logging.getLogger("cicada")
             logger.exception("Workflow crashed:")
 
-            session.finish(SessionStatus.FAILURE)
+            # TODO: find and cleanup orphaned workflows instead of assuming root workflow failed
+            workflow.finish(SessionStatus.FAILURE)
 
-        assert session.status != SessionStatus.PENDING
-        assert session.finished_at is not None
+        terminal.finish()
 
-        self.session_repo.update(session)
+        assert workflow.status != WorkflowStatus.PENDING
+        assert workflow.finished_at is not None
 
-        # TODO: set these directly, dont pull from session
-        workflow.status = session.status
-        workflow.finished_at = session.finished_at
         self.session_repo.update_workflow(workflow)
 
-        return session
+        session_with_workflows = self.session_repo.get_session_by_session_id(
+            session.id, session.run
+        )
+        assert session_with_workflows
+
+        session_with_workflows.finish()
+        self.session_repo.update(session_with_workflows)
+
+        return session_with_workflows
 
     def _inject_env_vars_and_secrets_into_trigger(self) -> None:
         self.trigger.env = self._get_env_vars()

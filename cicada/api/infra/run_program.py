@@ -1,15 +1,18 @@
 import asyncio
 import logging
 from asyncio import create_subprocess_exec, create_task, subprocess
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from contextlib import AbstractAsyncContextManager, nullcontext
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import ClassVar
 
 from cicada.ast.generate import AstError, generate_ast_tree
 from cicada.ast.nodes import FileNode, RunType
 from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
-from cicada.domain.session import Session, SessionStatus, Workflow
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
 from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import WorkflowFailure
@@ -89,6 +92,7 @@ class ExecutionContext:
         raise NotImplementedError
 
 
+@dataclass
 class RemoteDockerLikeExecutionContext(ExecutionContext):
     """
     Inject commands into a running container as opposed to running a container
@@ -102,8 +106,17 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
     similar.
     """
 
-    program: str
-    executor_name: str
+    program: ClassVar[str]
+    executor_name: ClassVar[str]
+
+    sub_workflows: asyncio.Queue[tuple[Workflow, Awaitable[None]]] = field(
+        default_factory=asyncio.Queue, init=False
+    )
+    get_wrapper_for_trigger_type: Callable[
+        [Session, Workflow], AbstractAsyncContextManager[None]
+    ] | None = field(default=None, init=False)
+    session_repo: ISessionRepo = field(init=False)
+    session: Session = field(init=False)
 
     async def run(self, file: FileNode) -> int:
         if not await self.is_program_installed():
@@ -111,14 +124,24 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
             logger.error(msg)
 
-            # TODO: move terminal cleanup out of visitor
-            self.terminal.finish()
-
             return 1
 
         assert file.file
 
-        return await self.run_file(file.file)
+        tg = asyncio.TaskGroup()
+
+        listener = asyncio.create_task(
+            self.listen_for_sub_workflows(self.session_repo, tg, self.session)
+        )
+
+        async with tg:
+            exit_code = await tg.create_task(self.run_file(file.file))
+
+            self.workflow.finish(exit_code_to_status_code(exit_code))
+
+        listener.cancel()
+
+        return exit_code
 
     async def run_file(self, file: Path) -> int:
         try:
@@ -153,6 +176,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
                 image=image,
                 program=self.program,
                 workflow=self.workflow,
+                sub_workflows=self.sub_workflows,
             )
             await visitor.setup()
 
@@ -180,6 +204,41 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
         await proc.wait()
 
         return proc.returncode == 0
+
+    async def listen_for_sub_workflows(
+        self,
+        session_repo: ISessionRepo,
+        tg: asyncio.TaskGroup,
+        session: Session,
+    ) -> None:
+        async def run(sub_workflow: Workflow, runner: Awaitable[None]) -> None:
+            if self.get_wrapper_for_trigger_type:
+                wrapper = self.get_wrapper_for_trigger_type(session, sub_workflow)
+
+            else:
+                wrapper = nullcontext()
+
+            async with wrapper:
+                try:
+                    await runner
+
+                    sub_workflow.finish(WorkflowStatus.SUCCESS)
+
+                except Exception:
+                    sub_workflow.finish(WorkflowStatus.FAILURE)
+
+                    raise
+
+                finally:
+                    session_repo.update_workflow(sub_workflow)
+
+        while True:
+            sub_workflow, runner = await self.sub_workflows.get()
+            self.sub_workflows.task_done()
+
+            session_repo.create_workflow(sub_workflow, session)
+
+            tg.create_task(run(sub_workflow, runner))
 
 
 class RemotePodmanExecutionContext(RemoteDockerLikeExecutionContext):
@@ -238,9 +297,6 @@ class SelfHostedExecutionContext(ExecutionContext):
             logging.getLogger("cicada").exception("")
 
             return 1
-
-        finally:
-            self.terminal.finish()
 
         # TODO: don't turn session status into int since it just gets
         # converted back to a session status anyways

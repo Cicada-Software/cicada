@@ -4,18 +4,22 @@ import asyncio
 import logging
 import os
 import pty
+import re
 import shlex
+import shutil
 import sys
 import termios
 from asyncio import subprocess
 from asyncio.subprocess import PIPE, STDOUT
 from contextlib import suppress
+from copy import deepcopy
 from decimal import Decimal
 from functools import partial
 from inspect import isawaitable
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING, Any, cast
 from uuid import uuid4
 
 from cicada.api.infra.cache_repo import CacheRepo
@@ -25,6 +29,7 @@ from cicada.ast.generate import SHELL_ALIASES
 from cicada.ast.nodes import (
     CacheStatement,
     FileNode,
+    FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     FunctionValue,
@@ -52,6 +57,59 @@ class ContainerTermination(WorkflowFailure):
     pass
 
 
+def generate_default_sub_workflow_title(name: str) -> str:
+    """
+    Given a function name, try to make a pretty printed, title cased version.
+    """
+
+    name = name.replace("_", " ")
+    parts = chain.from_iterable(x.split() for x in re.split("(?<=[a-z])(?=[A-Z])", name))
+
+    return " ".join(x.title() for x in parts)
+
+
+async def spawn_sub_workflow(self: RemoteContainerEvalVisitor, func: FunctionDefStatement) -> None:
+    process = await subprocess.create_subprocess_exec(
+        self.program,
+        "commit",
+        "--pause=true",
+        self.container_id,
+        stdout=PIPE,
+        stderr=STDOUT,
+    )
+
+    await process.wait()
+
+    if process.returncode != 0:
+        raise CommandFailed(1)
+
+    assert process.stdout
+
+    cloned_image_id = (await process.stdout.read()).strip().splitlines()[-1].decode()
+
+    sub_workflow = self.workflow.make_subworkflow()
+
+    # TODO: allow for changing sub workflow title via title statement
+    sub_workflow.title = generate_default_sub_workflow_title(func.name)
+
+    async def run_sub_workflow() -> None:
+        with TemporaryDirectory() as dir:
+            copy = Path(dir)
+
+            # TODO: move to separate function
+            # TODO: io bound, run in separate executor
+            shutil.copytree(self.cloned_repo, copy, dirs_exist_ok=True)
+
+            visitor = deepcopy(self)
+            visitor.image = cloned_image_id
+            visitor.cloned_repo = copy
+
+            await visitor.setup()
+            await func.body.accept(visitor)
+
+    self.sub_workflows.put_nowait((sub_workflow, run_sub_workflow()))
+
+
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     container_id: str
 
@@ -65,6 +123,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     cached_files: list[Path] | None
     cache_key: str | None
 
+    sub_workflows: asyncio.Queue  # type: ignore[type-arg]
+
     def __init__(
         self,
         cloned_repo: Path,
@@ -73,6 +133,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         image: str,
         program: str,
         workflow: Workflow,
+        sub_workflows: asyncio.Queue,  # type: ignore[type-arg]
     ) -> None:
         super().__init__(trigger)
 
@@ -89,6 +150,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
         self.cache_key = None
 
         self.workflow = workflow
+
+        self.sub_workflows = sub_workflows
 
         # TODO: deduplicate this monstrosity
         built_in_symbols = {
@@ -108,7 +171,7 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                     [StringType(), VariadicTypeArg(StringType())],
                     rtype=StringType(),
                 ),
-                func=self.hashOf,
+                func=self.hash_of,
             ),
             **{
                 alias: FunctionValue(
@@ -121,12 +184,27 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         self.symbols.update(built_in_symbols)
 
+    def __deepcopy__(self, memo: Any) -> RemoteContainerEvalVisitor:  # type: ignore
+        assert self.trigger
+
+        copy = RemoteContainerEvalVisitor(
+            deepcopy(self.cloned_repo, memo),
+            deepcopy(self.trigger, memo),
+            self.terminal,
+            self.image,
+            self.program,
+            self.workflow,
+            self.sub_workflows,
+        )
+        copy.symbols = deepcopy(self.symbols, memo)
+        copy.uuid = self.uuid
+
+        return copy
+
     async def setup(self) -> None:
         await self._start_container(self.image)
 
     async def cleanup(self) -> None:
-        self.terminal.finish()
-
         process = await subprocess.create_subprocess_exec(
             self.program,
             "kill",
@@ -181,11 +259,17 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
                 for name, arg in zip(func.arg_names, args, strict=True):
                     self.symbols[name] = arg
 
+                if self.is_workflow_function(func):
+                    await spawn_sub_workflow(self, func)
+
+                    return UnitValue()
+
                 return await func.body.accept(self)
 
         if callable(symbol.func):
             # TODO: make this type-safe
-            f = symbol.func(node)
+            f = symbol.func(self, node)
+
             if isawaitable(f):
                 return cast(Value, await f)
 
@@ -227,6 +311,13 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return UnitValue()
 
+    def is_workflow_function(self, node: FunctionDefStatement) -> bool:
+        match node.annotations:
+            case [FunctionAnnotation(IdentifierExpression("workflow"))]:
+                return True
+
+        return False
+
     async def _start_container(self, image: str) -> None:
         # TODO: add timeout
         process = await subprocess.create_subprocess_exec(
@@ -249,7 +340,6 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             msg = f"Could not start container. Make sure image `{image}` exists and is valid, then retry."  # noqa: E501
 
             self.terminal.append(msg.encode())
-            self.terminal.finish()
 
             raise ContainerTermination(1)
 
@@ -348,7 +438,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
     def temp_dir(self) -> str:
         return f"/tmp/{self.uuid}"
 
-    async def hashOf(self, node: FunctionExpression) -> StringValue:  # noqa: N802
+    @staticmethod
+    async def hash_of(self: RemoteContainerEvalVisitor, node: FunctionExpression) -> StringValue:
         args: list[str] = []
 
         for arg in node.args:
@@ -413,7 +504,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
 
         return StringValue(lines[0].strip())
 
-    async def builtin_shell(self, node: FunctionExpression) -> Value:
+    @staticmethod
+    async def builtin_shell(self: RemoteContainerEvalVisitor, node: FunctionExpression) -> Value:
         # TODO: turn this into a function
         args: list[str] = []
 
@@ -437,7 +529,8 @@ class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover
             CommandType(),
         )
 
-    async def builtin_print(self, node: FunctionExpression) -> Value:
+    @staticmethod
+    async def builtin_print(self: RemoteContainerEvalVisitor, node: FunctionExpression) -> Value:
         args: list[str] = []
 
         for arg in node.args:

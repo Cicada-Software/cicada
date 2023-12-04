@@ -6,8 +6,9 @@ import pytest
 from cicada.application.exceptions import InvalidRequest, NotFound
 from cicada.application.session.stop_session import StopSession
 from cicada.domain.datetime import UtcDatetime
-from cicada.domain.session import Session, SessionStatus
-from cicada.domain.triggers import CommitTrigger, GitSha
+from cicada.domain.session import Session, SessionStatus, Workflow
+from test.common import build
+from test.domain.repo.mock_session_repo import MockSessionRepo
 
 
 async def test_stopping_session_that_doesnt_exist_throws_error() -> None:
@@ -41,20 +42,12 @@ async def test_stopping_already_stopped_session_throws_error() -> None:
 
 
 async def test_stopping_existing_session_stops_it() -> None:
-    trigger = CommitTrigger(
-        repository_url="",
-        sha=GitSha("deadbeef"),
-        ref="refs/heads/master",
-        author="",
-        provider="github",
-        message="",
-        committed_on=UtcDatetime.now(),
-    )
+    session = build(Session, status=SessionStatus.PENDING)
+    workflow = build(Workflow)
 
-    session = Session(id=uuid4(), trigger=trigger)
-
-    session_repo = MagicMock()
-    session_repo.get_session_by_session_id.return_value = session
+    session_repo = MockSessionRepo()
+    session_repo.create(session)
+    session_repo.create_workflow(workflow, session)
 
     terminator_called = False
 
@@ -68,24 +61,15 @@ async def test_stopping_existing_session_stops_it() -> None:
     assert session.status == SessionStatus.STOPPED
     assert session.finished_at
     assert terminator_called
-    assert session_repo.update.call_count == 1
 
 
 async def test_provider_terminator_not_called_if_provider_doesnt_match() -> None:
-    trigger = CommitTrigger(
-        repository_url="",
-        sha=GitSha("deadbeef"),
-        ref="refs/heads/master",
-        author="",
-        provider="github",
-        message="",
-        committed_on=UtcDatetime.now(),
-    )
+    session = build(Session, status=SessionStatus.PENDING)
+    workflow = build(Workflow)
 
-    session = Session(id=uuid4(), trigger=trigger)
-
-    session_repo = MagicMock()
-    session_repo.get_session_by_session_id.return_value = session
+    session_repo = MockSessionRepo()
+    session_repo.create(session)
+    session_repo.create_workflow(workflow, session)
 
     terminator_called = False
 
@@ -99,4 +83,3 @@ async def test_provider_terminator_not_called_if_provider_doesnt_match() -> None
     assert session.status == SessionStatus.STOPPED
     assert session.finished_at
     assert not terminator_called
-    assert session_repo.update.call_count == 1

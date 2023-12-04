@@ -1,6 +1,7 @@
 # Summary
 
 - [Getting Started](./getting-started.md)
+- [FAQ](./faq.md)
 - [The Cicada DSL](./ci-lang/README.md)
   - [Your First Workflow](./ci-lang/getting-started.md)
   - [The `on` Statement](./ci-lang/on-statement.md)
@@ -19,5 +20,6 @@
   - [Secrets](./ci-lang/secrets.md)
   - [Caching](./ci-lang/caching.md)
   - [Functions](./ci-lang/functions.md)
+  - [Sub-workflows (Matrix Builds)](./ci-lang/sub-workflows.md)
 - [Self-Hosting](./installing.md)
   - [Self-Hosted Runners](./self-hosted-runner.md)

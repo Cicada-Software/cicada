@@ -16,7 +16,7 @@ from cicada.api.endpoints.webhook.gitlab.main import TASK_QUEUE
 from cicada.api.endpoints.webhook.gitlab.main import router as gitlab_webhook
 from cicada.ast.nodes import FileNode
 from cicada.domain.repo.gitlab_webhook_repo import GitlabWebhook
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.triggers import GitSha, Trigger
 from cicada.domain.user import User
 from test.api.endpoints.common import TestEndpointWrapper
@@ -52,8 +52,9 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.disable_webhook_verification(),
         ):
 
-            async def run(session: Session, *_, **__) -> None:  # type: ignore
-                session.finish(SessionStatus.SUCCESS)
+            async def run(*args, **__) -> None:  # type: ignore
+                workflow: Workflow = args[-1]
+                workflow.finish(WorkflowStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = run
             mocks["repo_get_env"].return_value = {}
@@ -96,8 +97,9 @@ class TestGitlabWebhook(TestEndpointWrapper):
             self.disable_webhook_verification(),
         ):
 
-            async def run(session: Session, *_, **__) -> None:  # type: ignore
-                session.finish(SessionStatus.SUCCESS)
+            async def run(*args, **__) -> None:  # type: ignore
+                workflow: Workflow = args[-1]
+                workflow.finish(WorkflowStatus.SUCCESS)
 
             mocks["run_workflow"].side_effect = run
             mocks["repo_get_env"].return_value = {}

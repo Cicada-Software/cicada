@@ -870,6 +870,19 @@ fn f():
     pytest.fail(f"tree does not match: {tree}")
 
 
+async def test_workflow_annotation_must_have_unit_return_type() -> None:
+    code = """\
+@workflow
+fn f() -> number:
+  1
+"""
+
+    expected = "`@workflow` annotated functions must have `()` return type"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await parse_and_analyze(code)
+
+
 async def test_lists_cannot_contain_mixed_types() -> None:
     code = "let l = [1, true]"
 

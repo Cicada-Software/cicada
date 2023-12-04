@@ -5,21 +5,26 @@ from urllib.parse import urlparse
 
 import gitlab
 
+from cicada.api.di import DiContainer
 from cicada.api.infra.common import url_get_user_and_repo
 from cicada.api.infra.gitlab.common import gitlab_clone_url
 from cicada.api.infra.repo_get_ci_files import repo_get_ci_files
-from cicada.api.infra.run_program import exit_code_to_status_code, get_execution_type
+from cicada.api.infra.run_program import (
+    RemoteDockerLikeExecutionContext,
+    exit_code_to_status_code,
+    get_execution_type,
+)
 from cicada.api.settings import ExecutionSettings, GitlabSettings
 from cicada.ast.generate import AstError
 from cicada.ast.nodes import FileNode
-from cicada.domain.session import Session, SessionStatus, Workflow
+from cicada.domain.session import Session, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
 
 @asynccontextmanager
 async def wrap_in_gitlab_status_check(
-    session: Session, access_token: str
+    session: Session, workflow: Workflow, access_token: str
 ) -> AsyncGenerator[None, None]:  # pragma: no cover
     settings = GitlabSettings()
 
@@ -36,7 +41,7 @@ async def wrap_in_gitlab_status_check(
     payload = {
         "sha": str(session.trigger.sha),
         "state": "running",
-        "name": "Cicada",
+        "name": workflow.title or "Cicada",
         "target_url": f"https://{settings.domain}/run/{session.id}?run={session.run}",
     }
 
@@ -50,9 +55,20 @@ async def wrap_in_gitlab_status_check(
 
         raise
 
-    state = "success" if session.status == SessionStatus.SUCCESS else "failed"
+    state = "success" if workflow.status == WorkflowStatus.SUCCESS else "failed"
 
     commit.statuses.create({**payload, "state": state})
+
+
+def get_wrapper_for_trigger_type(
+    session: Session,
+    workflow: Workflow,
+    access_token: str,
+) -> AbstractAsyncContextManager[None]:
+    if session.trigger.type == "git.push":
+        return wrap_in_gitlab_status_check(session, workflow, access_token)
+
+    return nullcontext()
 
 
 async def run_workflow(
@@ -61,14 +77,11 @@ async def run_workflow(
     cloned_repo: Path,
     filenode: FileNode,
     workflow: Workflow,
+    *,
     access_token: str,
+    di: DiContainer,
 ) -> None:
-    wrapper: AbstractAsyncContextManager[None]
-
-    if session.trigger.type == "git.push":
-        wrapper = wrap_in_gitlab_status_check(session, access_token)
-    else:
-        wrapper = nullcontext()
+    wrapper = get_wrapper_for_trigger_type(session, workflow, access_token)
 
     try:
         async with wrapper:
@@ -81,12 +94,16 @@ async def run_workflow(
                 workflow=workflow,
             )
 
+            if isinstance(ctx, RemoteDockerLikeExecutionContext):
+                ctx.session_repo = di.session_repo()
+                ctx.session = session
+
             exit_code = await ctx.run(filenode)
 
-            session.finish(exit_code_to_status_code(exit_code))
+            workflow.finish(exit_code_to_status_code(exit_code))
 
     except Exception:
-        session.finish(SessionStatus.FAILURE)
+        workflow.finish(WorkflowStatus.FAILURE)
 
         raise
 

@@ -1,18 +1,18 @@
 import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
-from uuid import uuid4
 
 from cicada.application.session.rerun_session import RerunSession
 from cicada.ast.nodes import FileNode
-from cicada.domain.datetime import UtcDatetime
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalSession
-from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
+from cicada.domain.triggers import Trigger
 from test.api.application.session.test_make_session_from_trigger import (
     AsyncTap,
     make_fake_repository_repo,
 )
+from test.common import build
+from test.domain.repo.mock_session_repo import MockSessionRepo
 
 
 async def dummy_gather(_: Trigger, repo: Path) -> list[FileNode]:
@@ -22,12 +22,13 @@ async def dummy_gather(_: Trigger, repo: Path) -> list[FileNode]:
 async def test_reran_session_is_created_and_ran() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(session: Session, *_) -> None:  # type: ignore
+    async def dummy_check_runner(*args) -> None:  # type: ignore
         await tap.wait_for_close()
 
-        session.finish(SessionStatus.SUCCESS)
+        workflow: Workflow = args[-1]
+        workflow.finish(WorkflowStatus.SUCCESS)
 
-    session_repo = MagicMock()
+    session_repo = MockSessionRepo()
     terminal_session_repo = MagicMock()
 
     terminal_session = TerminalSession()
@@ -44,29 +45,16 @@ async def test_reran_session_is_created_and_ran() -> None:
         secret_repo=MagicMock(),
     )
 
-    session = Session(
-        id=uuid4(),
-        trigger=CommitTrigger(
-            sha=GitSha("deadbeef"),
-            ref="refs/heads/master",
-            author="",
-            message="",
-            committed_on=UtcDatetime.now(),
-            repository_url="",
-            provider="github",
-        ),
-    )
-
-    session_repo.get_session_by_session_id.return_value = session
+    session = build(Session, run=1)
+    session_repo.create(session)
 
     handle = asyncio.create_task(cmd.handle(session))
-
-    session_repo.create.called_once()
 
     # stop execution during workflow runner execution, check that the session
     # hasn't finished, that it was passed the correct args, etc.
     async with tap.open():
-        new_session: Session = session_repo.create.call_args[0][0]
+        new_session = session_repo.get_session_by_session_id(session.id)
+        assert new_session
 
         assert new_session.id == session.id
         assert new_session.trigger == session.trigger
@@ -77,7 +65,8 @@ async def test_reran_session_is_created_and_ran() -> None:
     # finish the rest of the workflow
     await handle
 
-    updated_session: Session = session_repo.update.call_args[0][0]
+    updated_session = session_repo.get_session_by_session_id(session.id)
+    assert updated_session
 
     assert updated_session.finished_at
 
@@ -97,18 +86,7 @@ async def test_session_not_reran_if_gather_fails() -> None:
         secret_repo=MagicMock(),
     )
 
-    session = Session(
-        id=uuid4(),
-        trigger=CommitTrigger(
-            sha=GitSha("deadbeef"),
-            ref="refs/heads/master",
-            author="",
-            message="",
-            committed_on=UtcDatetime.now(),
-            repository_url="",
-            provider="github",
-        ),
-    )
+    session = build(Session, run=1)
 
     await cmd.handle(session)
 

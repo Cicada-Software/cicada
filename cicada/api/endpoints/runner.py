@@ -126,8 +126,8 @@ async def runner(websocket: WebSocket, di: Di, runner_id: UUID) -> None:  # prag
                         if stdout := packet.get("stdout"):
                             terminal.append(stdout.encode())
 
-                        if status := packet.get("status"):
-                            session.finish(SessionStatus(status))
+                        if packet.get("status"):
+                            session.finish()
                             session_repo.update(session)
 
                             break

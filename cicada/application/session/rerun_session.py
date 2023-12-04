@@ -13,7 +13,7 @@ from cicada.domain.repo.secret_repo import ISecretRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.services.repository import get_env_vars_for_repo
-from cicada.domain.session import Session, SessionStatus, Workflow
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.triggers import Trigger
 
 
@@ -110,18 +110,24 @@ class RerunSession:
             logger = logging.getLogger("cicada")
             logger.exception("Workflow crashed:")
 
-            session.finish(SessionStatus.FAILURE)
+            workflow.finish(WorkflowStatus.FAILURE)
 
-        assert session.status != SessionStatus.PENDING
-        assert session.finished_at is not None
+        terminal.finish()
 
-        self.session_repo.update(session)
+        assert workflow.status != WorkflowStatus.PENDING
+        assert workflow.finished_at is not None
 
-        workflow.status = session.status
-        workflow.finished_at = session.finished_at
         self.session_repo.update_workflow(workflow)
 
-        return session
+        session_with_workflows = self.session_repo.get_session_by_session_id(
+            session.id, session.run
+        )
+        assert session_with_workflows
+
+        session_with_workflows.finish()
+        self.session_repo.update(session_with_workflows)
+
+        return session_with_workflows
 
     def get_env_vars(self, trigger: Trigger) -> dict[str, str]:
         return get_env_vars_for_repo(self.env_repo, self.repository_repo, trigger)

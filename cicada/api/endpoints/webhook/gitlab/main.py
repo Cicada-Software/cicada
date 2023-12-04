@@ -52,7 +52,7 @@ def handle_gitlab_push_event(  # type: ignore[misc]
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
-        partial(run_workflow, access_token=access_token),
+        partial(run_workflow, access_token=access_token, di=di),
         gather_workflows=partial(gather_workflows, access_token=access_token),
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),
@@ -71,7 +71,7 @@ def handle_gitlab_issue_event(  # type: ignore[misc]
     cmd = MakeSessionFromTrigger(
         di.session_repo(),
         di.terminal_session_repo(),
-        partial(run_workflow, access_token=access_token),
+        partial(run_workflow, access_token=access_token, di=di),
         gather_workflows=partial(gather_issue_workflows, access_token=access_token),
         env_repo=di.environment_repo(),
         repository_repo=di.repository_repo(),

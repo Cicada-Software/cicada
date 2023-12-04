@@ -70,6 +70,10 @@ class Workflow:
     parent: WorkflowId | None = None
     sub_workflows: list["Workflow"] = field(default_factory=list)
 
+    def finish(self, status: WorkflowStatus) -> None:
+        self.status = status
+        self.finished_at = UtcDatetime.now()
+
     @classmethod
     def from_session(
         cls,
@@ -95,6 +99,19 @@ class Workflow:
             finished_at=session.finished_at,
             run_on_self_hosted=run_on_self_hosted,
             title=title,
+        )
+
+    def make_subworkflow(self) -> "Workflow":
+        return Workflow(
+            id=WorkflowId(uuid4()),
+            filename=self.filename,
+            sha=self.sha,
+            status=WorkflowStatus.PENDING,
+            started_at=UtcDatetime.now(),
+            finished_at=None,
+            run_on_self_hosted=self.run_on_self_hosted,
+            title=self.title,
+            parent=self.id,
         )
 
 
@@ -124,8 +141,41 @@ class Session:
     runs: list[Workflow] = field(default_factory=list)
 
     def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self) -> None:
         assert self.run >= 1
 
-    def finish(self, status: SessionStatus) -> None:
-        self.status = status
-        self.finished_at = UtcDatetime.now()
+        if self.status.is_finished():
+            assert self.finished_at
+
+        if self.finished_at:
+            assert self.status.is_finished()
+
+    def finish(self) -> None:
+        if not self.runs:
+            # TODO: sessions shouldn't be finished unless they have workflows
+            return
+
+        root_workflow = self.runs[self.run - 1]
+        failure_status: SessionStatus | None = None
+
+        def walk(workflow: Workflow) -> None:
+            nonlocal failure_status
+
+            if not self.finished_at or (
+                workflow.finished_at and workflow.finished_at > self.finished_at
+            ):
+                self.finished_at = workflow.finished_at
+
+            # TODO: how to differenctiate between multiple different failure statuses?
+            if workflow.status.is_failure():
+                failure_status = workflow.status
+
+            for sub_workflow in workflow.sub_workflows:
+                walk(sub_workflow)
+
+        walk(root_workflow)
+
+        self.status = failure_status or SessionStatus.SUCCESS
+        self.validate()

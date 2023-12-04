@@ -2,7 +2,7 @@ from collections.abc import Callable, Coroutine
 
 from cicada.application.exceptions import InvalidRequest, NotFound
 from cicada.domain.repo.session_repo import ISessionRepo
-from cicada.domain.session import Session, SessionId, SessionStatus
+from cicada.domain.session import Session, SessionId, Workflow, WorkflowStatus
 from cicada.domain.user import User
 
 SessionTerminator = Callable[[Session], Coroutine[None, None, None]]
@@ -46,16 +46,23 @@ class StopSession:
         if terminator:
             await terminator(session)
 
-        session.finish(SessionStatus.STOPPED)
-        self.session_repo.update(session)
+        def update_status(workflow: Workflow) -> None:
+            if not workflow.status.is_finished():
+                workflow.finish(WorkflowStatus.STOPPED)
 
-        # TODO: improve this flow
-        workflow_id = self.session_repo.get_workflow_id_from_session(session)
-        assert workflow_id
+            for sub_workflow in workflow.sub_workflows:
+                update_status(sub_workflow)
 
-        workflow = self.session_repo.get_workflow_by_id(workflow_id)
-        assert workflow
+            self.session_repo.update_workflow(workflow)
 
-        workflow.status = session.status
-        workflow.finished_at = session.finished_at
-        self.session_repo.update_workflow(workflow)
+            # TODO: actually stop the sub workflows
+
+        session_with_workflows = self.session_repo.get_session_by_session_id(
+            session.id, session.run
+        )
+        assert session_with_workflows
+
+        update_status(session_with_workflows.runs[session_with_workflows.run - 1])
+
+        session_with_workflows.finish()
+        self.session_repo.update(session_with_workflows)

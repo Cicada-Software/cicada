@@ -58,6 +58,12 @@ async def get_github_integration_for_repo(
     return GitHub(github.auth.as_installation(installation_id))
 
 
+async def create_access_token_from_repository_url(url: str) -> str:
+    username, repo = url_get_user_and_repo(url)
+
+    return await get_repo_access_token(username, repo)
+
+
 async def get_repo_access_token(user: str, repo: str) -> str:
     # TODO: managing the permissions for this token is very important, and will
     # probably need to be updated as time goes on. Burying these permissions in
@@ -79,6 +85,13 @@ async def get_repo_access_token(user: str, repo: str) -> str:
     )
 
     return data.parsed_data.token
+
+
+async def add_access_token_for_repository_url(url: str) -> str:
+    username, repo = url_get_user_and_repo(url)
+    access_token = await get_repo_access_token(username, repo)
+
+    return github_clone_url(username, repo, access_token)
 
 
 def github_clone_url(user: str, repo: str, access_token: str) -> str:

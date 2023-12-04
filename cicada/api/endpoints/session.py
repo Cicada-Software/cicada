@@ -67,7 +67,7 @@ async def rerun_session(session_id: SessionId, di: Di, user: CurrentUser) -> Non
             return
 
         gather = partial(gather_gitlab_workflows, access_token=token.access_token)
-        workflow_wrapper = partial(run_gitlab_workflow, access_token=token.access_token)
+        workflow_wrapper = partial(run_gitlab_workflow, access_token=token.access_token, di=di)
 
     else:
         assert False

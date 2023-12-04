@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 from cicada.application.session.make_session_from_trigger import MakeSessionFromTrigger
 from cicada.ast.nodes import FileNode
 from cicada.domain.datetime import UtcDatetime
-from cicada.domain.session import Session, SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalSession
 from cicada.domain.triggers import CommitTrigger, GitSha, Trigger
 
@@ -51,10 +51,14 @@ async def dummy_gather(_: Trigger, repo: Path) -> list[FileNode]:
 async def test_session_is_created() -> None:
     tap = AsyncTap()
 
-    async def dummy_check_runner(session: Session, *_) -> None:  # type: ignore
+    async def dummy_check_runner(session: Session, *args) -> None:  # type: ignore
         await tap.wait_for_close()
 
-        session.finish(SessionStatus.SUCCESS)
+        session.status = SessionStatus.SUCCESS
+        session.finished_at = UtcDatetime.now()
+
+        workflow: Workflow = args[-1]
+        workflow.finish(WorkflowStatus.SUCCESS)
 
     session_repo = MagicMock()
     terminal_session_repo = MagicMock()

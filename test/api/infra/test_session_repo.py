@@ -9,7 +9,7 @@ from cicada.api.infra.user_repo import UserRepo
 from cicada.domain.datetime import UtcDatetime
 from cicada.domain.repo.repository_repo import Permission
 from cicada.domain.repository import Repository
-from cicada.domain.session import Session, Workflow
+from cicada.domain.session import Session, SessionStatus, Workflow
 from cicada.domain.triggers import CommitTrigger
 from cicada.domain.user import User
 from test.api.common import SqliteTestWrapper
@@ -64,12 +64,14 @@ class TestSessionRepo(SqliteTestWrapper):
 
         now = UtcDatetime.now()
         session.finished_at = now
+        session.status = SessionStatus.SUCCESS
         self.session_repo.update(session)
 
         updated_session = self.session_repo.get_session_by_session_id(session.id)
 
         assert updated_session
         assert updated_session.finished_at == now
+        assert updated_session.status == SessionStatus.SUCCESS
 
     def test_get_recent_sessions(self) -> None:
         self.reset()
