@@ -12,7 +12,6 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanExpression,
     BooleanValue,
-    Expression,
     FileNode,
     FunctionDefStatement,
     FunctionExpression,
