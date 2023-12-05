@@ -354,17 +354,6 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
         raise KeyError(f"Cannot reassign `{name}` because it doesn't exist")  # pragma: no cover
 
-    def get_fullname(self, node: Expression) -> str:
-        if isinstance(node, IdentifierExpression):
-            return node.name
-
-        if isinstance(node, MemberExpression):
-            lhs = self.get_fullname(node.lhs)
-
-            return f"{lhs}.{node.name}"
-
-        assert False
-
 
 async def eval_title(title: TitleStatement | None) -> str | None:
     if not title:

@@ -132,3 +132,12 @@ async def test_run_on_statement_does_nothing_at_runtime() -> None:
     await tree.accept(visitor)
 
     assert "x" in visitor.symbols
+
+
+async def test_title_statement_does_nothing_at_runtime() -> None:
+    tree = await parse_and_analyze("title test\nlet x = 1")
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    assert "x" in visitor.symbols

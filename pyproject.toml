@@ -41,7 +41,7 @@ python_version = "3.11"
 
 [tool.coverage.run]
 omit = [
-  "cicada/api/logging.py",
+  "cicada/logging.py",
   "cicada/api/infra/migrate.py",
   "cicada/api/__main__.py",
   # Only used during setup, needs to be manually tested
@@ -62,10 +62,11 @@ omit = [
 
 [tool.coverage.report]
 exclude_lines = [
-  "raise NotImplementedError\\(\\)",
+  "raise NotImplementedError",
   "pragma: no cover",
   "def __str__(self)",
-  "assert False"
+  "assert False",
+  "if TYPE_CHECKING",
 ]
 skip_covered = true
 skip_empty = true
