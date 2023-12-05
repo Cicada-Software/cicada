@@ -1,15 +1,13 @@
 import asyncio
 import logging
-from asyncio import create_subprocess_exec, create_task, subprocess
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
-from cicada.ast.generate import AstError, generate_ast_tree
+from cicada.ast.generate import AstError
 from cicada.ast.nodes import FileNode, RunType
-from cicada.ast.semantic_analysis import SemanticAnalysisVisitor
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
@@ -17,58 +15,8 @@ from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
 from cicada.domain.triggers import Trigger
 from cicada.eval.constexpr_visitor import WorkflowFailure
 from cicada.eval.container import RemoteContainerEvalVisitor
-from cicada.parse.tokenize import tokenize
 
 logger = logging.getLogger("cicada")
-
-
-async def process_killer(process: subprocess.Process, terminal: TerminalSession) -> None:
-    """If terminal session is killed, kill process."""
-
-    await terminal.should_stop.wait()
-    process.kill()
-
-
-async def run_program(args: list[str], terminal: TerminalSession) -> int:
-    """
-    Run a program passed specified via `args`, and print output to `terminal`.
-    Return the exit code of the process, or -1 if the process was stopped by
-    the user.
-    """
-
-    process: subprocess.Process | None = None
-
-    try:
-        process = await create_subprocess_exec(*args, stdout=subprocess.PIPE)
-
-        killer = create_task(process_killer(process, terminal))
-
-        while True:
-            if not process.stdout:
-                break  # pragma: no cover
-
-            line = await process.stdout.readline()
-
-            if line:
-                terminal.append(line)
-
-            if not line or terminal.should_stop.is_set():
-                break
-
-        terminal.finish()
-        killer.cancel()
-        await process.wait()
-
-        # TODO: return SessionStatus instead of exit code?
-        return -1 if terminal.should_stop.is_set() else process.returncode or 0
-
-    except Exception:
-        terminal.finish()
-
-        if process:
-            process.kill()
-
-        raise
 
 
 EXIT_CODE_MAPPINGS = {
@@ -135,7 +83,7 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
         )
 
         async with tg:
-            exit_code = await tg.create_task(self.run_file(file.file))
+            exit_code = await tg.create_task(self.run_file(file))
 
             self.workflow.finish(exit_code_to_status_code(exit_code))
 
@@ -143,25 +91,11 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
 
         return exit_code
 
-    async def run_file(self, file: Path) -> int:
-        try:
-            tokens = tokenize(file.read_text())
-            tree = generate_ast_tree(tokens)
-
-            semantics = SemanticAnalysisVisitor(self.trigger)
-            await tree.accept(semantics)
-
-        except AstError as exc:
-            # Shouldn't happen, gather phase should pass without issues
-
-            logging.getLogger("cicada").exception(exc)
-
-            return 1
-
+    async def run_file(self, tree: FileNode) -> int:
         image = "ghcr.io/cicada-software/cicada-executor:latest"
 
-        if semantics.run_on and semantics.run_on.type == RunType.IMAGE:
-            image = semantics.run_on.value
+        if tree.run_on and tree.run_on.type == RunType.IMAGE:
+            image = tree.run_on.value
 
         if ":" not in image:
             image += ":latest"
