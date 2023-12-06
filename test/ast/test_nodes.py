@@ -73,6 +73,9 @@ fn f(x):
 
 let l = [1]
 let l = []
+
+for _ in [1]:
+  1
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -144,7 +147,12 @@ FileNode:
   LetExpression(): # 31:1..31:3
     name=l
     expr=ListExpression: # 31:9..31:10
-      <empty>\
+      <empty>
+  ForStatement(_): # 33:1..33:3
+    source=ListExpression: # 33:10..33:12
+      0=NumericExpression(1) # 33:11..33:11
+    body=BlockExpression: # 34:3..34:3
+      0=NumericExpression(1) # 34:3..34:3\
 """
 
     assert str(tree) == expected

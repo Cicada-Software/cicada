@@ -68,6 +68,7 @@ KEYWORD_NAMES = {
     "title": TitleToken,
     "in": InToken,
     "fn": FunctionToken,
+    "for": ForToken,
 }
 
 

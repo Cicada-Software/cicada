@@ -137,3 +137,4 @@ class UsingToken(KeywordToken): pass
 class TitleToken(KeywordToken): pass
 class InToken(KeywordToken): pass
 class FunctionToken(KeywordToken): pass
+class ForToken(KeywordToken): pass

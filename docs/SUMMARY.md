@@ -14,6 +14,7 @@
     - [Operators](./ci-lang/opers.md)
     - [The `let` Expression](./ci-lang/let-expr.md)
     - [The `if` Expression](./ci-lang/if-expr.md)
+    - [The `for` Expression](./ci-lang/for-stmt.md)
     - [List Expressions](./ci-lang/lists.md)
     - [The Block Expression](./ci-lang/block-expr.md)
     - [Built-in Functions](./ci-lang/built-in-functions.md)

@@ -20,6 +20,7 @@ from cicada.parse.token import (
     DanglingToken,
     EqualToken,
     FloatLiteralToken,
+    ForToken,
     FunctionToken,
     GreaterThanToken,
     IdentifierToken,
@@ -54,6 +55,7 @@ from .nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
@@ -407,6 +409,9 @@ def generate_node(state: ParserState) -> Node:
 
     if isinstance(token, AtToken | FunctionToken):
         return generate_function_def(state)
+
+    if isinstance(token, ForToken):
+        return generate_for_stmt(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
@@ -1194,6 +1199,52 @@ def parse_func_return_type(state: ParserState) -> Type | None:
     state.next_non_whitespace_or_eof()
 
     return ty
+
+
+def generate_for_stmt(state: ParserState) -> ForStatement:
+    start = state.current_token
+
+    name_token = state.next_non_whitespace_or_eof()
+    if not isinstance(name_token, IdentifierToken):
+        raise AstError("Expected identifier", name_token or start)
+
+    name = IdentifierExpression.from_token(name_token)
+
+    in_token = state.next_non_whitespace_or_eof()
+    if not isinstance(in_token, InToken):
+        raise AstError.unexpected_token(in_token or name_token, expected="in")
+
+    last = state.current_token
+    if not state.next_non_whitespace_or_eof():
+        raise AstError("Expected expression after `in`", last)
+
+    source = generate_expr(state)
+
+    last = state.current_token
+
+    colon = state.next_non_whitespace_or_eof()
+    if not isinstance(colon, ColonToken):
+        raise AstError.unexpected_token(colon or last, expected=":")
+
+    newline = next(state, None)
+    if not isinstance(newline, NewlineToken):
+        raise AstError.unexpected_token(newline or colon, expected="\\n")
+
+    # TODO: move indented block logic to separate function
+    whitespace = next(state, None)
+    if not isinstance(whitespace, WhiteSpaceToken):
+        raise AstError("Expected indentation in for statement", whitespace or colon)
+
+    exprs = cast(list[Expression], generate_block(state, whitespace))
+    block = BlockExpression.from_exprs(exprs, whitespace)
+
+    return ForStatement(
+        info=LineInfo.from_token(start),
+        name=name,
+        source=source,
+        body=block,
+        is_constexpr=False,
+    )
 
 
 def generate_type(state: ParserState) -> Type:

@@ -11,6 +11,7 @@ from cicada.ast.nodes import (
     BooleanExpression,
     CacheStatement,
     FileNode,
+    ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
@@ -1455,6 +1456,42 @@ def test_escape_interpolated_args() -> None:
                     ToStringExpression(ParenthesisExpression(StringExpression("$ENV_VAR")))
                 ),
             ],
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_invalid_for_stmts_are_caught() -> None:
+    tests = {
+        "for": "Expected identifier",
+        "for 1": "Expected identifier",
+        "for x": "Expected `in`",
+        "for x in": "Expected expression after `in`",
+        "for x in y": "Expected `:`",
+        "for x in y:": "Expected `\\n`",
+        "for x in y:\n": "Expected indentation in for statement",
+        "for x in y:\nz": "Expected indentation in for statement",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
+
+
+def test_generate_for_statement() -> None:
+    code = """
+for _ in [1]:
+    1
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case ForStatement(
+            name=IdentifierExpression("_"),
+            source=ListExpression([NumericExpression()]),
+            body=BlockExpression([NumericExpression()]),
         ):
             return
 

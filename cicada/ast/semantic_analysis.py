@@ -14,6 +14,7 @@ from cicada.ast.nodes import (
     CacheStatement,
     Expression,
     FileNode,
+    ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
@@ -710,6 +711,28 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 f"Unknown annotation `@{node.expr.name}`",
                 node.expr,
             )
+
+    async def visit_for_stmt(self, node: ForStatement) -> None:
+        await node.source.accept(self)
+
+        if not isinstance(node.source.type, ListType):
+            raise AstError(
+                f"Expected list type, got type `{node.source.type}` instead",
+                node.source,
+            )
+
+        if node.source.type.inner_type == UnknownType():
+            raise AstError(
+                f"Cannot iterate over value of type `{node.source.type}`. Is it empty?",
+                node.name,
+            )
+
+        with self.new_scope():
+            self.symbols[node.name.name] = node.name
+
+            node.name.type = node.source.type.inner_type
+
+            await node.body.accept(self)
 
     @staticmethod
     def check_for_duplicate_arg_names(node: FunctionDefStatement) -> None:

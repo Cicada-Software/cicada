@@ -1,7 +1,7 @@
 import pytest
 
 from cicada.ast.entry import parse_and_analyze
-from cicada.ast.nodes import RecordValue, StringValue
+from cicada.ast.nodes import NumericValue, RecordValue, StringValue
 from cicada.ast.semantic_analysis import IgnoreWorkflow
 from cicada.ast.types import RecordType, StringType
 from cicada.domain.triggers import CommitTrigger, GitSha, IssueOpenTrigger, Trigger
@@ -141,3 +141,46 @@ async def test_title_statement_does_nothing_at_runtime() -> None:
     await tree.accept(visitor)
 
     assert "x" in visitor.symbols
+
+
+async def test_for_stmt_iterates_over_values_and_doesnt_bleed_value_after_scope() -> None:
+    code = """
+let mut x = 0
+
+for y in [1, 2, 3]:
+    x = (x + y)
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    assert "y" not in visitor.symbols
+
+    x = visitor.symbols["x"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 6
+
+
+async def test_nested_for_loops_work() -> None:
+    code = """
+let mut x = 0
+
+for y in [1]:
+    for z in [2]:
+        x = (y + z)
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    assert "y" not in visitor.symbols
+
+    x = visitor.symbols["x"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 3

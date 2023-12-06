@@ -837,6 +837,29 @@ class FunctionDefStatement(Expression):
         )
 
 
+@dataclass
+class ForStatement(Expression):
+    name: IdentifierExpression
+    source: Expression
+    body: BlockExpression
+
+    type: UnitType = field(kw_only=True, default_factory=UnitType)
+
+    __match_args__ = ("name", "source", "body")
+
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_for_stmt(self)
+
+    def __str__(self) -> str:
+        source = str(self.source)
+        source = "  source=" + indent(source, "  ").lstrip()
+
+        body = str(self.body)
+        body = "  body=" + indent(body, "  ").lstrip()
+
+        return f"{type(self).__name__}({self.name.name}): # {self.info}\n{source}\n{body}"
+
+
 class NodeVisitor(Generic[T]):
     async def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError
@@ -905,6 +928,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError
 
     async def visit_func_annotation(self, node: FunctionAnnotation) -> T:
+        raise NotImplementedError
+
+    async def visit_for_stmt(self, node: ForStatement) -> T:
         raise NotImplementedError
 
 
@@ -994,3 +1020,8 @@ class TraversalVisitor(NodeVisitor[None]):
 
     async def visit_func_annotation(self, node: FunctionAnnotation) -> None:
         await node.expr.accept(self)
+
+    async def visit_for_stmt(self, node: ForStatement) -> None:
+        await node.name.accept(self)
+        await node.source.accept(self)
+        await node.body.accept(self)

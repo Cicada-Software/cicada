@@ -13,6 +13,7 @@ from cicada.ast.nodes import (
     BooleanExpression,
     BooleanValue,
     FileNode,
+    ForStatement,
     FunctionDefStatement,
     FunctionExpression,
     FunctionValue,
@@ -326,6 +327,18 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
     async def visit_func_def_stmt(self, node: FunctionDefStatement) -> Value:
         self.symbols[node.name] = FunctionValue(type=node.type, func=node)
+
+        return UnitValue()
+
+    async def visit_for_stmt(self, node: ForStatement) -> Value:
+        source = await node.source.accept(self)
+        assert isinstance(source, ListValue)
+
+        for item in source.items:
+            with self.new_scope():
+                self.symbols[node.name.name] = item
+
+                await node.body.accept(self)
 
         return UnitValue()
 

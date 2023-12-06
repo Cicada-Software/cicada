@@ -15,9 +15,8 @@ fn test(version):
   echo Running tests
   make test
 
-test("1.0")
-test("1.1")
-test("1.2")
+for version in ["1.0", "1.1", "1,2"]:
+  test(version)
 ```
 
 This code will create 4 workflows: The "root" workflow, which is created automatically, and 3 sub-workflows which

@@ -10,12 +10,14 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanExpression,
     Expression,
+    ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
     LetExpression,
     LineInfo,
+    ListExpression,
     MemberExpression,
     NumericExpression,
     OnStatement,
@@ -32,6 +34,7 @@ from cicada.ast.types import (
     BooleanType,
     CommandType,
     FunctionType,
+    ListType,
     NumericType,
     RecordType,
     StringType,
@@ -899,3 +902,46 @@ l = [2]
 """
 
     await parse_and_analyze(code)
+
+
+async def test_for_stmts_must_have_list_source() -> None:
+    code = """
+for x in 1:
+  1
+"""
+
+    expected = "Expected list type, got type `number` instead"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await parse_and_analyze(code)
+
+
+async def test_for_stmts_have_proper_types() -> None:
+    code = """\
+for x in [1]:
+  echo (x)
+"""
+
+    tree = await parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case ForStatement(
+            name=IdentifierExpression("x", type=NumericType()),
+            source=ListExpression(type=ListType(NumericType())),
+            body=BlockExpression([FunctionExpression()]),
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+async def test_for_stmts_cannot_have_unknown_inner_type() -> None:
+    code = """
+for x in []:
+  1
+"""
+
+    expected = "Cannot iterate over value of type `[<unknown>]`"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await parse_and_analyze(code)
