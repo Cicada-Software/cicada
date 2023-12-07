@@ -12,6 +12,8 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanExpression,
     BooleanValue,
+    BreakStatement,
+    ContinueStatement,
     FileNode,
     ForStatement,
     FunctionDefStatement,
@@ -43,6 +45,10 @@ from cicada.ast.nodes import (
 )
 from cicada.ast.types import ListType
 from cicada.domain.triggers import Trigger
+
+
+class Break(Exception): pass
+class Continue(Exception): pass
 
 
 def value_to_string(value: Value) -> Value:
@@ -335,20 +341,38 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         assert isinstance(source, ListValue)
 
         for item in source.items:
-            with self.new_scope():
-                self.symbols[node.name.name] = item
+            try:
+                with self.new_scope():
+                    self.symbols[node.name.name] = item
 
-                await node.body.accept(self)
+                    await node.body.accept(self)
+
+            except Break:
+                break
+
+            except Continue:
+                continue
 
         return UnitValue()
+
+    async def visit_break_stmt(self, node: BreakStatement) -> Value:
+        raise Break
+
+    async def visit_continue_stmt(self, node: ContinueStatement) -> Value:
+        raise Continue
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:
         self.symbols = self.symbols.new_child()
 
-        yield
+        try:
+            yield
 
-        self.symbols = self.symbols.parents
+        except:
+            raise
+
+        finally:
+            self.symbols = self.symbols.parents
 
     def reassign_variable(self, name: str, value: Value) -> None:
         """

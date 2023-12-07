@@ -11,12 +11,14 @@ from cicada.ast.types import FunctionType, StringType, Type, UnitType, UnknownTy
 from cicada.parse.token import (
     AtToken,
     BooleanLiteralToken,
+    BreakToken,
     CacheToken,
     CloseBracketToken,
     CloseParenToken,
     ColonToken,
     CommaToken,
     CommentToken,
+    ContinueToken,
     DanglingToken,
     EqualToken,
     FloatLiteralToken,
@@ -52,7 +54,9 @@ from .nodes import (
     BinaryOperator,
     BlockExpression,
     BooleanExpression,
+    BreakStatement,
     CacheStatement,
+    ContinueStatement,
     Expression,
     FileNode,
     ForStatement,
@@ -164,11 +168,14 @@ class ParserState:
     _current_indent_level: int
     _indent_style: IndentStyle
 
+    _loop_depth: int
+
     def __init__(self, tokens: Sequence[Token]) -> None:
         self.tokens = list(tokens)
         self._current_index = 0
         self._current_indent_level = 0
         self._indent_style = IndentStyle.UNKNOWN
+        self._loop_depth = 0
 
     def __iter__(self) -> Self:
         return self
@@ -305,6 +312,31 @@ class ParserState:
 
         return len(whitespace.content) < self._current_indent_level
 
+    @contextmanager
+    def loop_body(self, *, new_scope: bool=False) -> Iterator[None]:
+        """
+        Increase loop body depth, used for detecting break/continue outside of loop bodies.
+
+        If new_scope is True: store the current depth and reset the loop depth to zero, then
+        when the context manager exits, restore the previous scope. This feature is to allow
+        detection of break/continue statements hidden by function declarations, since breaking
+        out of a loop while inside of a function doesn't make sense.
+        """
+
+        if new_scope:
+            old = self._loop_depth
+            self._loop_depth = 0
+            yield
+            self._loop_depth = old
+
+        else:
+            self._loop_depth += 1
+            yield
+            self._loop_depth -= 1
+
+    def is_in_loop(self) -> bool:
+        return bool(self._loop_depth)
+
 
 def generate_if_expr(state: ParserState) -> IfExpression:
     start = state.current_token
@@ -412,6 +444,12 @@ def generate_node(state: ParserState) -> Node:
 
     if isinstance(token, ForToken):
         return generate_for_stmt(state)
+
+    if isinstance(token, BreakToken):
+        return generate_break_stmt(state)
+
+    if isinstance(token, ContinueToken):
+        return generate_continue_stmt(state)
 
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
@@ -1119,8 +1157,9 @@ def generate_function_def(state: ParserState) -> FunctionDefStatement:
             whitespace or newline,
         )
 
-    exprs = cast(list[Expression], generate_block(state, whitespace))
-    block = BlockExpression.from_exprs(exprs, whitespace)
+    with state.loop_body(new_scope=True):
+        exprs = cast(list[Expression], generate_block(state, whitespace))
+        block = BlockExpression.from_exprs(exprs, whitespace)
 
     return FunctionDefStatement(
         info=LineInfo.from_token(start),
@@ -1235,8 +1274,9 @@ def generate_for_stmt(state: ParserState) -> ForStatement:
     if not isinstance(whitespace, WhiteSpaceToken):
         raise AstError("Expected indentation in for statement", whitespace or colon)
 
-    exprs = cast(list[Expression], generate_block(state, whitespace))
-    block = BlockExpression.from_exprs(exprs, whitespace)
+    with state.loop_body():
+        exprs = cast(list[Expression], generate_block(state, whitespace))
+        block = BlockExpression.from_exprs(exprs, whitespace)
 
     return ForStatement(
         info=LineInfo.from_token(start),
@@ -1276,3 +1316,21 @@ def generate_type(state: ParserState) -> Type:
         )
 
     return rtype
+
+
+def generate_break_stmt(state: ParserState) -> BreakStatement:
+    br = state.current_token
+
+    if not state.is_in_loop():
+        raise AstError("Cannot use `break` outside of loop", br)
+
+    return BreakStatement(info=LineInfo.from_token(br))
+
+
+def generate_continue_stmt(state: ParserState) -> ContinueStatement:
+    cont = state.current_token
+
+    if not state.is_in_loop():
+        raise AstError("Cannot use `continue` outside of loop", cont)
+
+    return ContinueStatement(info=LineInfo.from_token(cont))

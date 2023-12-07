@@ -184,3 +184,138 @@ for y in [1]:
 
     assert isinstance(x, NumericValue)
     assert x.value == 3
+
+
+async def test_break_stmt() -> None:
+    code = """
+let mut x = 0
+
+for y in [1, 2, 3]:
+    let z = "shouldn't be defined"
+
+    x = y
+    break
+    x = -1
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 1
+
+    assert "y" not in visitor.symbols
+    assert "z" not in visitor.symbols
+
+
+async def test_continue_stmt() -> None:
+    code = """
+let mut x = 0
+
+for y in [1, 2, 3]:
+    let z = "shouldn't be defined"
+
+    x = y
+    continue
+    x = -1
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 3
+
+    assert "y" not in visitor.symbols
+    assert "z" not in visitor.symbols
+
+
+async def test_nested_break_stmt() -> None:
+    code = """
+let mut x = 0
+let mut y = 0
+
+for loop_x in [1, 2]:
+  for loop_y in [3, 4]:
+    x = loop_x
+    y = loop_y
+    break
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+    y = visitor.symbols["y"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 2
+
+    assert isinstance(y, NumericValue)
+    assert y.value == 3
+
+
+async def test_nested_continue_stmt() -> None:
+    code = """
+let mut x = 0
+let mut y = 0
+
+for loop_x in [1, 2]:
+  for loop_y in [3, 4]:
+    x = loop_x
+    y = loop_y
+    continue
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+    y = visitor.symbols["y"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 2
+
+    assert isinstance(y, NumericValue)
+    assert y.value == 4
+
+
+async def test_break_inside_for_loop_inside_function_works() -> None:
+    code = """
+let mut x = 0
+let mut y = 0
+
+for inner_x in [1, 2]:
+  fn f():
+    for inner_y in [3, 4]:
+      y = inner_y
+      break
+  f()
+  x = inner_x
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    x = visitor.symbols["x"]
+    y = visitor.symbols["y"]
+
+    assert isinstance(x, NumericValue)
+    assert x.value == 2
+
+    assert isinstance(y, NumericValue)
+    assert y.value == 3

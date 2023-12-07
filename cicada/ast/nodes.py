@@ -860,6 +860,34 @@ class ForStatement(Expression):
         return f"{type(self).__name__}({self.name.name}): # {self.info}\n{source}\n{body}"
 
 
+@dataclass
+class BreakStatement(Expression):
+    type: UnitType = field(kw_only=True, default_factory=UnitType)
+    is_constexpr: bool = field(kw_only=True, default=False)
+
+    __match_args__ = ("type", "is_constexpr")
+
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_break_stmt(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}() # {self.info}"
+
+
+@dataclass
+class ContinueStatement(Expression):
+    type: UnitType = field(kw_only=True, default_factory=UnitType)
+    is_constexpr: bool = field(kw_only=True, default=False)
+
+    __match_args__ = ("type", "is_constexpr")
+
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_continue_stmt(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}() # {self.info}"
+
+
 class NodeVisitor(Generic[T]):
     async def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError
@@ -931,6 +959,12 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError
 
     async def visit_for_stmt(self, node: ForStatement) -> T:
+        raise NotImplementedError
+
+    async def visit_break_stmt(self, node: BreakStatement) -> T:
+        raise NotImplementedError
+
+    async def visit_continue_stmt(self, node: ContinueStatement) -> T:
         raise NotImplementedError
 
 
@@ -1025,3 +1059,9 @@ class TraversalVisitor(NodeVisitor[None]):
         await node.name.accept(self)
         await node.source.accept(self)
         await node.body.accept(self)
+
+    async def visit_break_stmt(self, node: BreakStatement) -> None:
+        pass
+
+    async def visit_continue_stmt(self, node: ContinueStatement) -> None:
+        pass

@@ -9,7 +9,9 @@ from cicada.ast.nodes import (
     BinaryOperator,
     BlockExpression,
     BooleanExpression,
+    BreakStatement,
     CacheStatement,
+    ContinueStatement,
     FileNode,
     ForStatement,
     FunctionAnnotation,
@@ -1496,3 +1498,51 @@ for _ in [1]:
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_generate_break_and_continue_statement() -> None:
+    code = """
+for _ in [1]:
+    break
+    continue
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case ForStatement(
+            name=IdentifierExpression("_"),
+            source=ListExpression([NumericExpression()]),
+            body=BlockExpression([BreakStatement(), ContinueStatement()]),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_break_stmt_cannot_be_outside_loop() -> None:
+    expected = "Cannot use `break` outside of loop"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        generate_ast_tree(tokenize("break"))
+
+
+def test_continue_stmt_cannot_be_outside_loop() -> None:
+    expected = "Cannot use `continue` outside of loop"
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        generate_ast_tree(tokenize("continue"))
+
+
+def test_error_on_break_or_continue_outside_loop_hidden_by_func_def() -> None:
+    for stmt in ("break", "continue"):
+        code = f"""
+for x in [1]:
+  fn f():
+    {stmt}
+"""
+
+        expected = f"Cannot use `{stmt}` outside of loop"
+
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(code))
