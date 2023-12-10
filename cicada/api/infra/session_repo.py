@@ -419,6 +419,38 @@ class SessionRepo(ISessionRepo, DbConnection):
 
         workflows = [self._convert_workflow(row) for row in rows]
 
+        return self._treeify_workflow_list(workflows)
+
+    def _get_sub_workflows_for_workflow(self, workflow: Workflow) -> list[Workflow]:
+        rows = self.conn.execute(
+            """
+            SELECT
+                uuid,
+                status,
+                sha,
+                filename,
+                started_at,
+                finished_at,
+                run_number,
+                run_on_self_hosted,
+                title,
+                parent
+            FROM workflows
+            WHERE session_id=(SELECT session_id FROM workflows WHERE uuid=? LIMIT 1)
+                AND run_number=(SELECT run_number FROM workflows WHERE uuid=? LIMIT 1);
+            """,
+            [workflow.id, workflow.id],
+        ).fetchall()
+
+        workflows = [self._convert_workflow(row) for row in rows]
+
+        return self._treeify_workflow_list(workflows, parent=workflow.id)
+
+    def _treeify_workflow_list(
+        self,
+        workflows: list[Workflow],
+        parent: WorkflowId | None = None,
+    ) -> list[Workflow]:
         tmp: dict[WorkflowId, Workflow] = {}
 
         # seed dict with all available workflows
@@ -430,10 +462,11 @@ class SessionRepo(ISessionRepo, DbConnection):
             if workflow.parent:
                 tmp[workflow.parent].sub_workflows.append(workflow)
 
-        # go through and remove non-root elements from the dict. Since parents still have
-        # references to the sub-workflows, this will leave only the root nodes.
+        # go through and remove workflows that don't have the parent property we want. Since
+        # root workflows will still have references to their children, removing the workflows
+        # from the dict leaves only the parents we care about.
         for id, workflow in tmp.copy().items():
-            if workflow.parent:
+            if workflow.parent != parent:
                 tmp.pop(id)
 
         # since dicts retain insertion order, return values so that the workflows are ordered
@@ -464,7 +497,10 @@ class SessionRepo(ISessionRepo, DbConnection):
         if not rows:
             return None
 
-        return self._convert_workflow(rows[0])
+        workflow = self._convert_workflow(rows[0])
+        workflow.sub_workflows = self._get_sub_workflows_for_workflow(workflow)
+
+        return workflow
 
     @staticmethod
     def _convert_workflow(row: sqlite3.Row) -> Workflow:

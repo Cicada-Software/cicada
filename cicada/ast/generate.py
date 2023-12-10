@@ -313,7 +313,7 @@ class ParserState:
         return len(whitespace.content) < self._current_indent_level
 
     @contextmanager
-    def loop_body(self, *, new_scope: bool=False) -> Iterator[None]:
+    def loop_body(self, *, new_scope: bool = False) -> Iterator[None]:
         """
         Increase loop body depth, used for detecting break/continue outside of loop bodies.
 

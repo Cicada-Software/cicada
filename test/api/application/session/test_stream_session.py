@@ -3,8 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 from cicada.application.session.stream_session import StreamSession
-from cicada.domain.session import SessionStatus
+from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalSession
+from test.common import build
+from test.domain.repo.mock_session_repo import MockSessionRepo
 
 
 class SlimSession:
@@ -18,10 +20,8 @@ class SlimSession:
 
 async def test_stream_full_session() -> None:
     terminal_session_repo = MagicMock()
-    session_repo = MagicMock()
+    session_repo = MockSessionRepo()
     session_stopper = AsyncMock()
-
-    session_id = uuid4()
 
     terminal = TerminalSession()
     terminal.append(b"hello\n")
@@ -29,11 +29,13 @@ async def test_stream_full_session() -> None:
     terminal.finish()
     terminal_session_repo.get_by_workflow_id.return_value = terminal
 
-    session_repo.get_session_by_session_id.return_value = SlimSession()
+    workflow = build(Workflow)
+    workflow.finish(WorkflowStatus.SUCCESS)
+    session = build(Session, runs=[workflow])
+    session.finish()
 
-    # Technically not correct since this should return a session, but we only check the status
-    # anyways so it is fine.
-    session_repo.get_workflow_by_id.return_value = SlimSession()
+    session_repo.create(session)
+    session_repo.create_workflow(workflow, session)
 
     stream = StreamSession(
         terminal_session_repo=terminal_session_repo,
@@ -41,26 +43,31 @@ async def test_stream_full_session() -> None:
         stop_session=session_stopper,
     )
 
-    data = [data async for data in stream.stream(session_id, run=1)]
+    data = [data async for data in stream.stream(session.id, run=1)]
 
-    assert data == [{"stdout": "hello\nworld"}, {"status": "SUCCESS"}]
+    assert data == [
+        {"stdout": "hello\nworld", "workflow": str(workflow.id)},
+        {"status": "SUCCESS"},
+    ]
 
     session_stopper.assert_not_called()
 
 
 async def test_stop_session_mid_stream() -> None:
     terminal_session_repo = MagicMock()
-    session_repo = MagicMock()
+    session_repo = MockSessionRepo()
     session_stopper = AsyncMock()
-
-    session_id = uuid4()
 
     terminal = TerminalSession()
     terminal.append(b"hello\n")
     terminal.append(b"world")
     terminal_session_repo.get_by_workflow_id.return_value = terminal
 
-    session_repo.get_session_by_session_id.return_value = SlimSession()
+    workflow = build(Workflow, status=WorkflowStatus.PENDING)
+    session = build(Session, runs=[workflow])
+
+    session_repo.create(session)
+    session_repo.create_workflow(workflow, session)
 
     stream = StreamSession(
         terminal_session_repo=terminal_session_repo,
@@ -69,28 +76,31 @@ async def test_stop_session_mid_stream() -> None:
     )
 
     async def read_stream():  # type: ignore[no-untyped-def]
-        return [data async for data in stream.stream(session_id, run=1)]
+        return [data async for data in stream.stream(session.id, run=1)]
 
     task = create_task(read_stream())  # type: ignore[no-untyped-call]
 
     stream.send_command("STOP")
     data = await task
 
-    assert data == [{"stdout": "hello\nworld"}, {"status": "STOPPED"}]
+    assert data == [
+        {"stdout": "hello\nworld", "workflow": str(workflow.id)},
+        {"status": "STOPPED"},
+    ]
 
     session_stopper.assert_called()
 
 
 async def test_stream_non_existent_session_fails() -> None:
     terminal_session_repo = MagicMock()
-    session_repo = MagicMock()
+    session_repo = MockSessionRepo()
     session_stopper = AsyncMock()
 
     terminal_session_repo.get_by_workflow_id.return_value = None
 
     stream = StreamSession(
         terminal_session_repo=terminal_session_repo,
-        session_repo=MagicMock(),
+        session_repo=session_repo,
         stop_session=session_stopper,
     )
 
@@ -99,4 +109,3 @@ async def test_stream_non_existent_session_fails() -> None:
     assert data == [{"error": "Session not found"}]
 
     session_stopper.assert_not_called()
-    session_repo.get_session_by_session_id.assert_not_called()

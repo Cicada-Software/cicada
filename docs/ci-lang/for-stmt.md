@@ -17,7 +17,7 @@ for x in 1:  # error: expected list type
 For statements are technically expressions, though they only return the unit type (`()`).
 This may change in the future.
 
-Like in other programming langauges, you can use `break` and `continue` to change the control flow
+Like in other programming languages, you can use `break` and `continue` to change the control flow
 of your program. `break` will break out of the loop, and `continue` will skip the rest of the loop
 and start the next iteration:
 

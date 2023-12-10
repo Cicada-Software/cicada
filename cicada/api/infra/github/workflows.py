@@ -152,6 +152,7 @@ async def run_workflow(
                 if isinstance(ctx, RemoteDockerLikeExecutionContext):
                     ctx.get_wrapper_for_trigger_type = get_wrapper_for_trigger_type
                     ctx.session_repo = di.session_repo()
+                    ctx.terminal_repo = di.terminal_session_repo()
                     ctx.session = session
 
             exit_code = await ctx.run(file)

@@ -1,9 +1,13 @@
-from asyncio import Queue, create_task, sleep
+from asyncio import Queue, create_task, sleep, wait_for
 from collections.abc import AsyncGenerator, Callable, Coroutine
+from typing import Any
 
+from cicada.api.endpoints.task_queue import TaskQueue
+from cicada.common.json import asjson
 from cicada.domain.repo.session_repo import ISessionRepo
 from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
-from cicada.domain.session import SessionId, WorkflowId, WorkflowStatus
+from cicada.domain.session import SessionId, Workflow, WorkflowId, WorkflowStatus
+from cicada.domain.terminal_session import TerminalSession
 
 
 class StreamSession:
@@ -24,6 +28,8 @@ class StreamSession:
         self.stop_session = stop_session
 
         self.command_queue = Queue[str]()
+        self.data_queue = Queue[dict[str, Any]]()
+        self.task_queue = TaskQueue()
 
     async def stream(
         self, session_id: SessionId, run: int
@@ -68,8 +74,21 @@ class StreamSession:
 
             yield {"status": status.name}
 
-        async for chunks in terminal.stream_chunks():
-            yield {"stdout": chunks.decode()}
+        sub_workflow_listener = create_task(self.sub_workflow_listener(workflow_id))
+        terminal_data_listener = create_task(self.terminal_data_listener(workflow.id, terminal))
+
+        while True:
+            try:
+                data = await wait_for(self.data_queue.get(), timeout=1)
+                self.data_queue.task_done()
+                yield data
+
+            except TimeoutError:
+                if terminal.is_done or terminal.should_stop.is_set():
+                    break
+
+        sub_workflow_listener.cancel()
+        terminal_data_listener.cancel()
 
         terminal.finish()
 
@@ -120,3 +139,47 @@ class StreamSession:
 
     def send_command(self, command: str) -> None:
         self.command_queue.put_nowait(command)
+
+    async def terminal_data_listener(
+        self,
+        workflow_id: WorkflowId,
+        terminal: TerminalSession,
+    ) -> None:
+        async for chunks in terminal.stream_chunks():
+            self.data_queue.put_nowait({"stdout": chunks.decode(), "workflow": str(workflow_id)})
+
+    async def sub_workflow_listener(  # type: ignore[misc]
+        self, workflow_id: WorkflowId
+    ) -> AsyncGenerator[dict[str, Any], None]:
+        workflow_statuses: dict[WorkflowId, WorkflowStatus] = {}
+        new_terminals = set[WorkflowId]()
+
+        def stream_workflow(workflow: Workflow) -> None:
+            if workflow.id not in new_terminals:
+                new_terminals.add(workflow.id)
+
+                terminal = self.terminal_session_repo.get_by_workflow_id(workflow.id)
+                assert terminal
+
+                self.task_queue.add(self.terminal_data_listener(workflow.id, terminal))
+
+            existing_status = workflow_statuses.get(workflow.id)
+
+            if not existing_status:
+                workflow_statuses[workflow.id] = workflow.status
+
+                self.data_queue.put_nowait({"new_sub_workflow": asjson(workflow)})
+
+            elif existing_status != workflow.status:
+                workflow_statuses[workflow.id] = workflow.status
+
+                self.data_queue.put_nowait({"update_sub_workflow": asjson(workflow)})
+
+        while True:
+            workflow = self.session_repo.get_workflow_by_id(workflow_id)
+            assert workflow
+
+            for sub_workflow in workflow.sub_workflows:
+                stream_workflow(sub_workflow)
+
+            await sleep(0.5)

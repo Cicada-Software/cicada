@@ -47,8 +47,12 @@ from cicada.ast.types import ListType
 from cicada.domain.triggers import Trigger
 
 
-class Break(Exception): pass
-class Continue(Exception): pass
+class Break(Exception):
+    pass
+
+
+class Continue(Exception):
+    pass
 
 
 def value_to_string(value: Value) -> Value:
@@ -368,7 +372,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         try:
             yield
 
-        except:
+        except:  # noqa: TRY302
             raise
 
         finally:

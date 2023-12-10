@@ -92,7 +92,7 @@ async def spawn_sub_workflow(self: RemoteContainerEvalVisitor, func: FunctionDef
     # TODO: allow for changing sub workflow title via title statement
     sub_workflow.title = generate_default_sub_workflow_title(func.name)
 
-    async def run_sub_workflow() -> None:
+    async def run_sub_workflow(visitor: RemoteContainerEvalVisitor) -> None:
         with TemporaryDirectory() as dir:
             copy = Path(dir)
 
@@ -100,14 +100,15 @@ async def spawn_sub_workflow(self: RemoteContainerEvalVisitor, func: FunctionDef
             # TODO: io bound, run in separate executor
             shutil.copytree(self.cloned_repo, copy, dirs_exist_ok=True)
 
-            visitor = deepcopy(self)
             visitor.image = cloned_image_id
             visitor.cloned_repo = copy
 
             await visitor.setup()
             await func.body.accept(visitor)
 
-    self.sub_workflows.put_nowait((sub_workflow, run_sub_workflow()))
+    visitor = deepcopy(self)
+
+    self.sub_workflows.put_nowait((visitor, sub_workflow, run_sub_workflow(visitor)))
 
 
 class RemoteContainerEvalVisitor(ConstexprEvalVisitor):  # pragma: no cover

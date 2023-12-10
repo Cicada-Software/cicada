@@ -3,6 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, nullcontext
 from dataclasses import dataclass, field
+from functools import partial
 from pathlib import Path
 from typing import ClassVar
 
@@ -10,6 +11,7 @@ from cicada.ast.generate import AstError
 from cicada.ast.nodes import FileNode, RunType
 from cicada.domain.repo.runner_repo import IRunnerRepo
 from cicada.domain.repo.session_repo import ISessionRepo
+from cicada.domain.repo.terminal_session_repo import ITerminalSessionRepo
 from cicada.domain.session import Session, SessionStatus, Workflow, WorkflowStatus
 from cicada.domain.terminal_session import TerminalIsFinished, TerminalSession
 from cicada.domain.triggers import Trigger
@@ -57,13 +59,14 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
     program: ClassVar[str]
     executor_name: ClassVar[str]
 
-    sub_workflows: asyncio.Queue[tuple[Workflow, Awaitable[None]]] = field(
-        default_factory=asyncio.Queue, init=False
-    )
+    sub_workflows: asyncio.Queue[
+        tuple[RemoteContainerEvalVisitor, Workflow, Awaitable[None]]
+    ] = field(default_factory=asyncio.Queue, init=False)
     get_wrapper_for_trigger_type: Callable[
         [Session, Workflow], AbstractAsyncContextManager[None]
     ] | None = field(default=None, init=False)
     session_repo: ISessionRepo = field(init=False)
+    terminal_repo: ITerminalSessionRepo = field(init=False)
     session: Session = field(init=False)
 
     async def run(self, file: FileNode) -> int:
@@ -167,10 +170,14 @@ class RemoteDockerLikeExecutionContext(ExecutionContext):
                     session_repo.update_workflow(sub_workflow)
 
         while True:
-            sub_workflow, runner = await self.sub_workflows.get()
+            visitor, sub_workflow, runner = await self.sub_workflows.get()
             self.sub_workflows.task_done()
 
             session_repo.create_workflow(sub_workflow, session)
+            visitor.terminal = self.terminal_repo.create(sub_workflow.id)
+            visitor.terminal.callback = partial(
+                self.terminal_repo.append_to_workflow, sub_workflow.id
+            )
 
             tg.create_task(run(sub_workflow, runner))
 
