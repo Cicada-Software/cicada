@@ -119,7 +119,7 @@ extend-ignore = [
 
   # Fix later
   "C901",
-  "PLR0911", "PLR0912", "PLR0913",
+  "PLR0911", "PLR0912", "PLR0913", "PLR0917",
   "PLW1514", "PLW1641",
 
   # False positives

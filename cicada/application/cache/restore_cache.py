@@ -35,7 +35,7 @@ class RestoreCache:
                         if not link_path.resolve().is_relative_to(Path.cwd()):
                             raise ValueError("Symlink cannot resolve to outside cache")
 
-                tf.extractall(extract_to)
+                tf.extractall(extract_to)  # noqa: S202
 
         finally:
             cache_object.file.unlink()
