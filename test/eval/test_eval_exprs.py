@@ -341,3 +341,173 @@ let l = [f(), f(), f()]
         NumericValue(Decimal(2)),
         NumericValue(Decimal(3)),
     ]
+
+
+async def test_elif_exprs_only_called_when_if_fails() -> None:
+    # This test is a bit verbose, but it covers all the cases needed to ensure that elif exprs are
+    # only executing when they need to. There are 2 checks that need to happen: The outer checks
+    # which ensure the if/elif condition only evaluates if the previous condition was falsey, and
+    # the inner check, which ensures the only block that is evaluated is the one attached to the
+    # condition that was truthy (if any).
+
+    code = """\
+let mut a_outer = -1
+let mut a_inner = -1
+let mut b_outer = -1
+let mut b_inner = -1
+let mut c_outer = -1
+let mut c_inner = -1
+let mut d_outer = -1
+let mut d_inner = -1
+let mut e_outer = -1
+let mut e_inner = -1
+let mut f_outer = -1
+let mut f_inner = -1
+
+if a_outer = 1:
+    a_inner = 1
+elif a_outer = 0:
+    a_inner = 2
+
+if b_outer = 0:
+    b_inner = 1
+elif b_outer = 1:
+    b_inner = 2
+
+if c_outer = 1:
+    c_inner = 1
+elif c_outer = 2:
+    c_inner = 2
+
+if d_outer = 0:
+    d_inner = 1
+elif d_outer = 0:
+    d_inner = 2
+
+if e_outer = 0:
+    e_inner = 1
+elif e_outer = 0:
+    e_inner = 2
+elif e_outer = 1:
+    e_inner = 3
+
+if f_outer = 0:
+    f_inner = 1
+elif f_outer = 1:
+    f_inner = 2
+elif f_outer = 0:
+    f_inner = 3
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    values = {
+        "a_outer": 1,
+        "a_inner": 1,
+        "b_outer": 1,
+        "b_inner": 2,
+        "c_outer": 1,
+        "c_inner": 1,
+        "d_outer": 0,
+        "d_inner": -1,
+        "e_outer": 1,
+        "e_inner": 3,
+        "f_outer": 1,
+        "f_inner": 2,
+    }
+
+    for symbol, value in values.items():
+        expr = visitor.symbols[symbol]
+
+        assert isinstance(expr, NumericValue)
+
+        assert expr.value == value
+
+
+async def test_else_exprs_only_called_when_if_fails() -> None:
+    code = """\
+let mut a_outer = -1
+let mut a_inner = -1
+let mut b_outer = -1
+let mut b_inner = -1
+let mut c_outer = -1
+let mut c_inner = -1
+let mut d_outer = -1
+let mut d_inner = -1
+
+if a_outer = 1:
+    a_inner = 1
+else:
+    a_inner = 2
+
+if b_outer = 0:
+    b_inner = 1
+else:
+    b_inner = 2
+
+if c_outer = 1:
+    c_inner = 1
+elif c_outer = 2:
+    c_inner = 2
+else:
+    c_inner = 3
+
+if d_outer = 0:
+    d_inner = 1
+elif d_outer = 0:
+    d_inner = 2
+else:
+    d_inner = 3
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    values = {
+        "a_outer": 1,
+        "a_inner": 1,
+        "b_outer": 0,
+        "b_inner": 2,
+        "c_outer": 1,
+        "c_inner": 1,
+        "d_outer": 0,
+        "d_inner": 3,
+    }
+
+    for symbol, value in values.items():
+        expr = visitor.symbols[symbol]
+
+        assert isinstance(expr, NumericValue)
+
+        assert expr.value == value
+
+
+async def test_if_elif_and_else_blocks_make_their_own_scope() -> None:
+    code = """
+if true:
+    let a = 1
+
+if false:
+    1
+elif true:
+    let b = 1
+
+if false:
+    1
+else:
+    let c = 1
+"""
+
+    tree = await parse_and_analyze(code)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    assert not visitor.symbols.get("a")
+    assert not visitor.symbols.get("b")
+    assert not visitor.symbols.get("c")

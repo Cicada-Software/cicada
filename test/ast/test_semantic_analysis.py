@@ -9,12 +9,14 @@ from cicada.ast.nodes import (
     BinaryOperator,
     BlockExpression,
     BooleanExpression,
+    ElifExpression,
     Expression,
     ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
+    IfExpression,
     LetExpression,
     LineInfo,
     ListExpression,
@@ -38,7 +40,9 @@ from cicada.ast.types import (
     NumericType,
     RecordType,
     StringType,
+    UnionType,
     UnitType,
+    UnknownType,
 )
 from cicada.domain.datetime import Datetime
 from cicada.domain.triggers import CommitTrigger, GitSha
@@ -945,3 +949,204 @@ for x in []:
 
     with pytest.raises(AstError, match=re.escape(expected)):
         await parse_and_analyze(code)
+
+
+async def test_elif_exprs_have_proper_types() -> None:
+    # TODO: narrow if expr type when always true/false branches are found
+
+    code = """
+if false:
+    1
+elif true:
+    "testing"
+"""
+
+    tree = await parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            elifs=[
+                ElifExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression([StringExpression("testing")]),
+                    type=StringType(),
+                    is_constexpr=True,
+                ),
+            ],
+            type=UnionType((NumericType(), StringType(), UnknownType())),
+            is_constexpr=True,
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+async def test_if_scopes_dont_bleed_into_elif_scope() -> None:
+    expected = "Variable `x` is not defined"
+
+    code1 = """
+if false:
+    let x = 123
+elif true:
+    let y = x
+"""
+
+    code2 = """
+if let x = 123:
+    echo noop
+elif true:
+    let y = x
+"""
+
+    for code in [code1, code2]:
+        with pytest.raises(AstError, match=re.escape(expected)):
+            await parse_and_analyze(code)
+
+
+async def test_elif_scope_doesnt_persist_after_exit() -> None:
+    expected = "Variable `x` is not defined"
+
+    code1 = """
+if false:
+    echo noop
+elif true:
+    let x = 123
+
+let y = x
+"""
+
+    code2 = """
+if false:
+    echo noop
+elif let x = 123:
+    echo noop
+
+let y = x
+"""
+
+    for code in [code1, code2]:
+        with pytest.raises(AstError, match=re.escape(expected)):
+            await parse_and_analyze(code)
+
+
+async def test_elif_condition_must_be_bool_like() -> None:
+    expected = "Type `()` cannot be converted to bool"
+
+    code = """
+if false:
+    1
+elif print("won't work"):
+    2
+"""
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await parse_and_analyze(code)
+
+
+async def test_else_exprs_have_proper_types() -> None:
+    code = """
+if false:
+    1
+else:
+    "testing"
+"""
+
+    tree = await parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            else_block=BlockExpression([StringExpression("testing")]),
+            type=UnionType((NumericType(), StringType())),
+            is_constexpr=True,
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+async def test_if_scopes_dont_bleed_into_else_scope() -> None:
+    expected = "Variable `x` is not defined"
+
+    code1 = """
+if false:
+    let x = 123
+else:
+    let y = x
+"""
+
+    code2 = """
+if let x = 123:
+    echo noop
+else:
+    let y = x
+"""
+
+    for code in [code1, code2]:
+        with pytest.raises(AstError, match=re.escape(expected)):
+            await parse_and_analyze(code)
+
+
+async def test_else_scope_doesnt_persist_after_exit() -> None:
+    expected = "Variable `x` is not defined"
+
+    code = """
+if false:
+    echo noop
+else:
+    let x = 123
+
+let y = x
+"""
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await parse_and_analyze(code)
+
+
+async def test_constexpr_propagation_in_if_exprs() -> None:
+    async def is_if_expr_constexpr(code: str) -> bool:
+        tree = await parse_and_analyze(code)
+
+        match tree.exprs[0]:
+            case IfExpression(is_constexpr=is_constexpr):
+                return is_constexpr
+
+        pytest.fail(f"expected if expr: {tree}")
+
+    tests = {
+        "if true:\n\t1": True,
+        "if true:\n\techo": False,
+        "if true:\n\t1\nelif true:\n\t2": True,
+        "if true:\n\t1\nelif true:\n\techo": False,
+        "if true:\n\t1\nelse:\n\t2": True,
+        "if true:\n\t1\nelse:\n\techo": False,
+    }
+
+    for code, expected in tests.items():
+        assert expected == await is_if_expr_constexpr(code)
+
+
+async def test_if_expr_has_single_type_if_all_branches_return_same_type() -> None:
+    code = """
+if false:
+    1
+else:
+    2
+"""
+
+    tree = await parse_and_analyze(code)
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            else_block=BlockExpression([NumericExpression(2)]),
+            type=NumericType(),
+            is_constexpr=True,
+        ):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")

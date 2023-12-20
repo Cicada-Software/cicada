@@ -20,6 +20,8 @@ from cicada.parse.token import (
     CommentToken,
     ContinueToken,
     DanglingToken,
+    ElifToken,
+    ElseToken,
     EqualToken,
     FloatLiteralToken,
     ForToken,
@@ -57,6 +59,7 @@ from .nodes import (
     BreakStatement,
     CacheStatement,
     ContinueStatement,
+    ElifExpression,
     Expression,
     FileNode,
     ForStatement,
@@ -363,14 +366,110 @@ def generate_if_expr(state: ParserState) -> IfExpression:
     exprs = cast(list[Expression], generate_block(state, expected_whitespace))
     block = BlockExpression.from_exprs(exprs, expected_whitespace)
 
+    elifs = parse_elif_exprs(state, expected_whitespace)
+    else_block = parse_else_expr(state, expected_whitespace)
+
     # TODO: turn into func
     return IfExpression(
         info=LineInfo.from_token(start),
         condition=cond,
         body=block,
+        elifs=elifs,
+        else_block=else_block,
         type=UnknownType(),
         is_constexpr=False,
     )
+
+
+def parse_elif_exprs(
+    state: ParserState, expected_whitespace: WhiteSpaceToken
+) -> list[ElifExpression]:
+    elifs: list[ElifExpression] = []
+
+    while True:
+        with state.peek() as peeker:
+            elif_token = state.next_non_whitespace_or_eof()
+
+            if not isinstance(elif_token, ElifToken):
+                break
+
+            peeker.drop_peeked_tokens()
+
+        if not state.next_non_whitespace_or_eof():
+            raise AstError("Expected expression", elif_token)
+
+        elif_cond = generate_expr(state)
+
+        colon = state.next_non_whitespace_or_eof()
+
+        if not isinstance(colon, ColonToken):
+            raise AstError("Expected `:`", state.current_token)
+
+        newline = next(state, None)
+
+        if not isinstance(newline, NewlineToken):
+            raise AstError("Expected newline", newline or colon)
+
+        whitespace = next(state, None)
+
+        if not isinstance(whitespace, WhiteSpaceToken):
+            raise AstError("Expected whitespace", whitespace or newline)
+
+        exprs = cast(list[Expression], generate_block(state, expected_whitespace))
+
+        if not exprs:
+            raise AstError("Expected expression", state.current_token)
+
+        elif_block = BlockExpression.from_exprs(exprs, expected_whitespace)
+
+        elifs.append(
+            ElifExpression(
+                info=LineInfo.from_token(elif_token),
+                condition=elif_cond,
+                body=elif_block,
+                type=UnknownType(),
+                is_constexpr=False,
+            )
+        )
+
+    return elifs
+
+
+def parse_else_expr(
+    state: ParserState, expected_whitespace: WhiteSpaceToken
+) -> BlockExpression | None:
+    with state.peek() as peeker:
+        else_token = state.next_non_whitespace_or_eof()
+
+        if not isinstance(else_token, ElseToken):
+            return None
+
+        peeker.drop_peeked_tokens()
+
+    colon = state.next_non_whitespace_or_eof()
+
+    if isinstance(colon, IfToken):
+        raise AstError("Unexpected `else if`. Did you mean `elif`?", colon or state.current_token)
+
+    if not isinstance(colon, ColonToken):
+        raise AstError("Expected `:`", colon or state.current_token)
+
+    newline = next(state, None)
+
+    if not isinstance(newline, NewlineToken):
+        raise AstError("Expected newline", newline or colon)
+
+    whitespace = next(state, None)
+
+    if not isinstance(whitespace, WhiteSpaceToken):
+        raise AstError("Expected whitespace", whitespace or newline)
+
+    exprs = cast(list[Expression], generate_block(state, expected_whitespace))
+
+    if not exprs:
+        raise AstError("Expected expression", state.current_token)
+
+    return BlockExpression.from_exprs(exprs, expected_whitespace)
 
 
 def generate_ast_tree(tokens: Iterable[Token]) -> FileNode:
@@ -881,6 +980,12 @@ def generate_expr(state: ParserState) -> Expression:
 
     elif isinstance(token, IfToken):
         expr = generate_if_expr(state)
+
+    elif isinstance(token, ElifToken):
+        raise AstError("Unexpected token `elif`. Did you mean `if`?", token)
+
+    elif isinstance(token, ElseToken):
+        raise AstError("Unexpected token `else`. Did you mean `if`?", token)
 
     elif isinstance(token, IntegerLiteralToken | FloatLiteralToken):
         expr = NumericExpression.from_token(token)

@@ -601,7 +601,7 @@ class BinaryExpression(Expression):
 
 
 @dataclass
-class IfExpression(Expression):
+class ElifExpression(Expression):
     """
     An if expression is like an if statement, except that it can be directly
     assigned to a variable, like any other expression. The result of an if
@@ -614,10 +614,45 @@ class IfExpression(Expression):
     body: BlockExpression
 
     async def accept(self, visitor: NodeVisitor[T]) -> T:
-        return await visitor.visit_if_expr(self)
+        return await visitor.visit_elif_expr(self)
 
     def __str__(self) -> str:
         args = f"cond={self.condition}\nbody={self.body}"
+        args = indent(args, "  ")
+
+        return f"{type(self).__name__}: # {self.info}\n{args}"
+
+
+@dataclass
+class IfExpression(Expression):
+    """
+    An if expression is like an if statement, except that it can be directly
+    assigned to a variable, like any other expression. The result of an if
+    expression is the last expression to be evaluated in the if statement.
+    """
+
+    __match_args__ = ("condition", "body", "elifs", "else_body")
+
+    condition: Expression
+    body: BlockExpression
+    elifs: list[ElifExpression] = field(default_factory=list)
+    else_block: BlockExpression | None = None
+
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_if_expr(self)
+
+    def __str__(self) -> str:
+        if self.elifs:
+            elifs = "\n".join(f"{i}={expr}" for i, expr in enumerate(self.elifs))
+            elifs = indent(elifs, "  ")
+            elifs = f"\nelifs=\n{elifs}"
+
+        else:
+            elifs = ""
+
+        else_block = f"\nelse={self.else_block}" if self.else_block else ""
+
+        args = f"cond={self.condition}\nbody={self.body}{elifs}{else_block}"
         args = indent(args, "  ")
 
         return f"{type(self).__name__}: # {self.info}\n{args}"
@@ -928,6 +963,9 @@ class NodeVisitor(Generic[T]):
     async def visit_if_expr(self, node: IfExpression) -> T:
         raise NotImplementedError
 
+    async def visit_elif_expr(self, node: ElifExpression) -> T:
+        raise NotImplementedError
+
     async def visit_unary_expr(self, node: UnaryExpression) -> T:
         raise NotImplementedError
 
@@ -1019,6 +1057,17 @@ class TraversalVisitor(NodeVisitor[None]):
         await node.rhs.accept(self)
 
     async def visit_if_expr(self, node: IfExpression) -> None:
+        await node.condition.accept(self)
+
+        await node.body.accept(self)
+
+        for _elif in node.elifs:
+            await _elif.accept(self)
+
+        if node.else_block:
+            await node.else_block.accept(self)
+
+    async def visit_elif_expr(self, node: ElifExpression) -> None:
         await node.condition.accept(self)
 
         await node.body.accept(self)

@@ -280,7 +280,20 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
             if cond.value:
                 return await node.body.accept(self)
 
-            return UnitValue()
+        for _elif in node.elifs:
+            with self.new_scope():
+                cond = await _elif.condition.accept(self)
+
+                assert isinstance(cond, BooleanValue | NumericValue | StringValue)
+
+                if cond.value:
+                    return await _elif.body.accept(self)
+
+        if node.else_block:
+            with self.new_scope():
+                return await node.else_block.accept(self)
+
+        return UnitValue()
 
     async def visit_block_expr(self, node: BlockExpression) -> Value:
         last: Value = UnitValue()

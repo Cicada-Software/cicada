@@ -78,6 +78,13 @@ for _ in [1]:
   1
   break
   continue
+
+if true:
+  1
+elif true:
+  2
+else:
+  3
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -156,7 +163,18 @@ FileNode:
     body=BlockExpression: # 34:3..36:3
       0=NumericExpression(1) # 34:3..34:3
       1=BreakStatement() # 35:3..35:7
-      2=ContinueStatement() # 36:3..36:10\
+      2=ContinueStatement() # 36:3..36:10
+  IfExpression: # 38:1..38:2
+    cond=BooleanExpression(True) # 38:4..38:7
+    body=BlockExpression: # 39:3..39:3
+      0=NumericExpression(1) # 39:3..39:3
+    elifs=
+      0=ElifExpression: # 40:1..40:4
+        cond=BooleanExpression(True) # 40:6..40:9
+        body=BlockExpression: # 41:3..41:3
+          0=NumericExpression(2) # 41:3..41:3
+    else=BlockExpression: # 43:3..43:3
+      0=NumericExpression(3) # 43:3..43:3\
 """
 
     assert str(tree) == expected

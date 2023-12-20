@@ -98,6 +98,8 @@ class UnionType(Type):
 
     types: tuple[Type, ...]
 
+    __match_args__ = ("types",)
+
     def __init__(self, types: Sequence[Type]) -> None:
         copy: list[Type] = []
 
@@ -110,6 +112,16 @@ class UnionType(Type):
 
         if len(self.types) < 2:
             raise ValueError("Union must have 2 or more types")
+
+    @classmethod
+    def union_or_single(cls, types: Sequence[Type]) -> Type:
+        assert types
+
+        try:
+            return cls(types)
+
+        except ValueError:
+            return types[0]
 
     def __eq__(self, o: object) -> bool:
         if not (isinstance(o, UnionType) and len(o.types) == len(self.types)):

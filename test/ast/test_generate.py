@@ -12,6 +12,7 @@ from cicada.ast.nodes import (
     BreakStatement,
     CacheStatement,
     ContinueStatement,
+    ElifExpression,
     FileNode,
     ForStatement,
     FunctionAnnotation,
@@ -1546,3 +1547,120 @@ for x in [1]:
 
         with pytest.raises(AstError, match=re.escape(expected)):
             generate_ast_tree(tokenize(code))
+
+
+def test_invalid_elif_exprs_are_caught() -> None:
+    if_stmt = "if true:\n\t1"
+
+    tests = {
+        "elif": "Unexpected token `elif`. Did you mean `if`?",
+        f"{if_stmt}\nelif": "Expected expression",
+        f"{if_stmt}\nelif true": "Expected `:`",
+        f"{if_stmt}\nelif true:": "Expected newline",
+        f"{if_stmt}\nelif true:1": "Expected newline",
+        f"{if_stmt}\nelif true:\n": "Expected whitespace",
+        f"{if_stmt}\nelif true:\n1": "Expected whitespace",
+        f"{if_stmt}\nelif true:\n\t": "Expected expression",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
+
+
+def test_parse_elif_expr() -> None:
+    code = """
+if false:
+    1
+elif true:
+    2
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            elifs=[
+                ElifExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression([NumericExpression(2)]),
+                ),
+            ],
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_parse_multiple_elif_exprs() -> None:
+    code = """
+if false:
+    1
+elif true:
+    2
+elif true:
+    3
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            elifs=[
+                ElifExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression([NumericExpression(2)]),
+                ),
+                ElifExpression(
+                    condition=BooleanExpression(True),
+                    body=BlockExpression([NumericExpression(3)]),
+                ),
+            ],
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_invalid_else_exprs_are_caught() -> None:
+    if_stmt = "if true:\n\t1"
+
+    tests = {
+        "else": "Unexpected token `else`. Did you mean `if`?",
+        f"{if_stmt}\nelse": "Expected `:`",
+        f"{if_stmt}\nelse if": "Unexpected `else if`. Did you mean `elif`?",
+        f"{if_stmt}\nelse:": "Expected newline",
+        f"{if_stmt}\nelse:x": "Expected newline",
+        f"{if_stmt}\nelse:\n": "Expected whitespace",
+        f"{if_stmt}\nelse:\n1": "Expected whitespace",
+        f"{if_stmt}\nelse:\n\t": "Expected expression",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
+
+
+def test_parse_else_expr() -> None:
+    code = """
+if false:
+    1
+else:
+    2
+"""
+
+    tree = generate_ast_tree(tokenize(code))
+
+    match tree.exprs[0]:
+        case IfExpression(
+            condition=BooleanExpression(False),
+            body=BlockExpression([NumericExpression(1)]),
+            else_block=BlockExpression([NumericExpression(2)]),
+        ):
+            return
+
+    pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")

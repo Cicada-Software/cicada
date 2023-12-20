@@ -12,6 +12,7 @@ from cicada.ast.nodes import (
     BlockExpression,
     BooleanValue,
     CacheStatement,
+    ElifExpression,
     Expression,
     FileNode,
     ForStatement,
@@ -593,7 +594,38 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     async def visit_if_expr(self, node: IfExpression) -> None:
         with self.new_scope():
-            await super().visit_if_expr(node)
+            await node.condition.accept(self)
+            await node.body.accept(self)
+
+            if node.condition.type not in BOOL_LIKE_TYPES:
+                raise AstError(
+                    f"Type `{node.condition.type}` cannot be converted to bool",
+                    node.condition,
+                )
+
+        for _elif in node.elifs:
+            await _elif.accept(self)
+
+        if node.else_block:
+            with self.new_scope():
+                await node.else_block.accept(self)
+
+        node.is_constexpr = (
+            node.body.is_constexpr
+            and all(x.is_constexpr for x in node.elifs)
+            and (node.else_block.is_constexpr if node.else_block else True)
+        )
+
+        elif_types = [x.type for x in node.elifs]
+
+        # TODO: should unit type be used instead of unknown type?
+        else_type = node.else_block.type if node.else_block else UnknownType()
+
+        node.type = UnionType.union_or_single((node.body.type, *elif_types, else_type))
+
+    async def visit_elif_expr(self, node: ElifExpression) -> None:
+        with self.new_scope():
+            await super().visit_elif_expr(node)
 
             if node.condition.type not in BOOL_LIKE_TYPES:
                 raise AstError(
@@ -602,7 +634,7 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 )
 
             node.is_constexpr = node.body.is_constexpr
-            node.type = UnionType((node.body.type, UnknownType()))
+            node.type = node.body.type
 
     async def visit_block_expr(self, node: BlockExpression) -> None:
         await super().visit_block_expr(node)
