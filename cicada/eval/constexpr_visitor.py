@@ -3,6 +3,7 @@ from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from decimal import Decimal
+from pathlib import Path
 from typing import cast
 
 from cicada.ast.common import trigger_to_record
@@ -21,6 +22,7 @@ from cicada.ast.nodes import (
     FunctionValue,
     IdentifierExpression,
     IfExpression,
+    ImportStatement,
     LetExpression,
     ListExpression,
     ListValue,
@@ -43,7 +45,7 @@ from cicada.ast.nodes import (
     UnreachableValue,
     Value,
 )
-from cicada.ast.types import ListType
+from cicada.ast.types import ListType, RecordType
 from cicada.domain.triggers import Trigger
 
 
@@ -94,6 +96,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
     def __init__(self, trigger: Trigger | None = None) -> None:
         self.symbols = ChainMap()
         self.trigger = trigger
+        self.loaded_modules = set[Path]()
 
         if trigger:
             event = cast(RecordValue, trigger_to_record(trigger))
@@ -340,7 +343,7 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
         if name == "strip":
             return StringValue(expr.value.strip())
 
-        assert False
+        return NotImplemented
 
     async def visit_title_stmt(self, node: TitleStatement) -> Value:
         # TitleStatement is special in that it is used for display purposes and
@@ -377,6 +380,36 @@ class ConstexprEvalVisitor(NodeVisitor[Value]):
 
     async def visit_continue_stmt(self, node: ContinueStatement) -> Value:
         raise Continue
+
+    async def visit_import_stmt(self, node: ImportStatement) -> Value:
+        # Because these modules have already been imported during semantic analysis we can safely
+        # eval the modules without needing to do any file IO.
+        assert node.tree
+        assert node.full_path
+        assert node.full_path.is_absolute()
+
+        if node.full_path in self.loaded_modules:
+            return UnitValue()
+
+        self.loaded_modules.add(node.full_path)
+
+        module_visitor = self.__class__(trigger=None)
+        module_visitor.loaded_modules = self.loaded_modules
+
+        await node.tree.accept(module_visitor)
+
+        record_type = RecordType()
+        record_values = {}
+
+        symbols: dict[str, Value] = dict(*module_visitor.symbols.maps[:1])
+
+        for name, symbol in symbols.items():
+            record_type.fields[name] = symbol.type
+            record_values[name] = symbol
+
+        self.symbols[node.module.stem] = RecordValue(record_values, record_type)
+
+        return UnitValue()
 
     @contextmanager
     def new_scope(self) -> Iterator[None]:

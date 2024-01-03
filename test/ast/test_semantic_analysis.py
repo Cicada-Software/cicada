@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 import pytest
 
@@ -11,12 +12,14 @@ from cicada.ast.nodes import (
     BooleanExpression,
     ElifExpression,
     Expression,
+    FileNode,
     ForStatement,
     FunctionAnnotation,
     FunctionDefStatement,
     FunctionExpression,
     IdentifierExpression,
     IfExpression,
+    ImportStatement,
     LetExpression,
     LineInfo,
     ListExpression,
@@ -1150,3 +1153,83 @@ else:
             return
 
     pytest.fail(f"tree does not match: {tree}")
+
+
+async def test_invalid_imports_are_caught() -> None:
+    # TODO: dont require newline after import
+
+    tests = {
+        "import xyz\n": "Cannot import `xyz`: Imported files must end in `.ci`",
+        "let xyz = 1\nimport xyz.ci\n": "Cannot import `xyz.ci`: Importing `xyz` would shadow existing variable/function",  # noqa: E501
+        "import xyz.ci\n": "Cannot import `xyz.ci`: File does not exist",
+        "import /xyz.ci\n": "Cannot import files outside of root directory",
+        "import ../xyz.ci\n": "Cannot import files outside of root directory",
+        "import file/../../xyz.ci\n": "Cannot import files outside of root directory",
+    }
+
+    for code, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            await parse_and_analyze(code, file_root=Path.cwd())
+
+
+async def test_import_stmt_has_proper_types() -> None:
+    code = """
+import imported.ci
+"""
+
+    root = Path("test/ast/data/imports").resolve()
+
+    tree = await parse_and_analyze(code, file_root=root)
+
+    match tree.exprs[0]:
+        case ImportStatement(
+            module=module,
+            tree=FileNode(
+                exprs=[LetExpression("x", StringExpression("imported variable"))],
+            ),
+        ) if module == Path("imported.ci"):
+            return
+
+    pytest.fail(f"tree does not match: {tree}")
+
+
+async def test_certain_stmts_cannot_be_used_in_imported_modules() -> None:
+    tests = {
+        'cache x using ""': "Cannot use `cache` inside imported modules",
+        "on git.push": "Cannot use `on` inside imported modules",
+        "run_on image alpine": "Cannot use `run_on` inside imported modules",
+        "title x": "Cannot use `title` inside imported modules",
+    }
+
+    for code, expected in tests.items():
+        tokens = tokenize(code)
+
+        visitor = SemanticAnalysisVisitor()
+        visitor.is_inside_import = True
+
+        tree = generate_ast_tree(tokens)
+
+        with pytest.raises(AstError, match=re.escape(expected)):
+            await tree.accept(visitor)
+
+
+async def test_imported_modules_cannot_call_workflow_functions() -> None:
+    code = """
+@workflow
+fn f():
+    1
+
+f()
+"""
+
+    expected = "Cannot create sub-workflow in imported modules"
+
+    tokens = tokenize(code)
+
+    visitor = SemanticAnalysisVisitor()
+    visitor.is_inside_import = True
+
+    tree = generate_ast_tree(tokens)
+
+    with pytest.raises(AstError, match=re.escape(expected)):
+        await tree.accept(visitor)

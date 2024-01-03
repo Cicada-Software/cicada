@@ -61,7 +61,7 @@ async def folder_get_runnable_ci_files(
 
     for file in find_ci_files(folder):
         try:
-            tree = await parse_and_analyze(file.read_text(), trigger)
+            tree = await parse_and_analyze(file.read_text(), trigger, file_root=folder)
 
             visitor = OnStatementEvalVisitor(trigger)
 
@@ -77,7 +77,8 @@ async def folder_get_runnable_ci_files(
             pass
 
         except AstError as err:
-            err.filename = str(file.relative_to(folder))
+            tmp = Path(err.filename) if err.filename else file
+            err.filename = str(tmp.relative_to(folder))
 
             files_or_errors.append(err)
 

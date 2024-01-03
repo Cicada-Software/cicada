@@ -86,6 +86,11 @@ class CommandType(RecordType):
     )
 
 
+@dataclass
+class ModuleType(RecordType):
+    name: str = field(kw_only=True)
+
+
 BOOL_LIKE_TYPES = (BooleanType(), NumericType(), StringType())
 
 

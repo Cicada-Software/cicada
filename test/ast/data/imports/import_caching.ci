@@ -1,0 +1,6 @@
+# Modules should only be evaluated once, so side effects like incrementing the number below
+# should only be ran once if a module happens to be imported multiple times.
+let mut num = 0
+
+# TODO: fix operator precedence
+num = (num + 1)

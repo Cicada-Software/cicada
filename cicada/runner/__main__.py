@@ -333,6 +333,7 @@ async def run_session(  # type: ignore[misc]
                 trigger,
                 data_stream,
                 should_stop,
+                Path(tmp),
             )
 
             if status is not None:
@@ -347,9 +348,10 @@ async def run_workflow(
     trigger: Trigger,
     data_stream: list[bytes],
     should_stop: asyncio.Event,
+    folder: Path,
 ) -> SessionStatus | None:
     try:
-        tree = await parse_and_analyze(file.read_text(), trigger)
+        tree = await parse_and_analyze(file.read_text(), trigger, file_root=folder)
 
     except IgnoreWorkflow:
         return None

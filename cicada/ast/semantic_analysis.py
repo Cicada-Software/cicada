@@ -2,10 +2,11 @@ from collections import ChainMap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from decimal import Decimal
+from pathlib import Path
 from typing import cast
 
 from cicada.ast.common import trigger_to_record
-from cicada.ast.generate import SHELL_ALIASES, AstError
+from cicada.ast.generate import SHELL_ALIASES, AstError, generate_ast_tree
 from cicada.ast.nodes import (
     BinaryExpression,
     BinaryOperator,
@@ -22,9 +23,11 @@ from cicada.ast.nodes import (
     FunctionValue,
     IdentifierExpression,
     IfExpression,
+    ImportStatement,
     LetExpression,
     ListExpression,
     MemberExpression,
+    ModuleValue,
     NumericValue,
     OnStatement,
     ParenthesisExpression,
@@ -45,6 +48,7 @@ from cicada.ast.types import (
     CommandType,
     FunctionType,
     ListType,
+    ModuleType,
     NumericType,
     RecordType,
     StringType,
@@ -55,6 +59,7 @@ from cicada.ast.types import (
     VariadicTypeArg,
 )
 from cicada.domain.triggers import Trigger
+from cicada.parse.tokenize import tokenize
 
 
 class IgnoreWorkflow(RuntimeError):
@@ -184,14 +189,27 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
     file_node: FileNode | None = None
 
-    def __init__(self, trigger: Trigger | None = None) -> None:
+    loaded_modules: dict[Path, FileNode]
+
+    file_root: Path | None = None
+
+    def __init__(self, trigger: Trigger | None = None, file_root: Path | None = None) -> None:
+        # Load builtin symbols into symbol table
         self.symbols = ChainMap(BUILT_IN_SYMBOLS.copy())
+        # Create a new scope so that builtin symbols can be differentiated from user defined ones
+        self.symbols = self.symbols.new_child()
         self.trigger = trigger
         self.has_ran_function = False
         self.has_on_stmt = False
         self.run_on = None
         self.file_node = None
         self.cache_stmt = None
+        self.loaded_modules = {}
+        self.is_inside_import = False
+
+        if file_root:
+            assert file_root.is_absolute()
+            self.file_root = file_root
 
         if self.trigger:
             event = cast(RecordValue, trigger_to_record(self.trigger))
@@ -339,14 +357,22 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                             node.rhs,
                         )
 
-                if rvalue.type.fields.get(member.name):
+                if sym := rvalue.value.get(member.name):
+                    # TODO: better encapsulate what is assignable or not
+                    # TODO: include lhs of member expr in error
+
+                    lhs = rvalue.type.name if isinstance(rvalue, ModuleValue) else ""
+
+                    match sym:
+                        case LetExpression(is_mutable=False):
+                            raise AstError(
+                                f"Cannot reassign `{lhs}.{member.name}` because it is immutable",
+                                sym,
+                            )
+
                     await member.accept(self)
 
-                    self.ensure_valid_op_types(
-                        member,
-                        node.oper,
-                        node.rhs,
-                    )
+                    self.ensure_valid_op_types(member, node.oper, node.rhs)
 
                 else:
                     # TODO: Should we be able to assign arbitrary values to
@@ -408,17 +434,26 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             if not isinstance(node.callee, MemberExpression):
                 raise NotImplementedError
 
-            member_type, symbol = MEMBER_FUNCTION_TYPES[node.callee.name]
+            if data := MEMBER_FUNCTION_TYPES.get(node.callee.name):
+                member_type, symbol = data
+
+                if node.callee.lhs.type != member_type:
+                    ty = node.callee.lhs.type
+
+                    raise AstError(
+                        f"Expected type `{member_type}`, got type `{ty}` instead",
+                        node.callee.lhs,
+                    )
+
+            else:
+                lhs = self.get_symbol(node.callee.lhs)
+
+                assert isinstance(lhs, RecordValue)
+
+                symbol = lhs.value[node.callee.name]
+                member_type = symbol.type
 
             assert isinstance(symbol, FunctionValue)
-
-            if node.callee.lhs.type != member_type:
-                ty = node.callee.lhs.type
-
-                raise AstError(
-                    f"Expected type `{member_type}`, got type `{ty}` instead",
-                    node.callee.lhs,
-                )
 
             if len(node.args) != len(symbol.type.arg_types):
                 raise AstError.incorrect_arg_count(
@@ -454,6 +489,8 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         assert isinstance(symbol, FunctionValue)
 
+        self.check_no_subworkflows_in_imported_modules(node, symbol)
+
         func_arg_types = symbol.type.arg_types
 
         is_variadic = func_arg_types and isinstance(func_arg_types[-1], VariadicTypeArg)
@@ -469,6 +506,22 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
         self.has_ran_function = True
         node.type = symbol.type.rtype
+
+    def check_no_subworkflows_in_imported_modules(
+        self, node: FunctionExpression, symbol: FunctionValue
+    ) -> None:
+        if not self.is_inside_import:
+            return
+
+        assert symbol.func
+
+        if not isinstance(symbol.func, FunctionDefStatement):
+            return
+
+        for annotation in symbol.func.annotations:
+            match annotation:
+                case FunctionAnnotation(IdentifierExpression("workflow")):
+                    raise AstError("Cannot create sub-workflow in imported modules", node)
 
     def type_check_variadic_func_expr(
         self,
@@ -542,6 +595,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
 
             raise AstError("Cannot use `on` statement after a function call", node)
 
+        if self.is_inside_import:
+            raise AstError("Cannot use `on` inside imported modules", node)
+
         await super().visit_on_stmt(node)
 
         if not self.trigger:
@@ -585,6 +641,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 "Cannot use multiple `run_on` statements in a single file",
                 node,
             )
+
+        if self.is_inside_import:
+            raise AstError("Cannot use `run_on` inside imported modules", node)
 
         # TODO: use run_on field from field_node instead
         self.run_on = node
@@ -671,9 +730,10 @@ class SemanticAnalysisVisitor(TraversalVisitor):
         await super().visit_cache_stmt(node)
 
         if self.cache_stmt:
-            msg = "Cannot have multiple `cache` statements in a single file"
+            raise AstError("Cannot have multiple `cache` statements in a single file", node)
 
-            raise AstError(msg, node)
+        if self.is_inside_import:
+            raise AstError("Cannot use `cache` inside imported modules", node)
 
         if node.using.type != StringType():
             raise AstError(
@@ -691,6 +751,9 @@ class SemanticAnalysisVisitor(TraversalVisitor):
                 "Cannot have multiple `title` statements in a single file",
                 node,
             )
+
+        if self.is_inside_import:
+            raise AstError("Cannot use `title` inside imported modules", node)
 
         for part in node.parts:
             if not part.is_constexpr:
@@ -765,6 +828,67 @@ class SemanticAnalysisVisitor(TraversalVisitor):
             node.name.type = node.source.type.inner_type
 
             await node.body.accept(self)
+
+    async def visit_import_stmt(self, node: ImportStatement) -> None:
+        # Require a file root for doing any imports since we need to know where files should be
+        # imported from.
+        assert self.file_root
+
+        node.full_path = (self.file_root / node.module).resolve()
+
+        if not node.full_path.is_relative_to(self.file_root):
+            raise AstError("Cannot import files outside of root directory", node)
+
+        if tree := self.loaded_modules.get(node.full_path):
+            node.tree = tree
+            return
+
+        module_name = node.module.stem
+
+        if self.symbols.get(module_name):
+            raise AstError(
+                f"Cannot import `{node.module}`: Importing `{module_name}` would shadow existing variable/function",  # noqa: E501
+                node,
+            )
+
+        if not node.full_path.name.endswith(".ci"):
+            raise AstError(
+                f"Cannot import `{node.module}`: Imported files must end in `.ci`",
+                node,
+            )
+
+        if not node.full_path.exists():
+            raise AstError(f"Cannot import `{node.module}`: File does not exist", node)
+
+        code = node.full_path.read_text()
+
+        tokens = tokenize(code)
+        node.tree = generate_ast_tree(tokens)
+
+        self.loaded_modules[node.full_path] = node.tree
+
+        try:
+            module_visitor = SemanticAnalysisVisitor(trigger=None, file_root=self.file_root)
+            module_visitor.loaded_modules = self.loaded_modules
+            module_visitor.is_inside_import = True
+
+            await node.tree.accept(module_visitor)
+
+            # TODO: turn this into a function
+            record_type = ModuleType(name=module_name)
+            record_values = {}
+
+            symbols: dict[str, Value] = dict(*module_visitor.symbols.maps[:1])
+
+            for name, symbol in symbols.items():
+                record_type.fields[name] = symbol.type
+                record_values[name] = symbol
+
+            self.symbols[module_name] = ModuleValue(record_values, record_type)
+
+        except AstError as ex:
+            ex.filename = str(node.module)
+            raise
 
     @staticmethod
     def check_for_duplicate_arg_names(node: FunctionDefStatement) -> None:

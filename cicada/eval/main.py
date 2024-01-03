@@ -9,10 +9,13 @@ from cicada.ast.entry import parse_and_analyze
 from cicada.ast.generate import SHELL_ALIASES, AstError
 from cicada.ast.nodes import (
     CacheStatement,
+    Expression,
     FunctionDefStatement,
     FunctionExpression,
     FunctionValue,
     IdentifierExpression,
+    MemberExpression,
+    RecordValue,
     UnitValue,
     UnreachableValue,
     Value,
@@ -61,6 +64,7 @@ class EvalVisitor(ConstexprEvalVisitor):
     def __init__(self, trigger: Trigger | None = None) -> None:
         super().__init__(trigger)
         self.symbols.update(BUILT_IN_SYMBOLS.copy())
+        self.symbols = self.symbols.new_child()
 
         self.cached_files = None
         self.cache_key = None
@@ -69,9 +73,9 @@ class EvalVisitor(ConstexprEvalVisitor):
         if (expr := await super().visit_func_expr(node)) is not NotImplemented:
             return expr
 
-        assert isinstance(node.callee, IdentifierExpression)
+        assert isinstance(node.callee, IdentifierExpression | MemberExpression)
 
-        symbol = self.symbols.get(node.callee.name)
+        symbol = self.get_symbol(node.callee)
 
         if not symbol:
             return UnreachableValue()
@@ -107,6 +111,17 @@ class EvalVisitor(ConstexprEvalVisitor):
 
         return UnitValue()
 
+    def get_symbol(self, node: Expression) -> Value | None:
+        if isinstance(node, IdentifierExpression):
+            return self.symbols.get(node.name)
+
+        if isinstance(node, MemberExpression):
+            if lhs := self.get_symbol(node.lhs):
+                if isinstance(lhs, RecordValue):
+                    return lhs.value.get(node.name)
+
+        return None
+
 
 async def run_pipeline(
     contents: str,
@@ -116,7 +131,7 @@ async def run_pipeline(
     try:
         trigger = trigger or trigger_from_env()
 
-        tree = await parse_and_analyze(contents, trigger)
+        tree = await parse_and_analyze(contents, trigger, file_root=Path.cwd())
 
         await tree.accept(EvalVisitor(trigger))
 
@@ -124,7 +139,7 @@ async def run_pipeline(
         pass
 
     except AstError as ex:  # pragma: no cover
-        ex.filename = filename
+        ex.filename = ex.filename or filename
 
         print(ex)  # noqa: T201
 

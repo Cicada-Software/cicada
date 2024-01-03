@@ -85,6 +85,8 @@ elif true:
   2
 else:
   3
+
+import testing.ci
 """
 
     tree = generate_ast_tree(tokenize(code))
@@ -174,7 +176,8 @@ FileNode:
         body=BlockExpression: # 41:3..41:3
           0=NumericExpression(2) # 41:3..41:3
     else=BlockExpression: # 43:3..43:3
-      0=NumericExpression(3) # 43:3..43:3\
+      0=NumericExpression(3) # 43:3..43:3
+  ImportStatement(testing.ci) # 45:1..45:6\
 """
 
     assert str(tree) == expected

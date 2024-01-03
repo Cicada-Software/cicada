@@ -38,6 +38,7 @@ from .types import (
     BooleanType,
     FunctionType,
     ListType,
+    ModuleType,
     NumericType,
     StringType,
     Type,
@@ -101,6 +102,11 @@ class BooleanValue(Value):
 class RecordValue(Value):
     value: dict[str, Value]
     type: Type
+
+
+@dataclass
+class ModuleValue(RecordValue):
+    type: ModuleType
 
 
 BuiltInFunction = Callable[..., Awaitable[Value] | Value]  # type: ignore[misc]
@@ -923,6 +929,24 @@ class ContinueStatement(Expression):
         return f"{type(self).__name__}() # {self.info}"
 
 
+@dataclass
+class ImportStatement(Statement):
+    # The name of the module as it appears in the .ci file
+    module: Path
+
+    # The full path of the .ci file after cloning
+    full_path: Path | None = None
+    tree: FileNode | None = None
+
+    __match_args__ = ("module",)
+
+    async def accept(self, visitor: NodeVisitor[T]) -> T:
+        return await visitor.visit_import_stmt(self)
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.module}) # {self.info}"
+
+
 class NodeVisitor(Generic[T]):
     async def visit_file_node(self, node: FileNode) -> T:
         raise NotImplementedError
@@ -1003,6 +1027,9 @@ class NodeVisitor(Generic[T]):
         raise NotImplementedError
 
     async def visit_continue_stmt(self, node: ContinueStatement) -> T:
+        raise NotImplementedError
+
+    async def visit_import_stmt(self, node: ImportStatement) -> T:
         raise NotImplementedError
 
 
@@ -1113,4 +1140,7 @@ class TraversalVisitor(NodeVisitor[None]):
         pass
 
     async def visit_continue_stmt(self, node: ContinueStatement) -> None:
+        pass
+
+    async def visit_import_stmt(self, node: ImportStatement) -> None:
         pass

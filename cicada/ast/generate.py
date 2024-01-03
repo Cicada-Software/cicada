@@ -4,6 +4,8 @@ from contextlib import contextmanager
 from dataclasses import replace
 from enum import Enum
 from itertools import count, groupby
+from pathlib import Path
+from types import UnionType as _UnionType
 from typing import NoReturn, Self, cast
 
 from cicada.ast.common import pluralize
@@ -29,6 +31,7 @@ from cicada.parse.token import (
     GreaterThanToken,
     IdentifierToken,
     IfToken,
+    ImportToken,
     IntegerLiteralToken,
     InToken,
     KeywordToken,
@@ -68,6 +71,7 @@ from .nodes import (
     FunctionExpression,
     IdentifierExpression,
     IfExpression,
+    ImportStatement,
     LetExpression,
     LineInfo,
     ListExpression,
@@ -550,6 +554,9 @@ def generate_node(state: ParserState) -> Node:
     if isinstance(token, ContinueToken):
         return generate_continue_stmt(state)
 
+    if isinstance(token, ImportToken):
+        return generate_import_stmt(state)
+
     if isinstance(token, IdentifierToken) and token.content in {
         *SHELL_ALIASES,
         "shell",
@@ -740,7 +747,7 @@ def generate_c_function_expr(
 
 
 def generate_string_list(
-    state: ParserState, *, stop_at: type[Token] = NewlineToken
+    state: ParserState, *, stop_at: type[Token] | _UnionType = NewlineToken
 ) -> list[Expression]:
     arg: list[Token] = []
     args: list[Expression] = []
@@ -1439,3 +1446,26 @@ def generate_continue_stmt(state: ParserState) -> ContinueStatement:
         raise AstError("Cannot use `continue` outside of loop", cont)
 
     return ContinueStatement(info=LineInfo.from_token(cont))
+
+
+def generate_import_stmt(state: ParserState) -> ImportStatement:
+    start = state.current_token
+
+    whitespace = next(state, None)
+    if not isinstance(whitespace, WhiteSpaceToken):
+        raise AstError("Expected whitespace", start)
+
+    exprs = generate_string_list(state, stop_at=WhiteSpaceToken | NewlineToken)
+    if not exprs:
+        raise AstError("Expected module name after `import`", whitespace)
+
+    assert len(exprs) == 1
+
+    if not isinstance(exprs[0], StringExpression):
+        raise AstError("Interpolated strings are not allowed here", exprs[0])
+
+    newline = state.current_token
+    if newline and not isinstance(newline, NewlineToken):
+        raise AstError("Expected newline", newline)
+
+    return ImportStatement(info=LineInfo.from_token(start), module=Path(exprs[0].value))

@@ -9,6 +9,7 @@
   - [The `run_on` Statement](./ci-lang/run-on-statement.md)
   - [The `title` Statement](./ci-lang/title-statement.md)
   - [The `shell` Statement](./ci-lang/shell-stmt.md)
+  - [The `import` Statement](./ci-lang/import-stmt.md)
   - [Expressions](./ci-lang/exprs.md)
     - [Types and Literals](./ci-lang/types.md)
     - [Operators](./ci-lang/opers.md)

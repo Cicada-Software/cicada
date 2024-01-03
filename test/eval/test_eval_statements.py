@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from cicada.ast.entry import parse_and_analyze
@@ -319,3 +321,31 @@ for inner_x in [1, 2]:
 
     assert isinstance(y, NumericValue)
     assert y.value == 3
+
+
+async def test_importing_file_multiple_times_doesnt_rerun_side_effects() -> None:
+    code = """
+import import_caching.ci
+
+let num_a = import_caching.num
+
+import import_caching.ci
+
+let num_b = import_caching.num
+"""
+
+    root = Path("test/ast/data/imports").resolve()
+
+    tree = await parse_and_analyze(code, file_root=root)
+
+    visitor = EvalVisitor()
+    await tree.accept(visitor)
+
+    num_a = visitor.symbols["num_a"]
+    num_b = visitor.symbols["num_b"]
+
+    assert isinstance(num_a, NumericValue)
+    assert num_a.value == 1
+
+    assert isinstance(num_b, NumericValue)
+    assert num_b.value == 1

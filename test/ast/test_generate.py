@@ -1664,3 +1664,16 @@ else:
             return
 
     pytest.fail(f"Tree did not match:\n{tree.exprs[0]}")
+
+
+def test_invalid_import_stmts_are_caught() -> None:
+    tests = {
+        "import": "Expected whitespace",
+        "import ": "Expected module name after `import`",
+        "import x x": "Expected newline",
+        "import (x)": "Interpolated strings are not allowed here",
+    }
+
+    for test, expected in tests.items():
+        with pytest.raises(AstError, match=re.escape(expected)):
+            generate_ast_tree(tokenize(test))
